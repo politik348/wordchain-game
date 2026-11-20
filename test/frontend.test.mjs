@@ -13,7 +13,7 @@ function sandbox(){
  const fakeInput={isContentEditable:false,matches:s=>s.includes('input')};
  const fakeRoot={contains:el=>el===fakeInput,querySelector:()=>null};
  const document={getElementById:()=>fakeRoot,activeElement:fakeInput};
- const context=vm.createContext({document,localStorage:{getItem:()=>null},sessionStorage:{getItem:()=>null,setItem:()=>{}},crypto:{randomUUID:()=> 'fake-uuid'},console,setTimeout,configureRummikubUI:()=>{}});
+ const context=vm.createContext({document,localStorage:{getItem:()=>null},sessionStorage:{getItem:()=>null,setItem:()=>{}},crypto:{randomUUID:()=> 'fake-uuid'},console,setTimeout,configureRummikubUI:()=>{},installYutPowerControl:()=>({})});
  vm.runInContext(pureSource,context);
  const evaluate=js=>vm.runInContext(js,context);
  return {evaluate,document};
