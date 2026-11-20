@@ -96,7 +96,7 @@ const touch = (r,message) => {
 function sanitize(r,sid) {
   const pub={ id:r.id,game:r.game,gameName:GAME_INFO[r.game].name,host:r.host,status:r.status,
     players:r.players.map(p=>({id:p.id,nick:p.nick,ready:p.ready})),options:r.options,
-    notices:r.notices.slice(-8),me:sid,now:Date.now(),updatedAt:r.updatedAt,version:r.version||0 };
+    notices:r.notices.slice(-8),lobbyChat:(r.lobbyChat||[]).slice(-40),me:sid,now:Date.now(),updatedAt:r.updatedAt,version:r.version||0 };
   if(!r.state) return pub;
   const s=r.state;
   if(r.game==='rummikub') {pub.state=sanitizeRummikub(r,sid);
@@ -301,6 +301,19 @@ function act(r,sid,type,data={},transport='http') {
     if(st!=='lobby'||!host)throw err(403,'대기실에서 방장만 설정할 수 있습니다.');
     r.options=makeOptions(r.game,{...r.options,...data});
     touch(r,'게임 설정이 변경되었습니다.');return;
+  }
+  if(type==='lobbyChat'){
+    if(st!=='lobby')throw err(400,'대기실에서만 사용할 수 있는 채팅입니다.');
+    const message=clampText(data.text,120).trim();
+    if(!message)return;
+    r.lobbyChatTimes??={};
+    const now=Date.now();
+    if(now-Number(r.lobbyChatTimes[sid]||0)<800)throw err(429,'채팅은 잠시 간격을 두고 보내주세요.');
+    r.lobbyChatTimes[sid]=now;
+    r.lobbyChat??=[];
+    r.lobbyChat.push({id:id(),sid,nick:player(r,sid).nick,text:message,at:now});
+    r.lobbyChat=r.lobbyChat.slice(-40);
+    touch(r);return;
   }
   if(type==='ready') {if(st!=='lobby'||host)throw err(400,'준비를 바꿀 수 없습니다.');const p=player(r,sid);p.ready=!p.ready;touch(r);return;}
   if(type==='start') {if(!host||st!=='lobby')throw err(403,'방장만 게임을 시작할 수 있습니다.');start(r);return;}
