@@ -368,3 +368,67 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
   .cat-hub-character{height:220px;width:210px;margin:0 auto}
   .cat-hub-hero-refresh h1 br{display:none}
 }
+
+
+/* Seamless transparent crowned cat mascot on challenge landing. */
+.cat-hub-hero.cat-hub-hero-refresh{
+  grid-template-columns:minmax(0,1fr) minmax(310px,445px);
+  align-items:center;
+  column-gap:22px;
+  padding:21px 35px 18px 49px;
+  min-height:365px;
+  overflow:hidden;
+}
+.cat-hub-character{
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:min(100%,445px);
+  height:auto;
+  max-width:100%;
+  margin:0 auto;
+  overflow:visible;
+  background:transparent;
+  isolation:isolate;
+}
+.cat-hub-character::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:110%;height:77%;
+  left:-5%;top:13%;
+  border-radius:50%;
+  background:radial-gradient(ellipse at 50% 54%,#ffd0aa70,#fff4e600 70%);
+  pointer-events:none;
+}
+.cat-hub-character img{
+  position:relative;
+  z-index:1;
+  top:auto;right:auto;left:auto;
+  display:block;width:100%;max-width:100%;height:auto;
+  aspect-ratio:620 / 470;
+  object-fit:contain;
+  -webkit-mask-image:none;
+  mask-image:none;
+  transform:none;
+}
+@media(max-width:960px){
+  .cat-hub-hero.cat-hub-hero-refresh{
+    grid-template-columns:minmax(0,1fr) minmax(225px,330px);
+    gap:13px;
+    padding:22px 25px;
+    min-height:320px
+  }
+  .cat-hub-character{width:min(100%,330px);height:auto}
+  .cat-hub-hero-refresh h1 br{display:inline}
+}
+@media(max-width:620px){
+  .cat-hub-hero.cat-hub-hero-refresh{
+    grid-template-columns:minmax(0,1fr);
+    min-height:0;padding:19px 19px 12px;
+    gap:5px
+  }
+  .cat-hub-hero-refresh h1 br{display:none}
+  .cat-hub-character{width:min(100%,340px);max-width:340px;height:auto}
+}
