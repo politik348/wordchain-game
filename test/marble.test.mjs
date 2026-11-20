@@ -100,3 +100,28 @@ test('online rooms: create, join, start, reject wrong-turn cheating, make server
  const end=await request(`/api/marble/rooms/${one.code}?sid=tester_001`);
  assert.equal(end.state.winner,'tester_001');
 });
+test('v2: every turn emits deduplicatable action metadata for replay and narration',()=>{
+ let s=createGame({players:[{id:'human',name:'사람'},{id:'cat',name:'고양이',ai:true}],maxRounds:8});
+ assert.equal(s.actionSeq,0);assert.equal(s.lastEvent,null);
+ s=applyAction(s,'human','roll',{},zero);
+ assert.equal(s.actionSeq,1);assert.equal(s.lastEvent.actor,'human');assert.deepEqual(s.lastEvent.dice,{a:1,b:1,total:2,double:true});
+ assert.equal(s.lastEvent.from,0);assert.equal(s.lastEvent.to,2);
+ assert.equal(s.lastEvent.tileIndex,2);assert.equal(s.lastEvent.type,'roll');
+ s=applyAction(s,'human','buy',{},zero);
+ assert.equal(s.actionSeq,2);assert.equal(s.lastEvent.propertyChanges[0].kind,'purchase');
+ assert.equal(s.lastEvent.propertyChanges[0].index,2);
+ assert.ok(s.lastEvent.moneyChanges.some(m=>m.id==='human'&&m.delta===-125));
+ assert.deepEqual(s.events.map(e=>e.seq),[2,1]);
+});
+test('v2: opponent toll and AI turns keep owner, cash and who-acted data',()=>{
+ let s=createGame({players:[{id:'human',name:'사람'},{id:'cat',name:'고양이',ai:true}],maxRounds:8});
+ s.properties[2]={owner:'cat',level:1};
+ s=applyAction(s,'human','roll',{},zero);
+ assert.equal(s.lastEvent.actor,'human');assert.equal(s.lastEvent.moneyChanges.length,2);
+ assert.ok(s.lastEvent.message.includes('통행료'));
+ assert.equal(s.lastEvent.phase,'choice');
+ s=applyAction(s,'human','pass',{},zero);
+ assert.equal(s.players[s.turnIndex].id,'human'); // rolled a double
+ s=applyAction(s,'human','roll',{},()=>0.2);
+ assert.ok(s.lastEvent.dice);
+});
