@@ -2,7 +2,7 @@ import {TURN_SECONDS, dictionaryIndex, replies as chainReplies, validReply, turn
 import {configureRummikubUI, renderRummikubGame} from './rummikub/ui.mjs?v=20261120rk3';
 import {createSoloRummikub, soloRoom, soloPlayRummikub, soloTickRummikub, catPlayRummikub} from './rummikub/solo.mjs';
 import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove, yutSelectedSteps, usableYutRolls} from './yut-solo-engine.mjs?v=20261120yut4';
-import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut4';
+import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut5';
 import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut5';
 import {installYutPowerControl} from './yut-power.mjs?v=20261120yut5';
 import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261120banner1';
