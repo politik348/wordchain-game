@@ -248,9 +248,9 @@ function yutChoice(mode,s){
  const roomId=mode==='room'?room?.id:null;
  const rolls=s?.rolls||[];
  const old=yutRollSelection;
- let indices=old?.scope===mode&&old?.roomId===roomId?old.indices.filter(i=>Number.isInteger(i)&&i>=0&&i<rolls.length):[];
- if(!indices.length&&rolls.length)indices=[0];
- try{return {indices,steps:yutSelectedSteps(rolls,indices)};}catch{return {indices:[],steps:null};}
+ const same=old?.scope===mode&&old?.roomId===roomId;
+ const indices=same?old.indices.filter(i=>Number.isInteger(i)&&i>=0&&i<rolls.length):(rolls.length===1?[0]:[]);
+ try{return {indices,steps:yutSelectedSteps(rolls,indices)};}catch{return {indices,steps:null};}
 }
 function yutGame(){
  const s=room.state,mineTurn=s.turn===user.sid&&room.status==='playing';
@@ -705,7 +705,7 @@ function yutSelectRoll(mode,index){
  if(!Number.isInteger(index)||index<0||index>=s.rolls.length)return;
  const roomId=isSolo?null:room.id,old=yutChoice(mode,s).indices;
  let next;
- if(old.includes(index)){next=old.length===1?old:old.filter(i=>i!==index);}
+ if(old.includes(index)){next=old.filter(i=>i!==index);}
  else if(s.rolls[index]===-1||old.some(i=>s.rolls[i]===-1))next=[index];
  else next=[...old,index].sort((a,b)=>a-b);
  yutRollSelection={scope:mode,roomId,indices:next};yutRouteChoice=null;render();
