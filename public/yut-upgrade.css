@@ -85,3 +85,36 @@
  .yut-participant{flex-basis:100%}
 }
 @media(prefers-reduced-motion:reduce){.yut-preview-path{animation:none}}
+
+/* v5: press/hold throw power and slower, clearer launch */
+.yut-charge-button{position:relative;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:75px;transition:transform .13s ease,box-shadow .13s ease;white-space:normal}
+.yut-charge-button .yut-charge-label{position:relative;z-index:1;display:block;font-size:14px;line-height:1.2;font-weight:900}
+.yut-charge-button .yut-power-meter{display:block;width:100%;height:9px;max-width:260px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.4)}
+.yut-charge-button .yut-power-fill{display:block;width:var(--yut-power,0%);height:100%;border-radius:99px;background:linear-gradient(90deg,#ffe6a1,#ffe36b,#fff);box-shadow:0 0 12px rgba(255,244,144,.45);transition:width .06s linear}
+.yut-charge-button .yut-power-caption{font-size:10px;letter-spacing:1px;line-height:1.1;opacity:.94}
+.yut-charge-button.is-charging{transform:scale(.98);box-shadow:0 0 0 4px #ffca77,0 8px 25px rgba(241,111,121,.3)}
+.yut-charge-button.is-charging .yut-charge-label{animation:yutChargeBeat .56s ease-in-out infinite alternate}
+.yut-power-help{margin:0;font-size:10px;line-height:1.6;color:#9e817e;text-align:center}
+@keyframes yutChargeBeat{to{transform:scale(1.06)}}
+.yut-throwbox.is-rolling .yut-wood{animation:yutPowerFlip var(--yut-duration,900ms) cubic-bezier(.17,.7,.2,1) both;animation-delay:calc(var(--order) * 32ms)}
+.yut-throwbox.is-rolling .yut-stick-pack{animation:yutPackShake var(--yut-duration,900ms) ease-out both}
+@keyframes yutPowerFlip{
+ 0%{transform:translateY(5px) rotate(var(--tilt)) rotateX(0)}
+ 34%{transform:translateY(calc(-1 * var(--yut-lift,60px))) rotate(calc(var(--tilt) + 26deg)) rotateX(220deg)}
+ 70%{transform:translateY(-15px) rotate(calc(var(--tilt) - 16deg)) rotateX(450deg)}
+ 100%{transform:translateY(0) rotate(var(--tilt)) rotateX(720deg)}
+}
+@media(max-width:810px){
+ .yut-control-column .yut-charge-button{min-height:76px;min-width:145px;padding:10px}
+ .yut-control-column .yut-charge-label{font-size:12px}
+ .yut-control-column .yut-power-meter{height:8px}
+ .yut-control-column .yut-power-help{grid-column:1/-1;text-align:left}
+}
+@media(max-width:390px){
+ .yut-control-column .yut-charge-button{min-width:118px;max-width:158px;padding:8px}
+ .yut-control-column .yut-charge-label{font-size:11px}
+ .yut-control-column .yut-power-caption{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ .yut-throwbox.is-rolling .yut-wood,.yut-throwbox.is-rolling .yut-stick-pack,.yut-charge-button.is-charging .yut-charge-label{animation:none}
+}
