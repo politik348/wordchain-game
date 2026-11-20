@@ -54,7 +54,7 @@ try{
 }catch{}
 function persistPregamePrefs(){try{localStorage.setItem('moyeo-pregame-settings-v1',JSON.stringify(gamePrefs));}catch{}}
 const catGames=new Set(['omok','yut','wordchain','rummikub']);
-function pregameModesFor(game,catOnly=false){return catOnly?['cat']:catGames.has(game)?['cat','online']:['online'];}
+function pregameModesFor(game,catOnly=false){return catOnly?['cat']:catGames.has(game)?['online','cat']:['online'];}
 function pregameSettingGroups(game){
  const prefs=gamePrefs[game];if(!prefs)return [];
  const groups=[];
