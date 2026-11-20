@@ -1,10 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import {loadDictionary} from '../data/load-lexicon.mjs';
 import vm from 'node:vm';
 
 const source=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
-const pureSource=source.slice(0,source.indexOf("document.addEventListener('click'"));
+const helpers=readFileSync(new URL('../public/chain-utils.mjs',import.meta.url),'utf8').replace(/^export /gm,'');
+const cleanSource=source.replace(/^import .*\n/,'');
+const pureSource=helpers+'\n'+cleanSource.slice(0,cleanSource.indexOf("document.addEventListener('click'"));
 const CSS=readFileSync(new URL('../public/styles.css',import.meta.url),'utf8');
 function sandbox(){
  const fakeInput={isContentEditable:false,matches:s=>s.includes('input')};
@@ -77,9 +80,10 @@ test('wordchain input remains focusable outside player turn',()=>{
  assert.doesNotMatch(markup,/<input[^>]*disabled[^>]*>/);
 });
 test('imported dictionary has over 200,000 words and includes ordinary nouns',()=>{
- const dict=JSON.parse(readFileSync(new URL('../data/dictionary.json',import.meta.url),'utf8'));
+ const dict=loadDictionary();
  const client=JSON.parse(readFileSync(new URL('../public/words.json',import.meta.url),'utf8'));
- assert.equal(dict.length,212942);
- assert.equal(client.length,dict.length);
+ assert.equal(dict.length,437875);
+ assert.equal(client.count,dict.length);
+ assert.equal(client.parts.length,18);
  for(const w of ['사과','과자','자동차','학교','나무'])assert.ok(dict.includes(w),w);
 });

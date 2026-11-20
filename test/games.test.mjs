@@ -37,7 +37,7 @@ test('lobby code, join, ready, room list, then Omok turn enforcement',async()=>{
 test('Wordchain initializes round, validates lexicon and turn',async()=>{
  const a=await make('wordchain',2);assert.equal(a.room.state.history.length,1);
  const invalid=await post(`/api/rooms/${a.code}/action`,{sid:a.players[0].sid,type:'word',payload:{word:'없는단어예요'}},400);
- assert.match(invalid.error,/단어 목록/);
+ assert.match(invalid.error,/사전에 없는/);
  assert.equal((await state(a)).state.turn,a.players[0].sid);
 });
 

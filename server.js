@@ -1,15 +1,16 @@
 import http from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
+import { loadDictionary } from './data/load-lexicon.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, randomInt } from 'node:crypto';
 import {acceptWebSocket} from './websocket-lite.mjs';
+import {TURN_SECONDS, dictionaryIndex, replies, validReply} from './public/chain-utils.mjs';
 import { words as starterWords, startingWords, drawingWords, liarWords } from './data/words.js';
 // An imported full dictionary overrides the starter lexicon for multiplayer.
 let words = starterWords;
 try {
-  const imported = JSON.parse(readFileSync(new URL('./data/dictionary.json', import.meta.url), 'utf8'));
+  const imported = loadDictionary();
   if (Array.isArray(imported) && imported.length && imported.every(w => typeof w === 'string' && /^[가-힣]{2,24}$/.test(w))) {
     words = imported;
     console.log(`Dictionary loaded: ${words.length.toLocaleString('ko-KR')} words`);
@@ -20,6 +21,33 @@ try {
   if (e.code !== 'ENOENT') console.warn('Dictionary load failed, retaining starter words:', e.message);
 }
 const lexicon = new Set(words);
+const wordIndex = dictionaryIndex(words);
+const DICT_COUNT = words.length;
+const START_POOL = {
+ wordchain: [...startingWords.filter(w=>lexicon.has(w)), ...words.filter((w,i)=>i%97===0 && w.length>=2 && w.length<=5)],
+ kungkungtta: [...startingWords.filter(w=>lexicon.has(w)&&w.length===3), ...words.filter((w,i)=>i%149===0 && w.length===3)]
+};
+const lastStartingWord={wordchain:null,kungkungtta:null};
+function openingWord(mode){
+ let pool=START_POOL[mode]||START_POOL.wordchain;
+ // Opening must have at least one legal response; prefer a different opening each match.
+ for(let n=0;n<50;n++){
+  const candidate=n<12 ? pick(pool.slice(0,Math.min(12,pool.length))) : pick(pool);
+  if(candidate!==lastStartingWord[mode] && replies(wordIndex,candidate,new Set([candidate]),mode,null,1).length){lastStartingWord[mode]=candidate;return candidate;}
+ }
+ const fallback=pool.find(w=>w!==lastStartingWord[mode]&&replies(wordIndex,w,new Set([w]),mode,null,1).length) || '사과';
+ lastStartingWord[mode]=fallback;return fallback;
+}
+const configGames=new Set(['wordchain','omok','yut','doodle']);
+const defaults={wordchain:30,omok:30,yut:45,doodle:90};
+function makeOptions(game,value={}){
+ const opts={turnSeconds:configGames.has(game)?defaults[game]:null,wordMode:'wordchain',stoneStyle:'normal'};
+ if(configGames.has(game)&&TURN_SECONDS.includes(Number(value.turnSeconds)))opts.turnSeconds=Number(value.turnSeconds);
+ if(game==='wordchain'&&value.wordMode==='kungkungtta')opts.wordMode='kungkungtta';
+ if(game==='omok'&&value.stoneStyle==='crazy')opts.stoneStyle='crazy';
+ return opts;
+}
+
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
@@ -62,7 +90,7 @@ const touch = (r,message) => {
 };
 function sanitize(r,sid) {
   const pub={ id:r.id,game:r.game,gameName:GAME_INFO[r.game].name,host:r.host,status:r.status,
-    players:r.players.map(p=>({id:p.id,nick:p.nick,ready:p.ready})),
+    players:r.players.map(p=>({id:p.id,nick:p.nick,ready:p.ready})),options:r.options,
     notices:r.notices.slice(-8),me:sid,now:Date.now(),updatedAt:r.updatedAt,version:r.version||0 };
   if(!r.state) return pub;
   const s=r.state;
@@ -78,6 +106,8 @@ function sanitize(r,sid) {
   } else if(r.game==='doodle') {
     pub.state={...s,word:sid===s.artist || r.status==='finished' ? s.word:undefined,
       wordLength:s.word.length};
+  } else if(r.game==='wordchain') {
+    pub.state={...s,hints:s.hints?.for===sid ? s.hints : undefined};
   } else pub.state=s;
   return pub;
 }
@@ -118,9 +148,9 @@ function start(r) {
   r.status='playing';
   const ids=r.players.map(p=>p.id);
   switch(r.game){
-    case 'omok':r.state={board:Array(225).fill(null),turn:ids[0],winner:null,last:null,moves:0};break;
-    case 'wordchain':r.state={turn:ids[0],turnIndex:0,history:[pick(startingWords)],used:[],hearts:Object.fromEntries(ids.map(x=>[x,2])),scores:Object.fromEntries(ids.map(x=>[x,0])),deadline:Date.now()+20000,round:1,mission:pick(['사','가','구','나','리','자','이','도','수']),timer:20,reason:null};break;
-    case 'doodle':r.state={artist:ids[0],artistIndex:0,round:1,maxRounds:Math.min(12,ids.length*3),word:pick(drawingWords),strokes:[],strokeSeq:0,chat:[],scores:Object.fromEntries(ids.map(x=>[x,0])),deadline:Date.now()+80000,revealed:false};break;
+    case 'omok':r.state={board:Array(225).fill(null),turn:ids[0],winner:null,last:null,moves:0,deadline:Date.now()+r.options.turnSeconds*1000};break;
+    case 'wordchain':r.state={turn:ids[0],turnIndex:0,history:[openingWord(r.options.wordMode)],used:[],usedEndings:Object.fromEntries(ids.map(x=>[x,[]])),hearts:Object.fromEntries(ids.map(x=>[x,2])),scores:Object.fromEntries(ids.map(x=>[x,0])),deadline:Date.now()+r.options.turnSeconds*1000,round:1,mission:pick(['사','가','구','나','리','자','이','도','수']),timer:r.options.turnSeconds,reason:null,hints:null,oneShot:false};break;
+    case 'doodle':r.state={artist:ids[0],artistIndex:0,round:1,maxRounds:Math.min(12,ids.length*3),word:pick(drawingWords),strokes:[],strokeSeq:0,chat:[],scores:Object.fromEntries(ids.map(x=>[x,0])),deadline:Date.now()+r.options.turnSeconds*1000,revealed:false};break;
     case 'liar': {
       const [topic,word]=pick(liarWords);
       r.state={topic,word,liar:pick(ids),phase:'clue',speaker:ids[0],speakerIndex:0,clues:[],votes:{},guess:'',result:null};break;
@@ -132,7 +162,7 @@ function start(r) {
       r.state={roles:Object.fromEntries(ids.map((x,i)=>[x,roles[i]])),alive:[...ids],phase:'night',day:1,nightActions:{},investigations:{},votes:{},chat:[],history:[{text:'첫 번째 밤이 시작되었습니다. 역할을 확인하고 행동하세요.'}],result:null};break;
     }
     case 'bell':r.state={cards:Object.fromEntries(ids.map(x=>[x,null])),scores:Object.fromEntries(ids.map(x=>[x,0])),pile:0,draws:0,maxDraws:24,lastDraw:Date.now(),round:1,feedback:'카드가 뒤집힐 때를 기다려요.',deadline:Date.now()+1900};break;
-    case 'yut':r.state={turn:ids[0],turnIndex:0,pieces:Object.fromEntries(ids.map(x=>[x,Array.from({length:4},()=>({node:0,route:'outer',index:0,done:false}))])),pending:null,rollName:null,bonus:false,history:[],result:null};break;
+    case 'yut':r.state={turn:ids[0],turnIndex:0,pieces:Object.fromEntries(ids.map(x=>[x,Array.from({length:4},()=>({node:0,route:'outer',index:0,done:false}))])),pending:null,rollName:null,bonus:false,history:[],result:null,deadline:Date.now()+r.options.turnSeconds*1000};break;
   }
   touch(r,'게임이 시작되었습니다!');
 }
@@ -202,14 +232,14 @@ function nextDoodle(r) {
   s.artistIndex=(s.artistIndex+1)%r.players.length;
   s.artist=r.players[s.artistIndex].id;
   let next=pick(drawingWords);if(next===prev)next=pick(drawingWords);
-  s.word=next;s.strokes=[];s.strokeSeq=0;s.deadline=Date.now()+80000;s.revealed=false;
+  s.word=next;s.strokes=[];s.strokeSeq=0;s.deadline=Date.now()+r.options.turnSeconds*1000;s.revealed=false;
   touch(r,`${s.round}라운드: 새로운 화가가 그림을 그립니다.`);
 }
 function nextChainTurn(r) {
   const s=r.state,live=r.players.filter(p=>s.hearts[p.id]>0);
   if(live.length<=1){finish(r,live.length?`${live[0].nick}님 승리!`:'무승부');return;}
   s.turnIndex=nextIndex(r,(s.turnIndex+1)%r.players.length,p=>s.hearts[p.id]>0);
-  s.turn=r.players[s.turnIndex].id;s.timer=Math.max(7,20-Math.floor(s.round/3));
+  s.turn=r.players[s.turnIndex].id;s.timer=r.options.turnSeconds;
   s.deadline=Date.now()+s.timer*1000;
 }
 const lastChar=w=>w.at(-1);
@@ -260,12 +290,18 @@ function moveYut(r,sid,pieceIndex,shortcut=true) {
   const bonus=s.bonus||caught;
   s.pending=null;s.rollName=null;s.bonus=false;
   if(!bonus){s.turnIndex=(s.turnIndex+1)%r.players.length;s.turn=r.players[s.turnIndex].id;}
+  s.deadline=Date.now()+r.options.turnSeconds*1000;
   touch(r,bonus?'한 번 더 던지세요!':'다음 차례입니다.');
 }
 function act(r,sid,type,data={},transport='http') {
   requireMember(r,sid);
   const host=r.host===sid,st=r.status,s=r.state;
   if(type==='rename'){player(r,sid).nick=cleanNick(data.nick);touch(r);return;}
+  if(type==='settings'){
+    if(st!=='lobby'||!host)throw err(403,'대기실에서 방장만 설정할 수 있습니다.');
+    r.options=makeOptions(r.game,{...r.options,...data});
+    touch(r,'게임 설정이 변경되었습니다.');return;
+  }
   if(type==='ready') {if(st!=='lobby'||host)throw err(400,'준비를 바꿀 수 없습니다.');const p=player(r,sid);p.ready=!p.ready;touch(r);return;}
   if(type==='start') {if(!host||st!=='lobby')throw err(403,'방장만 게임을 시작할 수 있습니다.');start(r);return;}
   if(type==='rematch'){if(!host||st!=='finished')throw err(403,'종료 후 방장만 재대결을 준비할 수 있습니다.');reset(r);return;}
@@ -296,23 +332,31 @@ function act(r,sid,type,data={},transport='http') {
     s.last={x,y};s.moves++;
     if(result.five){s.winner=sid;finish(r,`${player(r,sid).nick}님이 오목에서 승리했습니다!`);return;}
     if(s.moves===225){finish(r,'무승부입니다.');return;}
-    s.turn=r.players.find(p=>p.id!==sid).id;touch(r);return;
+    s.turn=r.players.find(p=>p.id!==sid).id;s.deadline=Date.now()+r.options.turnSeconds*1000;touch(r);return;
   }
   if(r.game==='wordchain'){
     if(type!=='word')throw err(400,'올바른 단어를 입력하세요.');
     if(s.turn!==sid)throw err(400,'다른 사람의 차례입니다.');
-    if(Date.now()>s.deadline){throw err(400,'제한 시간이 지났습니다.');}
+    if(Date.now()>s.deadline)throw err(400,'제한 시간이 지났습니다.');
     const w=clampText(data.word,24).replace(/\s/g,'');
-    if(!/^[가-힣]{2,}$/.test(w))throw err(400,'두 글자 이상의 한글 단어를 입력하세요.');
-    if(!lexicon.has(w))throw err(400,'현재 내장된 단어 목록에 없는 단어입니다.');
+    if(!/^[가-힣]{2,24}$/.test(w))throw err(400,'한글 2~24글자를 입력하세요.');
+    if(r.options.wordMode==='kungkungtta'&&w.length!==3)throw err(400,'쿵쿵따는 정확히 3글자 단어만 사용할 수 있습니다.');
+    if(!lexicon.has(w))throw err(400,'확장 사전에 없는 단어입니다.');
     if(s.history.includes(w))throw err(400,'이미 사용한 단어입니다.');
-    if(!initials(lastChar(s.history.at(-1))).has(w[0]))throw err(400,`'${lastChar(s.history.at(-1))}'(으)로 시작해야 합니다.`);
-    if(s.round<=4&&!words.some(t=>t!==w&&initials(lastChar(w)).has(t[0])&&!s.history.includes(t)))throw err(400,'첫 4턴에는 한방단어를 사용할 수 없습니다.');
-    s.history.push(w);s.used.push(w);s.round++;
+    const spent=new Set(s.usedEndings[sid]);
+    if(!validReply(w,s.history.at(-1),new Set(s.history),r.options.wordMode,spent)){
+      if(spent.has(w.at(-1)))throw err(400,`같은 끝글자 '${w.at(-1)}'를 다시 사용할 수 없습니다.`);
+      throw err(400,`'${lastChar(s.history.at(-1))}'(으)로 시작해야 합니다.`);
+    }
+    s.history.push(w);s.used.push(w);s.usedEndings[sid].push(w.at(-1));s.round++;
     const pts=w.length*10+(w.includes(s.mission)?35:0)+Math.floor(Math.max(0,s.deadline-Date.now())/1000)*3;
     s.scores[sid]+=pts;s.reason=`${player(r,sid).nick}: ${w} (+${pts}점)`;
     if(s.round%4===0)s.mission=pick(['사','가','구','나','리','자','이','도','수']);
-    nextChainTurn(r);touch(r,s.reason);return;
+    // A one-shot word means no currently unused dictionary reply at all.
+    // No first-four-round exception. End immediately rather than timing out.
+    const response=replies(wordIndex,w,new Set(s.history),r.options.wordMode,null,1);
+    if(!response.length){s.oneShot=true;s.reason=`한방단어! ${w}`;finish(r,`한방단어 '${w}'! ${player(r,sid).nick}님 즉시 승리!`);return;}
+    s.hints=null;nextChainTurn(r);touch(r,s.reason);return;
   }
   if(r.game==='doodle') {
     if(type==='stroke'){
@@ -405,7 +449,7 @@ function act(r,sid,type,data={},transport='http') {
       const roll=pick([1,1,1,2,2,2,3,3,3,4,4,5,-1]);
       s.pending=roll;s.rollName=({'1':'도','2':'개','3':'걸','4':'윷','5':'모','-1':'빽도'})[roll];s.bonus=roll===4||roll===5;
       if(roll===-1&&!s.pieces[sid].some(x=>x.node!==0&&!x.done)){
-        s.pending=null;s.turnIndex=(s.turnIndex+1)%r.players.length;s.turn=r.players[s.turnIndex].id;
+        s.pending=null;s.turnIndex=(s.turnIndex+1)%r.players.length;s.turn=r.players[s.turnIndex].id;s.deadline=Date.now()+r.options.turnSeconds*1000;
         touch(r,'움직일 말이 없어 빽도 차례를 넘깁니다.');return;
       }
       touch(r,`${player(r,sid).nick}: ${s.rollName}!`);return;
@@ -423,8 +467,16 @@ function gameTick(){
     if(r.status!=='playing') continue;
     const s=r.state;
     if(r.game==='wordchain'&&now>s.deadline){
-      const loser=s.turn;s.hearts[loser]--;s.reason=`${player(r,loser)?.nick}님 시간 초과! 목숨 -1`;
+      const loser=s.turn;
+      s.hints={for:loser,words:replies(wordIndex,s.history.at(-1),new Set(s.history),r.options.wordMode,new Set(s.usedEndings[loser]),3)};
+      s.hearts[loser]--;s.reason=`${player(r,loser)?.nick}님 시간 초과! 목숨 -1`;
       nextChainTurn(r);touch(r,s.reason);
+    } else if(r.game==='omok'&&now>s.deadline){
+      const winner=r.players.find(p=>p.id!==s.turn);finish(r,`${player(r,s.turn).nick}님 시간 초과! ${winner?.nick}님 승리!`);
+    } else if(r.game==='yut'&&now>s.deadline){
+      s.pending=null;s.rollName=null;s.bonus=false;s.turnIndex=(s.turnIndex+1)%r.players.length;
+      s.turn=r.players[s.turnIndex].id;s.deadline=now+r.options.turnSeconds*1000;
+      touch(r,'시간 초과! 다음 사람에게 차례가 넘어갑니다.');
     } else if(r.game==='doodle'&&now>s.deadline){
       touch(r,`시간 종료! 정답: ${s.word}`);nextDoodle(r);
     } else if(r.game==='bell'&&now>s.deadline){
@@ -440,11 +492,12 @@ function gameTick(){
 }
 const ticker=setInterval(gameTick,300);ticker.unref();
 
-const MIME={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.json':'application/json; charset=utf-8'};
+const MIME={'.webp':'image/webp','.png':'image/png','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json; charset=utf-8'};
 const handler=async(req,res)=>{
   const u=new URL(req.url,'http://localhost');const pathname=decodeURIComponent(u.pathname);
   try {
-    if(pathname==='/api/health')return simpleReply(res,200,{ok:true,rooms:rooms.size});
+    if(pathname==='/api/health')return simpleReply(res,200,{ok:true,rooms:rooms.size,dictionaryWords:DICT_COUNT,dictionarySource:'표준국어대사전 + 우리말샘'});
+    if(pathname==='/api/dictionary'&&req.method==='GET'){res.setHeader('Cache-Control','public, max-age=86400');return simpleReply(res,200,words);}
     if(pathname==='/api/rooms'&&req.method==='GET'){
       const game=u.searchParams.get('game');const list=[...rooms.values()].filter(r=>r.status==='lobby'&&(!game||r.game===game)).map(r=>({id:r.id,game:r.game,host:player(r,r.host)?.nick,count:r.players.length,max:GAME_INFO[r.game].max}));
       return simpleReply(res,200,{rooms:list.slice(-40).reverse()});
@@ -453,7 +506,7 @@ const handler=async(req,res)=>{
       const b=await body(req);if(!GAME_INFO[b.game])throw err(400,'게임을 선택하세요.');
       const sid=b.sid?cleanSid(b.sid):id();const nick=cleanNick(b.nick);
       let code;do{code=randomBytes(4).toString('hex').slice(0,6).toUpperCase();}while(rooms.has(code));
-      const r={id:code,game:b.game,host:sid,players:[{id:sid,nick,ready:true}],status:'lobby',state:null,notices:[],updatedAt:Date.now()};
+      const r={id:code,game:b.game,options:makeOptions(b.game,b.options),host:sid,players:[{id:sid,nick,ready:true}],status:'lobby',state:null,notices:[],updatedAt:Date.now()};
       rooms.set(code,r);return simpleReply(res,201,{sid,room:sanitize(r,sid)});
     }
     const roomPath=pathname.match(/^\/api\/rooms\/([A-Z0-9]{6})(?:\/(join|action|leave))?$/i);

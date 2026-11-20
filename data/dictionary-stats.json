@@ -1,0 +1,17 @@
+{
+  "source": [
+    "국립국어원 표준국어대사전 JSON 2026-11-06",
+    "국립국어원 우리말샘 JSON 2026-11-04"
+  ],
+  "standard_words_before_merge": 212942,
+  "unique_combined_words": 437875,
+  "urimal_import_stats": {
+    "items": 1246000,
+    "nouns": 596115,
+    "new": 224933,
+    "skipped_unit": 457669
+  },
+  "part_of_speech": "명사",
+  "filter": "한글 완성형 2~24글자, 어휘 항목, 중복 제외",
+  "license": "자료 이용 시 국립국어원 제공조건 확인"
+}
