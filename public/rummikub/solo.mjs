@@ -1,10 +1,10 @@
 import {newGame,submitTurn,drawTurn,tick,publicView} from './engine.mjs';
 import {chooseCatMove} from './ai.mjs';
-export function createSoloRummikub(seconds=60) {
+export function createSoloRummikub(seconds=60,difficulty='beginner') {
  const ids=['player','cat'];
  const state=newGame(ids,{turnSeconds:seconds});
  state.turnIndex=0;state.turn='player';state.deadline=Date.now()+seconds*1000;
- return {game:'rummikub',ids,engine:state,finished:false,pending:false};
+ return {game:'rummikub',ids,engine:state,aiDifficulty:['beginner','intermediate','advanced'].includes(difficulty)?difficulty:'beginner',finished:false,pending:false};
 }
 export function soloRoom(solo){
  const s=solo.engine;
@@ -29,7 +29,7 @@ export function soloTickRummikub(solo){
 export function catPlayRummikub(solo) {
  const s=solo.engine;
  if(s.result||s.turn!=='cat')return false;
- let move=chooseCatMove(s,'cat');
+ let move=chooseCatMove(s,'cat',{difficulty:solo.aiDifficulty||'beginner'});
  if(move) {
    try {submitTurn(s,solo.ids,'cat',move.groups);}
    catch(e){console.warn('고양이 조합 복구',e);move=null;}
