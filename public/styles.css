@@ -333,103 +333,42 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
 }
 
 
-/* Reuse only the cat illustration in the inner hub: the original image
-   already contains its own title and button, so don't show them again. */
+/* User-selected illustrated cat: preserve its proportions and peach circular
+   illustration, with no square crop, fake character mask or duplicate title. */
 .cat-hub-hero.cat-hub-hero-refresh{
-  grid-template-columns:minmax(0,1fr) minmax(270px,330px);
-  gap:30px;align-items:center;padding:25px 45px 25px 48px;
-  min-height:345px
-}
-.cat-hub-character{
-  position:relative;overflow:hidden;flex-shrink:0;
-  height:316px;width:300px;max-width:100%;margin:0 auto;
-  background:transparent;
-}
-.cat-hub-character img{
-  position:absolute;top:-8%;right:0;
-  display:block;width:auto;max-width:none;height:145%;
-  /* Feather all four edges so this is a character illustration, not a
-     second banner with a broken painted-on frame. */
-  -webkit-mask-image:radial-gradient(ellipse 70% 62% at 67% 48%,#000 48%,transparent 100%);
-  mask-image:radial-gradient(ellipse 70% 62% at 67% 48%,#000 48%,transparent 100%);
-}
-@media(max-width:960px){
-  .cat-hub-hero.cat-hub-hero-refresh{
-    grid-template-columns:minmax(0,1fr) minmax(170px,260px);
-    gap:12px;padding:24px;min-height:280px
-  }
-  .cat-hub-character{width:235px;height:250px}
-}
-@media(max-width:620px){
-  .cat-hub-hero.cat-hub-hero-refresh{
-    grid-template-columns:minmax(0,1fr);
-    padding:20px;gap:6px;min-height:0
-  }
-  .cat-hub-character{height:220px;width:210px;margin:0 auto}
-  .cat-hub-hero-refresh h1 br{display:none}
-}
-
-
-/* Seamless transparent crowned cat mascot on challenge landing. */
-.cat-hub-hero.cat-hub-hero-refresh{
-  grid-template-columns:minmax(0,1fr) minmax(310px,445px);
+  grid-template-columns:minmax(0,1fr) minmax(290px,365px);
   align-items:center;
-  column-gap:22px;
-  padding:21px 35px 18px 49px;
-  min-height:365px;
+  column-gap:24px;
+  padding:24px 38px 24px 48px;
+  min-height:392px;
   overflow:hidden;
 }
 .cat-hub-character{
-  position:relative;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:min(100%,445px);
-  height:auto;
-  max-width:100%;
-  margin:0 auto;
-  overflow:visible;
-  background:transparent;
-  isolation:isolate;
+  position:relative;display:flex;align-items:center;justify-content:center;
+  width:min(100%,355px);height:auto;max-width:100%;aspect-ratio:1;
+  margin:0 auto;overflow:visible;background:transparent;
+  flex-shrink:1;
 }
-.cat-hub-character::before{
-  content:"";
-  position:absolute;
-  z-index:-1;
-  width:110%;height:77%;
-  left:-5%;top:13%;
-  border-radius:50%;
-  background:radial-gradient(ellipse at 50% 54%,#ffd0aa70,#fff4e600 70%);
-  pointer-events:none;
-}
+.cat-hub-character::before{content:none}
 .cat-hub-character img{
-  position:relative;
-  z-index:1;
-  top:auto;right:auto;left:auto;
-  display:block;width:100%;max-width:100%;height:auto;
-  aspect-ratio:630 / 480;
-  object-fit:contain;
-  filter:drop-shadow(0 11px 13px #8c4b3b16);
-  -webkit-mask-image:none;
-  mask-image:none;
-  transform:none;
+  position:static;display:block;
+  width:100%;height:auto;max-width:100%;aspect-ratio:1;
+  object-fit:contain;border-radius:50%;
+  -webkit-mask-image:none;mask-image:none;transform:none;
+  box-shadow:0 10px 29px #a9593922;
 }
 @media(max-width:960px){
   .cat-hub-hero.cat-hub-hero-refresh{
-    grid-template-columns:minmax(0,1fr) minmax(225px,330px);
-    gap:13px;
-    padding:22px 25px;
-    min-height:320px
+    grid-template-columns:minmax(0,1fr) minmax(220px,290px);
+    gap:12px;padding:22px 25px;min-height:320px
   }
-  .cat-hub-character{width:min(100%,330px);height:auto}
-  .cat-hub-hero-refresh h1 br{display:inline}
+  .cat-hub-character{width:min(100%,285px);height:auto}
 }
 @media(max-width:620px){
   .cat-hub-hero.cat-hub-hero-refresh{
     grid-template-columns:minmax(0,1fr);
-    min-height:0;padding:19px 19px 12px;
-    gap:5px
+    gap:8px;min-height:0;padding:20px 20px 16px
   }
   .cat-hub-hero-refresh h1 br{display:none}
-  .cat-hub-character{width:min(100%,340px);max-width:340px;height:auto}
+  .cat-hub-character{width:min(100%,290px);height:auto}
 }
