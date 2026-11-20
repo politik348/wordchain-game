@@ -17,6 +17,22 @@
 
 **주의:** 현재 `render.yaml` 웹서비스는 Render의 `free` 플랜입니다. Render 무료 웹서비스의 **로컬 파일은 재시작·재배포 때 유지되지 않으며 영구 디스크를 연결할 수 없습니다.** 따라서 `AUTH_STORE_PATH`를 무료 웹서비스 내부 경로에 설정하는 것은 해결책이 아닙니다. 무료 환경에서는 외부 영구 DB를 연결하세요. 무료 PostgreSQL도 서비스 기간·만료 제한이 있을 수 있으므로 Render의 현재 정책을 확인하세요. 계정·발급번호·비밀번호 해시가 유실되면 로그인이 불가능합니다.
 
+## Render 배포: 데이터베이스 연결 (필수)
+
+GitHub에 있는 `render.yaml`에는 웹서비스 `wordchain-game`, PostgreSQL `moyeo-accounts`, 그리고 데이터베이스의 내부 연결 문자열을 `DATABASE_URL`에 주입하는 Blueprint 설정이 포함되어 있습니다.
+
+**중요:** GitHub에 `render.yaml`을 커밋하는 것만으로 이미 Render 대시보드에서 개별 생성한 웹서비스에 PostgreSQL이 자동 생성되지는 않습니다. 기존 서비스를 Blueprint로 관리하는 경우에만 Blueprint 동기화에서 이 설정이 반영됩니다. 현재 운영 중인 Render 서비스에서는 다음 절차가 가장 확실합니다.
+
+1. Render 대시보드의 **New → Postgres**에서 기존 게임 웹서비스와 **동일 리전**에 데이터베이스를 생성합니다.
+2. 데이터베이스의 **Internal Database URL**을 복사합니다. 이 값에는 계정 비밀번호가 포함되어 있으므로 공개하지 않습니다.
+3. **기존** `wordchain-game` 웹서비스의 **Environment**에서 `DATABASE_URL` 값을 해당 URL로 설정합니다. 앞서 설정한 `MOYEO_ADMIN_KEY` (24자 이상)도 유지합니다.
+4. **Save, rebuild, and deploy**로 재배포합니다.
+5. `https://wordchain-game-0nb3.onrender.com/api/auth/me`에서 `storageConfigured: true` 및 `invitesEnabled: true`인지 확인합니다. 이 값들은 환경변수 존재 여부만 검증하며 실제 PostgreSQL 접속 성공을 증명하지는 않습니다. 마지막으로 `/admin.html`에서 실제 번호를 발급해 연결 상태를 확인합니다.
+
+Blueprint로 **새로운 인프라를 생성**하는 경우에는 `render.yaml`을 선택하여 생성·동기화하고, `MOYEO_ADMIN_KEY` 비밀값은 Render에서 직접 입력합니다. 기존 서비스가 이미 있다면 중복 서비스가 만들어지지 않도록 리소스 이름과 Blueprint 소속을 먼저 확인하세요.
+
+**비용·보존 주의:** 여기 포함된 `moyeo-accounts`의 `plan: free`는 시험용입니다. Render 무료 PostgreSQL은 생성 후 30일에 만료되므로 실제 회원 정보의 장기 보존에는 적합하지 않습니다. 실제 공개 서비스는 만료되지 않는 유료 Postgres 또는 지속형 외부 PostgreSQL로 교체하고, 백업 정책도 마련해야 합니다.
+
 ## 가입번호 발급 (운영자)
 
 1. 환경변수를 설정한 뒤 사이트의 `/admin.html`로 이동합니다.
