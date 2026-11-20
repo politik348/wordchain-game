@@ -6,10 +6,23 @@ const icons=['🐰','🐱','🐻','🦊'];
 const paint=['#ff9ca9','#b9adf5','#8cd7c5','#f4c184'];
 const dice=['','⚀','⚁','⚂','⚃','⚄','⚅'];
 const formatM=n=>Math.round(n).toLocaleString('ko-KR')+'M';
-const SID=sessionStorage.getItem('moyeo-sid')||crypto.randomUUID();
+let SID=sessionStorage.getItem('moyeo-sid')||crypto.randomUUID();
 sessionStorage.setItem('moyeo-sid',SID);
 let nick=localStorage.getItem('moyeo-nick')||'말랑감자';
 const catChallenge=new URLSearchParams(location.search).get('cat')==='1';
+async function ensureMember(){
+ try{
+  const res=await fetch('/api/auth/me',{credentials:'same-origin'}),state=await res.json();
+  if(res.ok&&state.authenticated&&state.account){
+   SID=state.account.id;nick=state.account.dripNickname;
+   sessionStorage.setItem('moyeo-sid',SID);localStorage.setItem('moyeo-nick',nick);
+   return true;
+  }
+ }catch{}
+ const next=location.pathname+location.search+location.hash;
+ location.href='/?auth=login&next='+encodeURIComponent(next);
+ return false;
+}
 const backLink=document.getElementById('mmReturnLink');if(backLink)backLink.href=catChallenge?'/?cat=1':'/';
 let mode=catChallenge?'ai':'local',rounds=12,people=2,seconds=30;
 let localGame=null,onlineRoom=null,stream=null,inFlight=false,aiTimer=null,showResult=false;
@@ -33,7 +46,7 @@ function renderLobby(){
   ? [['ai','🐱','고양이를 이겨라','생각보다 영리한 고양이와 1:1 두뇌 대결']]
   : [['online','🎮','친구와 온라인','다른 기기에서도 링크로 2~4인 접속'],['local','🎲','한 화면에서 함께','한 기기에서 돌아가며 2~4인 플레이']];
  root.innerHTML=`<section class="mm-lobby-hero"><span class="mm-eyebrow">MOYEO GAMES PRESENTS</span><h1>어서 와, <span>모여마블!</span></h1><p>세상을 돌며 도시를 사고, 랜드마크를 세우고,<br>친구의 통행료를 받아 보세요. 한 판은 짧고 전략은 진하게!</p><div class="mm-hero-cards"><span>🗺️ 24칸 압축 맵</span><span>⏱️ 8 · 12 · 16라운드</span><span>🏖️ 관광지 & 올림픽</span></div></section>
- <section class="mm-setup"><h2>어떤 대결을 할까요?</h2><p class="mm-setup-sub">로그인 필요 없이 바로 시작해요. 온라인 대결은 초대 코드로 친구가 들어올 수 있어요.</p>
+ <section class="mm-setup"><h2>어떤 대결을 할까요?</h2><p class="mm-setup-sub">고양이와의 혼자 놀기는 자유롭게! 친구와 하는 대전은 드립대학 닉네임으로 가입·로그인해야 합니다.</p>
  <div class="mm-mode-grid">${modes.map(([id,icon,title,description])=>`<button class="mm-mode ${id===mode?'selected':''}" data-mode="${id}" aria-pressed="${id===mode}"><span class="mm-mode-emoji">${icon}</span><strong>${title}</strong><small>${description}</small>${id===mode?'<span class="mm-selected-check">✓</span>':''}</button>`).join('')}</div>
  <div class="mm-form-row"><div class="mm-field"><label for="mmNick">내 닉네임</label><input class="mm-input" id="mmNick" maxlength="14" value="${escapeHTML(nick)}" placeholder="닉네임을 입력하세요"></div><div class="mm-field"><label for="mmRounds">게임 길이</label><select class="mm-select" id="mmRounds"><option value="8" ${rounds===8?'selected':''}>⚡ 번개 모드 · 8라운드</option><option value="12" ${rounds===12?'selected':''}>✨ 기본 모드 · 12라운드</option><option value="16" ${rounds===16?'selected':''}>🏆 치열한 모드 · 16라운드</option></select></div></div>
  ${mode==='online'?`<div class="mm-field" style="margin-bottom:16px"><label for="mmSeconds">한 턴 제한시간</label><select class="mm-select" id="mmSeconds"><option value="15" ${seconds===15?'selected':''}>15초 · 초고속</option><option value="30" ${seconds===30?'selected':''}>30초 · 기본</option><option value="45" ${seconds===45?'selected':''}>45초 · 여유롭게</option></select></div>`:''}
@@ -215,7 +228,7 @@ function finishScene(){
 function resetScenes(){clearTimeout(sceneTimer);scene=null;sceneQueue=[];seenActionSeq=0;}
 
 function persistNick(){const input=document.querySelector('#mmNick');if(input){nick=(input.value||'말랑감자').trim().slice(0,14)||'말랑감자';localStorage.setItem('moyeo-nick',nick);}}
-function startLocal(){persistNick();const players=[{id:SID,name:nick}];
+async function startLocal(){if(mode==='local'&&!(await ensureMember()))return;persistNick();const players=[{id:SID,name:nick}];
  if(mode==='ai')players.push({id:'moyeo-cat',name:'고양이',ai:true});
  else for(let i=1;i<people;i++)players.push({id:`local-${i}`,name:`플레이어 ${i+1}`});
  resetScenes();inspectedCity=null;localGame=createGame({players,maxRounds:rounds});onlineRoom=null;lastDice=null;render();queueCat();}
@@ -238,10 +251,10 @@ function connectSSE(roomCode){stream?.close();stream=new EventSource(`/api/marbl
  stream.addEventListener('state',e=>{try{const data=JSON.parse(e.data);if(data.code!==onlineRoom?.code)return;updateOnlineRoom(data);}catch(error){console.error('온라인 상태 수신 오류',error);}});
  stream.addEventListener('error',()=>{/* EventSource automatically reconnects. */});
 }
-async function createOnline(){persistNick();inFlight=true;try{const r=await post('/api/marble/rooms',{sid:SID,name:nick,rounds,turnSeconds:seconds});resetScenes();localGame=null;lastDice=null;updateOnlineRoom(r);location.hash=`room=${r.code}`;connectSSE(r.code);}catch(error){toast(`온라인 방 생성 실패: ${error.message} · 서버 통합 설정을 확인해주세요.`);}finally{inFlight=false;}}
-async function joinOnline(code){persistNick();const id=(code||'').trim().toUpperCase();if(!/^[0-9A-F]{6}$/.test(id))return toast('6자리 초대 코드를 확인해주세요.');
+async function createOnline(){if(!(await ensureMember()))return;inFlight=true;try{const r=await post('/api/marble/rooms',{sid:SID,name:nick,rounds,turnSeconds:seconds});resetScenes();localGame=null;lastDice=null;updateOnlineRoom(r);location.hash=`room=${r.code}`;connectSSE(r.code);}catch(error){toast(`온라인 방 생성 실패: ${error.message} · 서버 통합 설정을 확인해주세요.`);}finally{inFlight=false;}}
+async function joinOnline(code){if(!(await ensureMember()))return;const id=(code||'').trim().toUpperCase();if(!/^[0-9A-F]{6}$/.test(id))return toast('6자리 초대 코드를 확인해주세요.');
  inFlight=true;try{let r=await post(`/api/marble/rooms/${id}/join`,{sid:SID,name:nick});resetScenes();localGame=null;lastDice=null;mode='online';updateOnlineRoom(r);location.hash=`room=${r.code}`;connectSSE(r.code);}catch(error){toast(error.message);if(!onlineRoom){location.hash='';render();}}finally{inFlight=false;}}
-async function startOnline(){if(!onlineRoom||inFlight)return;inFlight=true;try{const data=await post(`/api/marble/rooms/${onlineRoom.code}/start`,{sid:SID});resetScenes();lastDice=null;updateOnlineRoom(data);}catch(error){toast(error.message);}finally{inFlight=false;}}
+async function startOnline(){if(!onlineRoom||inFlight)return;if(!(await ensureMember()))return;inFlight=true;try{const data=await post(`/api/marble/rooms/${onlineRoom.code}/start`,{sid:SID});resetScenes();lastDice=null;updateOnlineRoom(data);}catch(error){toast(error.message);}finally{inFlight=false;}}
 async function leave(){
  if(onlineRoom?.state?.phase!=='finished' && onlineRoom?.state && !window.confirm('온라인 게임에서 나가면 기권 처리됩니다. 나갈까요?'))return;
  clearTimeout(aiTimer);resetScenes();stream?.close();stream=null;
