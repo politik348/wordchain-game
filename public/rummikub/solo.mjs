@@ -1,5 +1,5 @@
 import {newGame,submitTurn,drawTurn,tick,publicView} from './engine.mjs';
-import {chooseCatMove} from './ai.mjs';
+import {chooseCatMove} from './ai.mjs?v=20261120catlevels1';
 export function createSoloRummikub(seconds=60,difficulty='beginner') {
  const ids=['player','cat'];
  const state=newGame(ids,{turnSeconds:seconds});
