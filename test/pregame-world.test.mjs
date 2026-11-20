@@ -55,7 +55,8 @@ test('multiplayer waiting screen uses actual host/ready info and member-only lob
  assert.match(visitor,/data-action="ready"/);
  assert.match(visitor,/data-wr-setting="turnSeconds" data-wr-value="45"[^>]*disabled/);
  const host=renderOnlineWaiting({game,room,host:true,settings:options});
- assert.match(host,/data-action="start" disabled/);
+ assert.match(host,/data-action="start"/);
+ assert.doesNotMatch(host,/data-action="start" disabled/);
  assert.doesNotMatch(host,/data-wr-setting="turnSeconds" data-wr-value="45"[^>]*disabled/);
 });
 
