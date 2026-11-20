@@ -637,6 +637,40 @@ function updateTick(){
   render();
  }
 }
+
+async function yutMovePick(mode,index){
+ const isSolo=mode==='solo';
+ const s=isSolo?solo:room?.state;
+ const id=isSolo?'player':user.sid;
+ const pieces=isSolo?s?.pieces?.player:s?.pieces?.[id];
+ if(!s||!pieces||s.pending===null||(isSolo?s.turn!=='player'||s.finished:s.turn!==id||room.status!=='playing'))return;
+ const opts=legalYutMoves(pieces,s.pending).filter(m=>m.index===index);
+ if(!opts.length){toast('현재 이 말은 이동할 수 없습니다.');return;}
+ if(opts.length>1){yutRouteChoice={scope:mode,roomId:room?.id||null,index};render();return;}
+ yutRouteChoice=null;
+ if(isSolo)soloYutApply('player',index,opts[0].shortcut);
+ else await act('move',{index,shortcut:opts[0].shortcut});
+}
+async function yutMoveRoute(mode,index,shortcut){
+ const isSolo=mode==='solo',s=isSolo?solo:room?.state,id=isSolo?'player':user.sid;
+ const pieces=isSolo?s?.pieces?.player:s?.pieces?.[id];
+ if(!pieces||s.pending===null||(isSolo?s.turn!=='player'||s.finished:s.turn!==id||room.status!=='playing'))return;
+ if(!legalYutMoves(pieces,s.pending).some(m=>m.index===index&&m.shortcut===shortcut))return toast('이 경로로 이동할 수 없습니다.');
+ yutRouteChoice=null;
+ if(isSolo)soloYutApply('player',index,shortcut);
+ else await act('move',{index,shortcut});
+}
+async function startYutThrow(mode){
+ const isSolo=mode==='solo',s=isSolo?solo:room?.state;
+ if(yutRolling||!s||s.pending!==null||(isSolo?s.turn!=='player'||s.finished:s.turn!==user.sid||room.status!=='playing'))return;
+ const oldSolo=solo, oldRoom=room?.id;
+ yutRouteChoice=null;yutRolling={scope:mode,roomId:oldRoom};render();
+ await new Promise(resolve=>setTimeout(resolve,730));
+ const stillHere=isSolo?solo===oldSolo&&view==='solo':room?.id===oldRoom&&room.status==='playing';
+ if(stillHere){if(isSolo)soloYutRoll();else await act('roll');}
+ yutRolling=null;
+ if(isSolo?view==='solo':room?.id===oldRoom)render();
+}
 function scrollGames(){document.getElementById('gamesSection')?.scrollIntoView({behavior:'smooth'});}
 function rkScheduleCat(){
  const match=solo;
@@ -678,13 +712,18 @@ document.addEventListener('click',async e=>{
  if(action==='refreshRooms'){await refreshRooms(view==='detail'?selection:'');render();return;}
  if(action==='clear'&&room?.game==='doodle'){sendDoodle('clear');return;}
  if(action==='skip'&&room?.game==='doodle'){sendDoodle('skip');return;}
- if(action==='start'||action==='ready'||action==='rematch'||action==='ring'||action==='roll'||action==='discussionEnd'){await act(action);return;}
+ if(action==='start'||action==='ready'||action==='rematch'||action==='ring'||action==='discussionEnd'){await act(action);return;}
  if(action==='leave'){if(confirm('게임방을 나가시겠습니까?'))await leave();return;}
  if(action==='share'||action==='copyCode'){if(!room)return;const text=action==='copyCode'?room.id:`${location.origin}/?room=${room.id}`;try{await navigator.clipboard.writeText(text);toast('초대 정보를 복사했습니다.');}catch{toast(text);}return;}
  if(action==='place'){await act('place',{x:Number(b.dataset.x),y:Number(b.dataset.y)});return;}
  if(action==='night'||action==='mafiaVote'||action==='liarVote'){await act(action==='mafiaVote'?'vote':action==='liarVote'?'vote':'night',{target:b.dataset.target});return;}
  if(action==='drawColor'){drawColor=b.dataset.color;document.querySelectorAll('.color-dot').forEach(el=>el.classList.toggle('selected',el.dataset.color===drawColor));return;}
- if(action==='move'){await act('move',{index:Number(b.dataset.index)});return;}
+ if(action==='roll'){await startYutThrow('room');return;}
+ if(action==='yutPick'){await yutMovePick('room',Number(b.dataset.index));return;}
+ if(action==='yutRoute'){await yutMoveRoute('room',Number(b.dataset.index),b.dataset.shortcut==='1');return;}
+ if(action==='soloYutPick'){await yutMovePick('solo',Number(b.dataset.index));return;}
+ if(action==='soloYutRoute'){await yutMoveRoute('solo',Number(b.dataset.index),b.dataset.shortcut==='1');return;}
+ if(action==='move'){await act('move',{index:Number(b.dataset.index),shortcut:b.dataset.shortcut!=='0'});return;}
  if(action==='solo'){try{if(selection==='wordchain'&&!allWords.length){const res=await fetch('./words.json');
  if(!res.ok)throw new Error('Dictionary manifest unavailable');
  const manifest=await res.json();
@@ -705,7 +744,7 @@ document.addEventListener('click',async e=>{
  if(action==='soloReset'){soloStart(selection);return;}
  if(action==='backCatHub'){view='catHub';solo=null;render();window.scrollTo(0,0);return;}
  if(action==='soloPlace'){soloPlace(Number(b.dataset.x),Number(b.dataset.y));return;}
- if(action==='soloYutRoll'){soloYutRoll();return;}
+ if(action==='soloYutRoll'){await startYutThrow('solo');return;}
  if(action==='soloYutMove'){soloYutApply('player',Number(b.dataset.index),b.dataset.shortcut!=='0');return;}
  if(b.hasAttribute('data-stone-style-choice')){
    const style=b.dataset.stoneStyleChoice;if(style!=='normal'&&style!=='crazy')return;
