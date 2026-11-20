@@ -1,6 +1,9 @@
+# Render Blueprint for the existing wordchain-game web service.
+# Free Render Postgres expires after 30 days: use for testing only.
+# For long-term member accounts, upgrade the database or connect durable PostgreSQL.
 services:
   - type: web
-    name: moyeo-games
+    name: wordchain-game
     runtime: node
     plan: free
     buildCommand: npm install
@@ -9,3 +12,14 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Existing secret values configured in the Render dashboard must stay private.
+      - key: MOYEO_ADMIN_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: moyeo-accounts
+          property: connectionString
+
+databases:
+  - name: moyeo-accounts
+    plan: free
