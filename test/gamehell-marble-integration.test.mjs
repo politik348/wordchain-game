@@ -11,14 +11,14 @@ test('Game Hell is a standalone tenth home game and Cat Challenge stays first',(
  assert.match(app,/id:'gamehell'/);
  assert.match(app,/10 GAMES/);
  assert.match(app,/10가지 게임/);
- assert.match(app,/gamehell\\/index.html/);
+ assert.ok(app.includes('/gamehell/index.html'));
  assert.ok(app.indexOf('renderCatFeatured()}')<app.indexOf('GAMES.map(card)'));
  assert.match(home,/모여게임즈/);
  assert.match(arcade,/gamehell/);
 });
 test('Marble v3 preserves isolated Cat Challenge entrypoint and multiplayer mode',()=>{
  assert.match(marble,/const catChallenge=new URLSearchParams/);
- assert.match(marble,/mode=catChallenge\\?'ai':'local'/);
+ assert.ok(marble.includes("mode=catChallenge?'ai':'local'"));
  assert.match(marble,/const modes=catChallenge/);
  assert.match(marble,/modeBtn.dataset.mode/);
  assert.match(marble,/mmReturnLink/);
