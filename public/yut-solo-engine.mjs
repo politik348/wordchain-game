@@ -75,7 +75,9 @@ export function yutTravelNodes(piece,steps,shortcut=true){
  return nodes;
 }
 export function usableYutRolls(mine,rolls){
- return rolls.filter(value=>legalYutMoves(mine,value).length>0);
+ // Preserve back-do if another unused toss can bring a piece onto the board first.
+ const canEnter=rolls.some(value=>value>0&&legalYutMoves(mine,value).length>0);
+ return rolls.filter(value=>legalYutMoves(mine,value).length>0||(value===-1&&canEnter));
 }
 export function moveOwnYutPieces(ours,index,steps,shortcut=true){
  if(!legalYutMoves(ours,steps).some(m=>m.index===index&&m.shortcut===shortcut))
