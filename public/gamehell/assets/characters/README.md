@@ -1,1 +1,5 @@
-이 폴더에 나중에 캐릭터 이미지를 추가하세요. characters.js에서 해당 캐릭터의 image를 예: "./assets/characters/royal.png"로 바꿉니다. 투명 배경 PNG 또는 WebP 권장, 정사각형 권장. 파일명은 영문/숫자 권장.
+# 캐릭터 이미지 폴더
+
+기본 캐릭터 8종의 독자적 전신 SVG 및 래스터 PNG 대체 이미지가 있습니다.
+캐릭터 이미지를 교체할 때는 `../../characters.js`의 `image` 경로를 변경하세요.
+투명 배경의 약 288×328px 세로형 PNG/WebP 또는 SVG를 권장하며 캐릭터 ID를 바꾸지 마세요.

@@ -37,6 +37,7 @@ function autoAdvance(r){
  let type='pass',payload={};
  if(state.phase==='roll')type='roll';
  else if(state.phase==='travel'){type='travel';payload={index:0};}
+ else if(state.phase==='chance'){type='pickCard';payload={index:randomInt(0,3)};}
  else if(state.phase==='island')type='islandRoll';
  else if(state.phase==='choice')type='pass';
  const action=p.ai?(chooseCatAction(state)||{type,payload}):{type,payload};
@@ -59,7 +60,7 @@ export async function handleMarbleRequest(req,res,pathname){
   if(pathname==='/api/marble/rooms'&&req.method==='POST'){
    const data=await readJSON(req),account=await multiplayerAccount(req,data.sid||null),sid=account?.id||normSid(data.sid);
    let id;do{id=code();}while(rooms.has(id));
-   const r={code:id,host:sid,players:[{id:sid,name:account?.dripNickname||cleanName(data.name)}],state:null,rounds:[8,12,16].includes(Number(data.rounds))?Number(data.rounds):12,turnSeconds:[15,30,45].includes(Number(data.turnSeconds))?Number(data.turnSeconds):30,version:0,updatedAt:Date.now(),deadline:null,subscribers:new Set()};
+   const r={code:id,host:sid,players:[{id:sid,name:account?.dripNickname||cleanName(data.name)}],state:null,rounds:[0,8,12,16].includes(Number(data.rounds))?Number(data.rounds):12,turnSeconds:[15,30,45].includes(Number(data.turnSeconds))?Number(data.turnSeconds):30,version:0,updatedAt:Date.now(),deadline:null,subscribers:new Set()};
    rooms.set(id,r);reply(res,201,visible(r));return true;
   }
   const match=pathname.match(/^\/api\/marble\/rooms\/([A-Z0-9]{6})(?:\/(join|leave|start|action|events))?$/i);
@@ -96,7 +97,7 @@ export async function handleMarbleRequest(req,res,pathname){
   if(op==='action'){
    if(!r.state)throw fail(400,'게임을 시작해주세요.');
    const type=String(data.type||'');
-   if(!['roll','pass','buy','upgrade','takeover','travel','islandRoll','payBail','startBuild','olympic'].includes(type))throw fail(400,'허용되지 않는 행동입니다.');
+   if(!['roll','pass','buy','upgrade','takeover','travel','islandRoll','payBail','startBuild','olympic','pickCard','takeLoan'].includes(type))throw fail(400,'허용되지 않는 행동입니다.');
    finishTurnAction(r,sid,type,data.payload||{});reply(res,200,visible(r));return true;
   }
   if(op==='leave'){

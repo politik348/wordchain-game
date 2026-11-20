@@ -216,3 +216,142 @@ test('online server handles new legal actions and rejects forged/out-of-turn act
  const end=await request(`/api/marble/rooms/${one.code}?sid=tester_001`);
  assert.equal(end.state.winner,'tester_001');
 });
+
+test('endless mode never ends at a fixed round and ignores every monopoly win',()=>{
+ let s=createGame({players,maxRounds:0});
+ assert.equal(s.maxRounds,0);
+ s.turnCount=9999;s.round=500;
+ for(const i of [1,2,4,5,7,8,10,11,15,21])s.properties[i]={owner:'alice',level:0};
+ s=setTurn(s,'alice');
+ // The 2nd player remains solvent. Buying land must not end a bankruptcy-only match.
+ s=landOn(s,'alice',13);
+ assert.equal(s.pending?.kind,'purchase');
+ s=applyAction(s,'alice','buy',{targetLevel:0},low);
+ assert.equal(s.phase,'roll');
+ assert.equal(s.winner,null);
+ assert.ok(s.turnCount>=9999);
+ assert.ok(toll(s,1)>0,'rent remains active after thousands of turns');
+ // The game ends only when the other player is eliminated.
+ s=surrender(s,'bob');
+ assert.equal(s.phase,'finished');
+ assert.equal(s.winner,'alice');
+ assert.equal(s.reason,'파산 승리');
+});
+
+test('endless mode retains long-term rent pressure but finite mode rules unchanged',()=>{
+ const unlimited=createGame({players,maxRounds:0});
+ unlimited.properties[2]={owner:'alice',level:2};
+ const beginning=toll(unlimited,2);
+ unlimited.round=30;
+ assert.ok(toll(unlimited,2)>beginning);
+ const short=createGame({players,maxRounds:8});
+ short.properties[2]={owner:'alice',level:2};
+ assert.ok(toll(short,2)>0);
+});
+
+test('fortune card must be chosen explicitly and applies a visible deterministic reward',()=>{
+ let s=landOn(newGame(),'alice',3);
+ assert.equal(s.phase,'chance');
+ assert.equal(s.pending?.kind,'fortune');
+ assert.throws(()=>applyAction(s,'alice','roll',{},low),/주사위/);
+ assert.throws(()=>applyAction(s,'alice','pickCard',{index:3},low),/1~3/);
+ s=applyAction(s,'alice','pickCard',{index:0},low);
+ assert.equal(s.lastCard,'대박 굿즈 출시!');
+ assert.equal(s.cardReveal.effect,'cash');
+ assert.equal(s.players[0].cash,START_CASH+240);
+ assert.equal(s.lastEvent.type,'pickCard');
+ assert.ok(s.lastEvent.message.includes('대박 굿즈'));
+});
+
+test('fortune card effects: angel, discount, free construction, and instant start',()=>{
+ let s=newGame();s.phase='chance';s.pending={kind:'fortune'};
+ // rng index=7 for angel, index=8 for discount
+ s=applyAction(s,'alice','pickCard',{index:0},()=>7/15+.001);
+ assert.equal(s.players[0].angel,1);
+ s=newGame();s.phase='chance';s.pending={kind:'fortune'};
+ s=applyAction(s,'alice','pickCard',{index:0},()=>8/15+.001);
+ assert.equal(s.players[0].discountCards,1);
+ s=newGame();s.properties[2]={owner:'alice',level:0};s.players[0].laps=1;s.phase='chance';s.pending={kind:'fortune'};
+ s=applyAction(s,'alice','pickCard',{index:0},()=>11/15+.001);
+ assert.equal(s.properties[2].level,1);
+ s=newGame();s.phase='chance';s.pending={kind:'fortune'};
+ s=applyAction(s,'alice','pickCard',{index:0},()=>10/15+.001);
+ assert.equal(s.players[0].laps,1);
+ assert.equal(s.players[0].cash,START_CASH+PASS_BONUS);
+});
+
+test('angel prevents toll, 50 percent card cuts toll and is consumed once',()=>{
+ let s=newGame();s.properties[2]={owner:'bob',level:3};s.players[0].angel=1;
+ s=landOn(s,'alice',2);
+ assert.equal(s.players[0].angel,0);
+ assert.equal(s.players[0].cash,START_CASH);
+ assert.equal(s.players[1].cash,START_CASH);
+ s=newGame();s.properties[2]={owner:'bob',level:3};s.players[0].discountCards=1;
+ const expected=Math.round(toll(s,2)*.5/5)*5;
+ s=landOn(s,'alice',2);
+ assert.equal(s.players[0].cash,START_CASH-expected);
+ assert.equal(s.players[0].discountCards,0);
+ assert.equal(s.players[1].cash,START_CASH+expected);
+});
+
+test('one-time bank loan works in a choice, gets repaid from salary and cannot be duplicated',()=>{
+ let s=landOn(newGame(),'alice',2);
+ assert.equal(s.phase,'choice');
+ s=applyAction(s,'alice','takeLoan',{},low);
+ assert.equal(s.phase,'choice');
+ assert.equal(s.players[0].cash,START_CASH+450);
+ assert.equal(s.players[0].bankDebt,540);
+ assert.equal(netWorth(s,'alice'),START_CASH-90);
+ assert.throws(()=>applyAction(s,'alice','takeLoan',{},low),/한 번/);
+ s=applyAction(s,'alice','buy',{targetLevel:0},low);
+ s=setTurn(s,'alice');place(s,'alice',22);
+ s=applyAction(s,'alice','roll',{},low);
+ assert.equal(s.players[0].bankDebt,320);
+ assert.equal(s.players[0].cash,START_CASH+450-125);
+ s=setTurn(s,'alice');place(s,'alice',22);
+ s=applyAction(s,'alice','roll',{},low);
+ assert.equal(s.players[0].bankDebt,100);
+ s=setTurn(s,'alice');place(s,'alice',22);
+ s=applyAction(s,'alice','roll',{},low);
+ assert.equal(s.players[0].bankDebt,0);
+ assert.equal(s.players[0].cash,START_CASH+450-125+120);
+});
+
+test('AI handles chance and one-time loan without breaking turn flow',()=>{
+ let s=createGame({players:[{id:'alice',name:'고양이',ai:true},{id:'bob',name:'밥'}],maxRounds:0});
+ s.players[0].cash=120;
+ assert.equal(chooseCatAction(s).type,'takeLoan');
+ s=applyAction(s,'alice','takeLoan',{},low);
+ assert.equal(chooseCatAction(s).type,'roll');
+ s.phase='chance';s.pending={kind:'fortune'};
+ assert.equal(chooseCatAction(s).type,'pickCard');
+ const a=chooseCatAction(s);
+ s=applyAction(s,'alice',a.type,a.payload,low);
+ assert.notEqual(s.phase,'chance');
+});
+
+test('online game room accepts endless mode and legal bank loan, rejects bogus fortune actions',async()=>{
+ const host='endless-host-'+Date.now();
+ const guest='endless-guest-'+Date.now();
+ const room=await request('/api/marble/rooms',{sid:host,name:'Host',rounds:0,turnSeconds:15},201);
+ assert.equal(room.rounds,0);
+ await request(`/api/marble/rooms/${room.code}/join`,{sid:guest,name:'Guest'});
+ let r=await request(`/api/marble/rooms/${room.code}/start`,{sid:host});
+ assert.equal(r.state.maxRounds,0);
+ await request(`/api/marble/rooms/${room.code}/action`,{sid:guest,type:'takeLoan'},400);
+ await request(`/api/marble/rooms/${room.code}/action`,{sid:host,type:'pickCard',payload:{index:0}},400);
+ r=await request(`/api/marble/rooms/${room.code}/action`,{sid:host,type:'takeLoan'});
+ assert.equal(r.state.players[0].bankDebt,540);
+ await request(`/api/marble/rooms/${room.code}/action`,{sid:host,type:'takeLoan'},400);
+});
+
+test('bankrupt player with a double bonus never receives another turn',()=>{
+ let s=createGame({players:[...players,{id:'charlie',name:'찰리'}],maxRounds:0});
+ s.extraRoll=true;s.phase='chance';s.pending={kind:'fortune'};
+ s.players[0].cash=0;
+ s=applyAction(s,'alice','pickCard',{index:0},()=>13/15+.001); // costly maintenance
+ assert.equal(s.players[0].bankrupt,true);
+ assert.equal(s.phase,'roll');
+ assert.equal(s.players[s.turnIndex].id,'bob');
+ assert.equal(s.winner,null);
+});
