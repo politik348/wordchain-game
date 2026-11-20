@@ -137,44 +137,27 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
 @media(max-width:790px){.game-card.cat-feature-card{min-height:280px;grid-column:span 2}.cat-feature-graphic{font-size:125px}.cat-hub-hero{gap:20px}.cat-choice-grid{grid-template-columns:1fr}}
 @media(max-width:520px){.game-card.cat-feature-card{grid-column:span 2;min-height:230px;padding:20px 15px;gap:2px}.cat-feature-graphic{font-size:88px}.cat-feature-text{max-width:68%;gap:10px}.cat-feature-text>strong{font-size:25px}.cat-feature-text>span:not(.cat-feature-kicker):not(.cat-feature-go){font-size:10px}.cat-feature-go{font-size:11px;padding:10px 12px}.cat-hub-hero,.cat-setup-banner{padding:22px 16px;gap:14px;min-height:160px}.cat-hub-mascot{font-size:75px}.cat-setup-icon{font-size:53px}.cat-hub-hero h1,.cat-setup-banner h1{font-size:25px}.cat-hub-hero p,.cat-setup-banner p{font-size:12px}.cat-choice-card{padding:14px;min-height:104px}.cat-choice-icon{width:52px;height:52px;font-size:33px}.cat-choice-copy strong{font-size:16px}.cat-choice-copy small{font-size:11px}.cat-setup-panel{padding:14px}.cat-setup-actions .button{width:100%}}
 
-/* Keep the illustrated cat entry level with the other cards on desktop.
-   Its image is anchored to the stretched grid cell, so the first row is flush. */
+/* The PNG contains a partially clipped outline near its top-right corner.
+   Trim the old baked-in outline and draw one consistent CSS frame. */
 .game-card.cat-feature-card.cat-feature-image-card{
-  display:block;
-  position:relative;
-  align-self:stretch;
-  min-height:0;
-  padding:0;
-  gap:0;
-  aspect-ratio:auto;
-  border:0;
-  border-radius:23px;
-  background:#ffe4ce;
-  overflow:hidden;
-  box-shadow:0 10px 24px #b9552a1b;
+  display:block;position:relative;align-self:stretch;
+  min-height:0;padding:0;gap:0;aspect-ratio:auto;
+  border:2px solid #e9624d;border-radius:23px;
+  background:#ffe4ce;overflow:hidden;
+  box-shadow:0 10px 24px #b9552a1b
 }
-.game-card.cat-feature-card.cat-feature-image-card::before{content:none}
-/* The supplied PNG was cropped before its bottom/right illustrated border.
-   Complete those two edges without covering the artwork or its CTA. */
-.game-card.cat-feature-card.cat-feature-image-card::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-right:2px solid #ef604b;
-  border-bottom:2px solid #ef604b;
-  border-radius:23px;
-  pointer-events:none;
-}
+.game-card.cat-feature-card.cat-feature-image-card::before,
+.game-card.cat-feature-card.cat-feature-image-card::after{content:none}
 .cat-feature-image-card .cat-feature-image{
-  position:absolute;
-  inset:0;
-  display:block;
-  width:100%;
-  height:100%;
+  --cut-top:clamp(9px,1.3vw,21px);
+  --cut-left:clamp(5px,.75vw,12px);
+  position:absolute;display:block;
+  top:calc(-1 * var(--cut-top));
+  left:calc(-1 * var(--cut-left));
+  width:calc(100% + var(--cut-left));
+  height:calc(100% + var(--cut-top));
   object-fit:fill;
 }
-/* On two-column / narrow layouts, the featured card has no neighboring
-   full-height card, so keep its intrinsic aspect ratio instead of collapsing. */
 @media(max-width:790px){
   .game-card.cat-feature-card.cat-feature-image-card{aspect-ratio:775 / 470}
 }
@@ -347,4 +330,41 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
   .cat-setup-panel-refresh .game-settings{padding:14px}
   .cat-setup-panel-refresh .cat-setup-actions{flex-direction:column}
   .cat-setup-panel-refresh .cat-setup-actions .button{width:100%}
+}
+
+
+/* Reuse only the cat illustration in the inner hub: the original image
+   already contains its own title and button, so don't show them again. */
+.cat-hub-hero.cat-hub-hero-refresh{
+  grid-template-columns:minmax(0,1fr) minmax(270px,330px);
+  gap:30px;align-items:center;padding:25px 45px 25px 48px;
+  min-height:345px
+}
+.cat-hub-character{
+  position:relative;overflow:hidden;flex-shrink:0;
+  height:316px;width:300px;max-width:100%;margin:0 auto;
+  background:transparent;
+}
+.cat-hub-character img{
+  position:absolute;top:-8%;right:0;
+  display:block;width:auto;max-width:none;height:145%;
+  /* Feather all four edges so this is a character illustration, not a
+     second banner with a broken painted-on frame. */
+  -webkit-mask-image:radial-gradient(ellipse 70% 62% at 67% 48%,#000 48%,transparent 100%);
+  mask-image:radial-gradient(ellipse 70% 62% at 67% 48%,#000 48%,transparent 100%);
+}
+@media(max-width:960px){
+  .cat-hub-hero.cat-hub-hero-refresh{
+    grid-template-columns:minmax(0,1fr) minmax(170px,260px);
+    gap:12px;padding:24px;min-height:280px
+  }
+  .cat-hub-character{width:235px;height:250px}
+}
+@media(max-width:620px){
+  .cat-hub-hero.cat-hub-hero-refresh{
+    grid-template-columns:minmax(0,1fr);
+    padding:20px;gap:6px;min-height:0
+  }
+  .cat-hub-character{height:220px;width:210px;margin:0 auto}
+  .cat-hub-hero-refresh h1 br{display:none}
 }
