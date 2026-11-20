@@ -36,6 +36,7 @@ function autoAdvance(r){
  let type='pass',payload={};
  if(state.phase==='roll')type='roll';
  else if(state.phase==='travel'){type='travel';payload={index:0};}
+ else if(state.phase==='island')type='islandRoll';
  else if(state.phase==='choice')type='pass';
  const action=p.ai?(chooseCatAction(state)||{type,payload}):{type,payload};
  finishTurnAction(r,p.id,action.type,action.payload||{});
@@ -94,7 +95,7 @@ export async function handleMarbleRequest(req,res,pathname){
   if(op==='action'){
    if(!r.state)throw fail(400,'게임을 시작해주세요.');
    const type=String(data.type||'');
-   if(!['roll','pass','buy','upgrade','takeover','travel'].includes(type))throw fail(400,'허용되지 않는 행동입니다.');
+   if(!['roll','pass','buy','upgrade','takeover','travel','islandRoll','payBail','startBuild','olympic'].includes(type))throw fail(400,'허용되지 않는 행동입니다.');
    finishTurnAction(r,sid,type,data.payload||{});reply(res,200,visible(r));return true;
   }
   if(op==='leave'){

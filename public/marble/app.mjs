@@ -1,4 +1,4 @@
-import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,propertyValue,countMonopolies,winnerRanking} from './engine.mjs?v=20261120marble2';
+import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,upgradeCost,maxBuildLevel,propertyValue,countMonopolies,tourismComplete,olympicCost,LEVEL_NAMES,BAIL_COST,winnerRanking} from './engine.mjs?v=20261120v3';
 const root=document.querySelector('#mmApp');
 const toastZone=document.querySelector('#mmToast');
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -27,19 +27,19 @@ let clockOffset=0;
 const current=s=>s.players[s.turnIndex];
 const getState=()=>onlineRoom?.state||localGame;
 function toast(message){const n=document.createElement('div');n.className='mm-toast';n.textContent=message;toastZone.append(n);setTimeout(()=>n.remove(),3300);}
-function button(action,text,kind='mm-primary',disabled=false){return `<button class="mm-btn ${kind}" data-action="${action}" ${disabled?'disabled':''}>${text}</button>`;}
+function button(action,text,kind='mm-primary',disabled=false,attrs=''){return `<button class="mm-btn ${kind}" data-action="${action}" ${disabled?'disabled':''} ${attrs}>${text}</button>`;}
 function renderLobby(){
  const modes=catChallenge
   ? [['ai','🐱','고양이를 이겨라','생각보다 영리한 고양이와 1:1 두뇌 대결']]
   : [['online','🎮','친구와 온라인','다른 기기에서도 링크로 2~4인 접속'],['local','🎲','한 화면에서 함께','한 기기에서 돌아가며 2~4인 플레이']];
- root.innerHTML=`<section class="mm-lobby-hero"><span class="mm-eyebrow">MOYEO GAMES PRESENTS</span><h1>어서 와, <span>모여마블!</span></h1><p>세상을 돌며 도시를 사고, 랜드마크를 세우고,<br>친구의 통행료를 받아 보세요. 한 판은 짧고 전략은 진하게!</p><div class="mm-hero-cards"><span>🗺️ 24칸 압축 맵</span><span>⏱️ 8 · 12 · 16라운드</span><span>🏙️ 랜드마크 & 독점</span></div></section>
+ root.innerHTML=`<section class="mm-lobby-hero"><span class="mm-eyebrow">MOYEO GAMES PRESENTS</span><h1>어서 와, <span>모여마블!</span></h1><p>세상을 돌며 도시를 사고, 랜드마크를 세우고,<br>친구의 통행료를 받아 보세요. 한 판은 짧고 전략은 진하게!</p><div class="mm-hero-cards"><span>🗺️ 24칸 압축 맵</span><span>⏱️ 8 · 12 · 16라운드</span><span>🏖️ 관광지 & 올림픽</span></div></section>
  <section class="mm-setup"><h2>어떤 대결을 할까요?</h2><p class="mm-setup-sub">로그인 필요 없이 바로 시작해요. 온라인 대결은 초대 코드로 친구가 들어올 수 있어요.</p>
  <div class="mm-mode-grid">${modes.map(([id,icon,title,description])=>`<button class="mm-mode ${id===mode?'selected':''}" data-mode="${id}" aria-pressed="${id===mode}"><span class="mm-mode-emoji">${icon}</span><strong>${title}</strong><small>${description}</small>${id===mode?'<span class="mm-selected-check">✓</span>':''}</button>`).join('')}</div>
  <div class="mm-form-row"><div class="mm-field"><label for="mmNick">내 닉네임</label><input class="mm-input" id="mmNick" maxlength="14" value="${escapeHTML(nick)}" placeholder="닉네임을 입력하세요"></div><div class="mm-field"><label for="mmRounds">게임 길이</label><select class="mm-select" id="mmRounds"><option value="8" ${rounds===8?'selected':''}>⚡ 번개 모드 · 8라운드</option><option value="12" ${rounds===12?'selected':''}>✨ 기본 모드 · 12라운드</option><option value="16" ${rounds===16?'selected':''}>🏆 치열한 모드 · 16라운드</option></select></div></div>
  ${mode==='online'?`<div class="mm-field" style="margin-bottom:16px"><label for="mmSeconds">한 턴 제한시간</label><select class="mm-select" id="mmSeconds"><option value="15" ${seconds===15?'selected':''}>15초 · 초고속</option><option value="30" ${seconds===30?'selected':''}>30초 · 기본</option><option value="45" ${seconds===45?'selected':''}>45초 · 여유롭게</option></select></div>`:''}
  ${mode==='local'?`<div class="mm-field" style="margin-bottom:16px"><label for="mmPeople">함께 플레이할 인원</label><select class="mm-select" id="mmPeople"><option value="2" ${people===2?'selected':''}>2명</option><option value="3" ${people===3?'selected':''}>3명</option><option value="4" ${people===4?'selected':''}>4명</option></select></div>`:''}
  ${mode==='online'?`${button('createOnline','🎮 온라인 게임방 만들기','mm-primary mm-btn-full')}<div class="mm-online-join"><input class="mm-input" id="mmJoinCode" maxlength="6" placeholder="6자리 초대 코드" autocomplete="off">${button('joinOnline','코드로 입장','mm-neutral')}</div>`:`${button('startLocal',mode==='ai'?'🐱 고양이와 대결 시작!':'🎲 친구들과 대결 시작!','mm-primary mm-btn-full')}`}
- </section><section class="mm-guides"><article class="mm-guide"><span class="num">01 / OWN</span><h3>도시를 먼저 차지하세요</h3><p>빈 도시에 도착하면 바로 구매! 같은 색 두 도시를 모으면 통행료 2배.</p></article><article class="mm-guide"><span class="num">02 / BUILD</span><h3>건설과 인수로 역전</h3><p>내 도시에는 건물 4단계까지. 상대 도시는 통행료를 내고 인수 가능!</p></article><article class="mm-guide"><span class="num">03 / WIN</span><h3>짧고 짜릿한 승부</h3><p>파산, 3개 컬러 독점 또는 한 면 독점 시 즉시 승리. 아니면 총자산으로 결정.</p></article></section>`;
+ </section><section class="mm-guides"><article class="mm-guide"><span class="num">01 / OWN</span><h3>도시를 먼저 차지하세요</h3><p>빈 도시는 토지만 살 수도, 별장까지 건설할 수도 있어요. 컬러 독점 시 통행료 2배!</p></article><article class="mm-guide"><span class="num">02 / BUILD</span><h3>건설과 인수로 역전</h3><p>출발지 통과 횟수에 따라 빌딩과 호텔이 열려요. 랜드마크와 관광지는 인수 불가!</p></article><article class="mm-guide"><span class="num">03 / WIN</span><h3>짧고 짜릿한 승부</h3><p>파산, 트리플 컬러, 라인 또는 관광지 독점 시 즉시 승리. 아니면 총자산으로 결정.</p></article></section>`;
 }
 function renderWaiting(){
  const r=onlineRoom,isHost=r.host===SID;
@@ -53,22 +53,24 @@ function tilePos(i){
 }
 function token(s,p,i){const idx=s.players.indexOf(p);return `<span class="mm-pawn" title="${escapeHTML(p.name)}" style="--pawn-color:${paint[idx]}">${icons[idx]}</span>`;}
 function renderTile(s,t,i){
- const [row,col]=tilePos(i),property=s.properties[i],ownerIndex=property?s.players.findIndex(p=>p.id===property.owner):-1;
- const ownedBy=ownerIndex<0?null:s.players[ownerIndex];
- const isTravel=s.phase==='travel'&&current(s).id===(onlineRoom?SID:current(s).id)&&i!==18;
- const canSelect=isTravel&&!current(s).ai;
+ const [row,col]=tilePos(i),held=s.properties[i],ownerIndex=held?s.players.findIndex(p=>p.id===held.owner):-1;
+ const owner=ownerIndex<0?null:s.players[ownerIndex],buyable=['city','tourist'].includes(t.kind);
+ const canTravel=s.phase==='travel'&&current(s).id===(onlineRoom?SID:current(s).id)&&!current(s).ai&&i!==18;
+ const canInspect=buyable&&!canTravel;
  const pawns=s.players.filter(p=>!p.bankrupt&&p.position===i&&!(scene?.event.dice&&scene.event.actor===p.id));
- const total=property?toll(s,i):null;
- const title=t.kind==='city'?`${t.name} · ${property?`${ownedBy?.name||'알 수 없음'} 소유 · ${property.level}단계 · 통행료 ${formatM(total)}`:`구매가 ${formatM(t.price)}`}`:t.name;
- const building=property?`<div class="mm-building-row" aria-label="건물 ${property.level}단계">${property.level===4?'<span class="mm-building-landmark">🏰</span>':Array.from({length:property.level},(_,n)=>`<i class="mm-building-block" style="--height:${12+n*4}px"></i>`).join('')}</div>`:'';
- const ownerBadge=property?`<span class="mm-owner-badge" title="${escapeHTML(ownedBy?.name)}의 도시"><span class="mm-owner-icon">${icons[ownerIndex]||'●'}</span><b>${escapeHTML(ownedBy?.name||'플레이어')}</b></span>`:'';
- return `<div class="mm-tile ${t.kind==='city'?'mm-city':'mm-special'} ${property?'mm-own':''} ${canSelect?'mm-landable':''} ${pawns.some(p=>p.id===current(s).id)?'mm-highlight':''} ${scene?.event.tileIndex===i?'mm-scene-target':''} ${inspectedCity===i?'mm-inspected':''}" data-kind="${t.kind}" data-tile-index="${i}" ${canSelect?`data-land="${i}" tabindex="0" role="button" aria-label="${escapeHTML(t.name)}(으)로 여행하기"`:t.kind==='city'?`data-inspect="${i}" tabindex="0" role="button" aria-label="${escapeHTML(t.name)} 도시 정보 보기"`:''} title="${escapeHTML(title)}" style="grid-row:${row};grid-column:${col};${t.kind==='city'?`--tile-color:${GROUPS[t.group].color};`:''}${property?`--owner-color:${paint[ownerIndex]||'#a3a3a3'};`:''}">
- ${building}<span class="mm-tile-emoji">${t.emoji}</span><span class="mm-tile-name">${escapeHTML(t.name)}</span>${t.kind==='city'?`<span class="mm-tile-price">${property?`통행 ${formatM(total)}`:formatM(t.price)}</span>`:''}${ownerBadge}${pawns.length?`<span class="mm-tile-tokens">${pawns.map(p=>token(s,p,i)).join('')}</span>`:''}</div>`;
+ const fee=held?toll(s,i):0;
+ const label=t.kind==='tourist'?'관광지':t.kind==='city'?GROUPS[t.group].name+' 지역':'';
+ const title=buyable?`${t.name} · ${held?`${owner?.name||'플레이어'} 소유 · ${LEVEL_NAMES[held.level]} · 통행료 ${formatM(fee)}`:`구매가 ${formatM(t.price)}`}`:t.name;
+ const building=held&&t.kind==='city'?`<div class="mm-building-row" aria-label="${LEVEL_NAMES[held.level]}">${held.level===4?'<span class="mm-building-landmark">🏰</span>':held.level===0?'<span class="mm-empty-lot">🏳</span>':Array.from({length:held.level},(_,n)=>`<i class="mm-building-block" style="--height:${12+n*4}px"></i>`).join('')}</div>`:held&&t.kind==='tourist'?'<span class="mm-tourist-badge">🛟 관광지</span>':'';
+ const ownerBadge=held?`<span class="mm-owner-badge" title="${escapeHTML(owner?.name)} 소유"><span class="mm-owner-icon">${icons[ownerIndex]||'●'}</span><b>${escapeHTML(owner?.name||'플레이어')}</b></span>`:'';
+ const monopoly=held&&(t.kind==='city'?TILES.every((v,j)=>v.kind!=='city'||v.group!==t.group||s.properties[j]?.owner===held.owner):tourismComplete(s,held.owner));
+ return `<div class="mm-tile ${buyable?'mm-city':'mm-special'} ${t.kind==='tourist'?'mm-tourist':''} ${held?'mm-own':''} ${canTravel?'mm-landable':''} ${pawns.some(p=>p.id===current(s).id)?'mm-highlight':''} ${scene?.event.tileIndex===i?'mm-scene-target':''} ${inspectedCity===i?'mm-inspected':''}" data-kind="${t.kind}" data-tile-index="${i}" ${canTravel?`data-land="${i}" tabindex="0" role="button" aria-label="${escapeHTML(t.name)}(으)로 여행하기"`:canInspect?`data-inspect="${i}" tabindex="0" role="button" aria-label="${escapeHTML(t.name)} 정보 보기"`:''} title="${escapeHTML(title)}" style="grid-row:${row};grid-column:${col};${buyable?`--tile-color:${t.kind==='tourist'?'#70b9df':GROUPS[t.group].color};`:''}${held?`--owner-color:${paint[ownerIndex]||'#a3a3a3'};`:''}">
+ ${building}<span class="mm-tile-emoji">${t.emoji}</span><span class="mm-tile-name">${escapeHTML(t.name)}</span>${buyable?`<span class="mm-tile-price">${held?`통행 ${formatM(fee)}`:formatM(t.price)}</span>`:''}${monopoly?'<span class="mm-monopoly-flag">2× 독점</span>':''}${s.olympics?.[i]?`<span class="mm-olympic-flag">🏅 ${s.olympics[i]}×</span>`:''}${ownerBadge}${pawns.length?`<span class="mm-tile-tokens">${pawns.map(p=>token(s,p,i)).join('')}</span>`:''}</div>`;
 }
 function sceneMarkup(s){
  if(!scene)return '';
  const ev=scene.event;
- const emoji=ev.type==='roll'?'🎲':ev.type==='buy'?'🏙️':ev.type==='upgrade'?'🏗️':ev.type==='takeover'?'⚔️':ev.type==='travel'?'✈️':'💬';
+ const emoji=['roll','islandRoll'].includes(ev.type)?'🎲':ev.type==='buy'?'🏙️':['upgrade','startBuild'].includes(ev.type)?'🏗️':ev.type==='takeover'?'⚔️':ev.type==='travel'?'✈️':ev.type==='olympic'?'🏅':ev.type==='payBail'?'🏝️':'💬';
  const stageTitle=scene.stage==='dice'&&ev.dice?`주사위 ${ev.dice.a} + ${ev.dice.b} = ${ev.dice.total}`:scene.stage==='move'?'캐릭터 이동 중!':ev.message;
  return `<div class="mm-scene-card ${ev.ai?'mm-scene-cat':''} ${scene.stage==='outcome'?'is-outcome':''}" role="status" aria-live="polite"><span class="mm-scene-label">${ev.ai?'🐱 고양이의 행동':'✨ '+escapeHTML(ev.actorName)+'님의 행동'}</span><div class="mm-scene-icon">${emoji}</div><strong>${escapeHTML(stageTitle)}</strong><small>${escapeHTML(ev.message)}</small>${scene.stage==='outcome'&&ev.moneyChanges.length?`<div class="mm-scene-deltas">${ev.moneyChanges.map(m=>`<span class="${m.delta>0?'plus':'minus'}">${escapeHTML(m.name)} ${fmtDelta(m.delta)}</span>`).join('')}</div>`:''}<button class="mm-scene-skip" type="button" data-action="skipScene">연출 넘기기 »</button></div>`;
 }
@@ -80,16 +82,19 @@ function scenePawnMarkup(s){
  return `<span class="mm-replay-pawn" data-replay-pawn style="--pawn-color:${ownerColor(s,actor.id)};top:${((row-.5)/7)*100}%;left:${((col-.5)/7)*100}%">${ownerAvatar(s,actor.id)}</span>`;
 }
 function catThought(s,action){
- const kind=s.pending?.kind, i=s.pending?.index;
- if(action.type==='roll')return '주사위를 굴려 다음 목적지를 확인했어.';
- if(action.type==='travel')return `${TILES[action.payload?.index]?.name||'도시'}에 투자할 기회를 노리고 있어.`;
- if(action.type==='pass')return '지금은 투자보다 현금을 보유하는 쪽을 선택했어.';
+ const kind=s.pending?.kind,i=s.pending?.index;
+ if(action.type==='roll')return '어느 지역에 갈지 보면서 현금과 소유 도시를 계산 중이야.';
+ if(action.type==='islandRoll')return '보석금을 아끼고 더블 탈출을 노려 보겠어.';
+ if(action.type==='payBail')return '계속 쉬는 것보다 보석금을 내고 다시 투자하는 게 낫겠어.';
+ if(action.type==='travel')return `${TILES[action.payload?.index]?.name||'도시'}의 투자 기회를 노리고 있어.`;
+ if(action.type==='pass')return '지금은 현금을 아껴 다음 투자를 준비할게.';
  if(action.type==='buy'){
   const mate=TILES.findIndex((t,j)=>j!==i&&t.kind==='city'&&t.group===TILES[i]?.group);
-  return s.properties[mate]?.owner===current(s).id?'같은 색 도시를 모두 모아 통행료 2배를 노렸어.':'보유 현금과 다음 투자 여력을 고려해 이 도시를 샀어.';
+  return TILES[i]?.kind==='tourist'?'관광지는 인수가 안 되니까 먼저 차지할게.':s.properties[mate]?.owner===current(s).id?'같은 색 두 도시를 모아 통행료를 두 배로 올릴래.':action.payload?.targetLevel?'도시를 사면서 별장도 같이 지을래.':'먼저 토지를 확보하고 다음 건설을 준비할래.';
  }
- if(action.type==='upgrade')return '이 도시의 통행료를 높이려고 건설했어.';
- if(action.type==='takeover')return '상대 도시를 가져와 자산과 독점 가능성을 높이려 했어.';
+ if(action.type==='upgrade'||action.type==='startBuild')return '건물을 올려 통행료를 높이고 랜드마크를 준비할래.';
+ if(action.type==='olympic')return '올림픽을 개최해 내 도시 통행료를 높여야지.';
+ if(action.type==='takeover')return '상대 도시를 가져와 독점을 노릴 거야. 인수비는 건물 포함 가치의 2배야.';
  return '';
 }
 function recentAction(s){
@@ -100,30 +105,63 @@ function recentAction(s){
 }
 function cityInspector(s){
  const i=inspectedCity;
- if(i===null||TILES[i]?.kind!=='city')return '';
+ if(i===null||!['city','tourist'].includes(TILES[i]?.kind))return '';
  const t=TILES[i],v=s.properties[i],owner=s.players.find(p=>p.id===v?.owner);
- return `<section class="mm-card mm-city-inspector"><div class="mm-inspector-head"><h2 class="mm-card-title">🏙️ ${escapeHTML(t.name)} 정보</h2><button data-action="closeInspector" type="button" aria-label="도시 정보 닫기">×</button></div><div class="mm-inspector-owner" style="--inspector-color:${owner?ownerColor(s,owner.id):'#e6e6ea'}">${owner?`${ownerAvatar(s,owner.id)} ${escapeHTML(owner.name)} 소유 · ${v.level}단계`:'아직 주인이 없어요'}</div><div class="mm-inspector-numbers"><span>구매가 <b>${formatM(t.price)}</b></span><span>통행료 <b>${v?formatM(toll(s,i)):'—'}</b></span><span>컬러 그룹 <b>${escapeHTML(colorName(t.group))}</b></span></div></section>`;
+ const level=t.kind==='tourist'?'관광지 · 건설 불가':LEVEL_NAMES[v?.level??0];
+ return `<section class="mm-card mm-city-inspector"><div class="mm-inspector-head"><h2 class="mm-card-title">${t.emoji} ${escapeHTML(t.name)} 정보</h2><button data-action="closeInspector" type="button" aria-label="지역 정보 닫기">×</button></div><div class="mm-inspector-owner" style="--inspector-color:${owner?ownerColor(s,owner.id):'#e6e6ea'}">${owner?`${ownerAvatar(s,owner.id)} ${escapeHTML(owner.name)} 소유 · ${level}`:'아직 주인이 없어요'}</div><div class="mm-inspector-numbers"><span>구매가 <b>${formatM(t.price)}</b></span><span>통행료 <b>${v?formatM(toll(s,i)):'—'}</b></span><span>인수 <b>${t.kind==='tourist'||v?.level===4?'불가능':v?formatM(propertyValue(i,v.level)*2):'—'}</b></span><span>분류 <b>${t.kind==='tourist'?'관광지':escapeHTML(colorName(t.group))}</b></span></div>${t.kind==='city'?'<small>별장 → 빌딩 → 호텔 → 랜드마크. 랜드마크는 인수할 수 없어요.</small>':'<small>관광지는 건물을 지을 수 없고, 인수할 수도 없어요. 두 관광지를 모두 소유하면 관광지 독점 승리!</small>'}</section>`;
 }
-
+function buildButtons(s,index,from,p,label='건설',action='upgrade'){
+ const max=maxBuildLevel(s,p.id,index),options=[];
+ for(let level=from+1;level<=max;level++){
+  const cost=upgradeCost(index,from,level),allowed=p.cash>=cost;
+  options.push(button(action,`${level===4?'🏰':'🏗️'} ${LEVEL_NAMES[level]}${level>from+1?`까지`:''} · ${formatM(cost)}`,'mm-primary',!allowed||inFlight||!!scene||p.ai||(!!onlineRoom&&p.id!==SID),`data-index="${index}" data-level="${level}"`));
+ }
+ return options.join('');
+}
 function actionPanel(s){
  const p=current(s),yourTurn=(onlineRoom?p.id===SID:!p.ai)&&!scene;
  if(s.phase==='finished'){
-  const rank=winnerRanking(s),winner=s.players.find(x=>x.id===s.winner);
-  return `<div class="mm-result"><span class="mm-result-emoji">🏆</span><h2>${escapeHTML(winner?.name||'승자')} 승리!</h2><p>${escapeHTML(s.reason||'게임 종료')}</p><div class="mm-result-rank">${rank.map((x,i)=>`<div><span>${i+1}위 ${escapeHTML(x.name)}</span><span>${formatM(netWorth(s,x.id))}</span></div>`).join('')}</div><div class="mm-center-actions">${onlineRoom?onlineRoom.host===SID?button('startOnline','다시 대결하기','mm-primary'):button('leave','메인으로','mm-secondary'):button('rematch','다시 대결하기','mm-primary')}${button('leave','종료','mm-secondary')}</div></div>`;
+  const ranking=winnerRanking(s),winner=s.players.find(x=>x.id===s.winner);
+  return `<div class="mm-result"><span class="mm-result-emoji">🏆</span><h2>${escapeHTML(winner?.name||'승자')} 승리!</h2><p>${escapeHTML(s.reason||'게임 종료')}</p><div class="mm-result-rank">${ranking.map((x,i)=>`<div><span>${i+1}위 ${escapeHTML(x.name)}</span><span>${formatM(netWorth(s,x.id))}</span></div>`).join('')}</div><div class="mm-center-actions">${onlineRoom?onlineRoom.host===SID?button('startOnline','다시 대결하기','mm-primary'):button('leave','메인으로','mm-secondary'):button('rematch','다시 대결하기','mm-primary')}${button('leave','종료','mm-secondary')}</div></div>`;
  }
- if(s.phase==='roll')return `<div class="mm-status-line">${escapeHTML(p.name)}님의 차례${p.stuck?' · 무인도 휴식':''}</div><p class="mm-status-sub">${p.ai?'고양이가 전략을 생각하고 있어요…':p.stuck?'이번 차례에는 무인도에서 쉬어갑니다.':'두 주사위를 굴려 도시에 도착하세요!'}</p><div class="mm-center-actions">${button('roll',p.stuck?'⏩ 휴식 턴 넘기기':'🎲 주사위 굴리기','mm-primary',!yourTurn||inFlight)}</div>`;
- if(s.phase==='travel')return `<div class="mm-status-line">🌏 세계여행 시간!</div><p class="mm-status-sub">${escapeHTML(p.name)}님, 원하는 칸을 선택하세요.</p><div class="mm-center-actions">${button('travelBest','✈️ 추천 도시로 여행','mm-primary',!yourTurn||inFlight)}</div>`;
- const {kind,index}=s.pending||{},t=TILES[index],v=s.properties[index],cost=kind==='purchase'?t.price:kind==='upgrade'?buildingCost(index,v.level):propertyValue(index,v.level)*2;
- const labels={purchase:['도시 구매','이 도시를 차지할까요?','🏙️ '+formatM(cost)+'에 구매','buy'],upgrade:['건물 건설','내 도시의 통행료를 올려보세요.','🏗️ '+formatM(cost)+'에 건설','upgrade'],takeover:['도시 인수','상대 도시를 비싸게 인수할 수 있어요.','⚔️ '+formatM(cost)+'에 인수','takeover']};
- const [title,desc,cta,action]=labels[kind]||['선택','결정이 필요해요.','확인','pass'];
- return `<div class="mm-status-line">${escapeHTML(t?.name||'도시')} · ${title}</div><p class="mm-status-sub">${desc}${kind==='takeover'?' (랜드마크는 인수 불가)':''}</p><div class="mm-center-actions">${button(action,cta,'mm-primary',!yourTurn||inFlight)}${button('pass','건너뛰기','mm-neutral',!yourTurn||inFlight)}</div>`;
+ if(s.phase==='roll'){
+  const can=yourTurn&&!inFlight,remaining=p.parityUses??0;
+  return `<div class="mm-status-line">${escapeHTML(p.name)}님의 차례</div><p class="mm-status-sub">🎲 주사위 두 개를 굴려 도시에 도착하세요!${s.doubles?' 더블 '+s.doubles+'연속':''}</p><div class="mm-center-actions">${button('roll','🎲 주사위 굴리기','mm-primary',!can)}${remaining?button('rollOdd',`홀수 · ${remaining}회 남음`,'mm-neutral',!can)+button('rollEven',`짝수 · ${remaining}회 남음`,'mm-neutral',!can):''}</div>`;
+ }
+ if(s.phase==='island'){
+  return `<div class="mm-status-line">🏝️ 무인도 탈출 도전!</div><p class="mm-status-sub">${escapeHTML(p.name)}님 · 남은 최대 ${p.stuck}차례. 더블을 굴리거나 보석금을 내면 탈출할 수 있어요.</p><div class="mm-center-actions">${button('islandRoll','🎲 더블 도전 · 무료','mm-primary',!yourTurn||inFlight)}${button('payBail',`💎 보석금 ${BAIL_COST}M`,'mm-neutral',!yourTurn||inFlight||p.cash<BAIL_COST)}${button('pass','⏩ 한 차례 쉬기','mm-neutral',!yourTurn||inFlight)}</div>`;
+ }
+ if(s.phase==='travel')return `<div class="mm-status-line">✈️ 세계여행 출발!</div><p class="mm-status-sub">${escapeHTML(p.name)}님, 다음 차례가 되었어요. 원하는 지역을 선택해 바로 이동합니다.</p><div class="mm-center-actions">${button('travelBest','🎯 투자 추천 지역으로 이동','mm-primary',!yourTurn||inFlight)}</div>`;
+ const {kind,index}=s.pending||{},t=TILES[index],v=s.properties[index];
+ if(kind==='purchase'){
+  const villa=t.kind==='city'?buildingCost(index,0):0;
+  return `<div class="mm-status-line">${t.kind==='tourist'?'🏖️ 관광지':'🏘️ 도시'} 구매 · ${escapeHTML(t.name)}</div><p class="mm-status-sub">${t.kind==='tourist'?'관광지는 인수가 불가능하며 건설할 수 없어요.':'토지만 살 수도 있고, 별장까지 한 번에 지을 수도 있어요.'}</p><div class="mm-center-actions">${button('buy',`🏳 토지 구매 · ${formatM(t.price)}`,'mm-primary',!yourTurn||inFlight||p.cash<t.price,`data-level="0"`)}${t.kind==='city'?button('buy',`🏠 별장까지 · ${formatM(t.price+villa)}`,'mm-primary',!yourTurn||inFlight||p.cash<t.price+villa,`data-level="1"`):''}${button('pass','건너뛰기','mm-neutral',!yourTurn||inFlight)}</div>`;
+ }
+ if(kind==='upgrade'){
+  const max=maxBuildLevel(s,p.id,index);
+  return `<div class="mm-status-line">🏗️ ${escapeHTML(t.name)} 건설</div><p class="mm-status-sub">현재 ${LEVEL_NAMES[v.level]} · 출발지 ${p.laps}회 통과 · 건설 가능 최고 단계 ${LEVEL_NAMES[max]}. 단계별로 선택하세요.</p><div class="mm-center-actions">${buildButtons(s,index,v.level,p)}${button('pass','건설하지 않기','mm-neutral',!yourTurn||inFlight)}</div>`;
+ }
+ if(kind==='takeover'){
+  const price=propertyValue(index,v.level)*2,owner=s.players.find(x=>x.id===v.owner);
+  const max=maxBuildLevel(s,p.id,index);const plus=v.level<max?upgradeCost(index,v.level,v.level+1):0;
+  return `<div class="mm-status-line">⚔️ ${escapeHTML(t.name)} 인수 기회!</div><p class="mm-status-sub">${escapeHTML(owner?.name||'상대')}님 도시의 통행료는 이미 지불했어요. 토지와 건물의 현재 가치 ${formatM(propertyValue(index,v.level))} × 2 = 인수가 ${formatM(price)}. 상대방은 인수비를 받습니다.</p><div class="mm-center-actions">${button('takeover',`⚔️ 인수하기 · ${formatM(price)}`,'mm-primary',!yourTurn||inFlight||p.cash<price,`data-level="${v.level}"`)}${plus?button('takeover',`🏗️ 인수 + 건설 · ${formatM(price+plus)}`,'mm-neutral',!yourTurn||inFlight||p.cash<price+plus,`data-level="${v.level+1}"`):''}${button('pass','인수 포기','mm-neutral',!yourTurn||inFlight)}</div>`;
+ }
+ if(kind==='olympic'||kind==='startBuild'){
+  const list=Object.entries(s.properties).map(([idx,held])=>({i:+idx,held,t:TILES[+idx]})).filter(({i,held,t})=>held.owner===p.id&&(kind==='olympic'?(s.olympics[i]||1)<5:t.kind==='city'&&held.level<maxBuildLevel(s,p.id,i)));
+  const choices=list.map(({i,held,t})=>{const level=held.level+1,cost=kind==='olympic'?olympicCost(s,i):upgradeCost(i,held.level,level);
+   const text=kind==='olympic'?`🏅 ${escapeHTML(t.name)} ${s.olympics[i]||1}×→${(s.olympics[i]||1)+1}× · ${formatM(cost)}`:`🏗️ ${escapeHTML(t.name)} ${LEVEL_NAMES[level]} · ${formatM(cost)}`;
+   return button(kind==='olympic'?'olympic':'startBuild',text,'mm-neutral',!yourTurn||inFlight||p.cash<cost,`data-index="${i}" data-level="${level}"`);
+  }).join('');
+  return `<div class="mm-status-line">${kind==='olympic'?'🏅 올림픽 개최!':'🚩 출발지 특별 건설!'}</div><p class="mm-status-sub">${kind==='olympic'?'내 도시 한 곳의 통행료를 최대 5배로 높일 수 있어요.':'출발지에 정확히 도착했으니 내 도시 한 곳에 건설할 수 있어요.'}</p><div class="mm-center-actions mm-choice-scroll">${choices}${button('pass','건너뛰기','mm-neutral',!yourTurn||inFlight)}</div>`;
+ }
+ return `<div class="mm-status-line">선택을 진행해주세요.</div>${button('pass','다음으로','mm-primary',!yourTurn||inFlight)}`;
 }
 function sidePanel(s){
  const p=current(s),turns=s.maxRounds*s.players.length;
  const showTimers=onlineRoom && s.phase!=='finished';
- return `<aside class="mm-sidebar"><section class="mm-card"><h2 class="mm-card-title">참가자 <small>${s.players.length}명</small></h2>${s.players.map((x,i)=>`<div class="mm-player ${p.id===x.id&&s.phase!=='finished'?'current':''} ${x.bankrupt?'bankrupt':''}"><span class="mm-avatar" style="--pcolor:${paint[i]}">${icons[i]}</span><div class="mm-player-info"><strong>${escapeHTML(x.name)}${x.ai?' · AI':''}</strong><small>도시 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개 · 독점 ${countMonopolies(s,x.id)}세트</small></div><span class="mm-money">${formatM(x.cash)}<small><br>자산 ${formatM(netWorth(s,x.id))}</small></span></div>`).join('')}<div class="mm-progress"><div class="mm-progress-fill" style="width:${Math.min(100,Math.round(s.turnCount/turns*100))}%"></div></div><div class="mm-progress-label"><span>${s.round} / ${s.maxRounds}라운드</span><span>${Math.min(turns,s.turnCount)}/${turns}턴</span></div>${showTimers?`<p style="text-align:center;margin:10px 0 0"><span class="mm-clock" data-clock>⏳ 30초</span></p>`:''}</section>
+ return `<aside class="mm-sidebar"><section class="mm-card"><h2 class="mm-card-title">참가자 <small>${s.players.length}명</small></h2>${s.players.map((x,i)=>`<div class="mm-player ${p.id===x.id&&s.phase!=='finished'?'current':''} ${x.bankrupt?'bankrupt':''}"><span class="mm-avatar" style="--pcolor:${paint[i]}">${icons[i]}</span><div class="mm-player-info"><strong>${escapeHTML(x.name)}${x.ai?' · AI':''}</strong><small>부동산 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개 · 컬러 ${countMonopolies(s,x.id)}세트</small></div><span class="mm-money">${formatM(x.cash)}<small><br>자산 ${formatM(netWorth(s,x.id))}</small></span></div>`).join('')}<div class="mm-progress"><div class="mm-progress-fill" style="width:${Math.min(100,Math.round(s.turnCount/turns*100))}%"></div></div><div class="mm-progress-label"><span>${s.round} / ${s.maxRounds}라운드</span><span>${Math.min(turns,s.turnCount)}/${turns}턴</span></div>${showTimers?`<p style="text-align:center;margin:10px 0 0"><span class="mm-clock" data-clock>⏳ 30초</span></p>`:''}</section>
  ${cityInspector(s)}<section class="mm-card mm-events-card"><h2 class="mm-card-title">📣 행동 기록 <small>고양이가 뭘 했는지 확인!</small></h2><div class="mm-event-list">${(s.events||[]).slice(0,7).map((ev,j)=>`<div class="mm-event ${ev.ai?'is-cat':''} ${j===0?'new':''}" style="--event-color:${ownerColor(s,ev.actor)}"><span class="mm-event-icon">${ownerAvatar(s,ev.actor)}</span><div><strong>${escapeHTML(ev.message)}</strong>${ev.moneyChanges.length?`<small>${ev.moneyChanges.map(m=>`${escapeHTML(m.name)} ${fmtDelta(m.delta)}`).join(' · ')}</small>`:''}${ev.thought?`<small class="mm-event-thought">💭 ${escapeHTML(ev.thought)}</small>`:''}</div></div>`).join('')||'<p class="mm-helper">첫 행동을 기다리고 있어요.</p>'}</div><details class="mm-raw-history"><summary>전체 세부 기록 보기</summary><div class="mm-log-list">${s.log.slice(0,24).map(e=>`<div class="mm-log">${escapeHTML(e.text)}</div>`).join('')}</div></details></section>
- <section class="mm-card"><h2 class="mm-card-title">✨ 승리 팁</h2><div class="mm-helper">같은 색 도시 2개를 모두 사면 해당 통행료가 2배!<br>서로 다른 색 3세트 또는 한 면의 도시를 모두 독점하면 즉시 승리합니다.<br>랜드마크(4단계)는 인수할 수 없어요.</div>${onlineRoom?`<div style="margin-top:12px">${button('copyInvite','🔗 방 링크 복사','mm-neutral')}</div>`:''}</section></aside>`;
+ <section class="mm-card"><h2 class="mm-card-title">✨ 승리 팁</h2><div class="mm-helper">컬러 독점 2배 · 관광지 둘 다 소유하면 즉시 승리!<br>컬러 3세트 또는 한 면의 도시를 모두 소유해도 승리합니다.<br>랜드마크와 관광지는 인수 불가. 무인도는 더블/보석금으로 탈출!</div>${onlineRoom?`<div style="margin-top:12px">${button('copyInvite','🔗 방 링크 복사','mm-neutral')}</div>`:''}</section></aside>`;
 }
 function renderGame(s){
  const p=current(s);
@@ -132,7 +170,7 @@ function renderGame(s){
  root.innerHTML=`<div class="mm-topgame"><div><span class="mm-eyebrow">MOYEO MARBLE · ${onlineRoom?'ONLINE MATCH':mode==='ai'?'CAT CHALLENGE':'LOCAL MATCH'}</span><h1>모여마블 <span style="font-size:14px;color:#a99dab">${s.round}/${s.maxRounds} 라운드</span></h1><p>${onlineRoom?`방 코드 ${onlineRoom.code} · 모든 주사위는 서버에서 판정`:mode==='ai'?'고양이 AI와 1:1 대결 중':'한 화면에서 돌아가며 플레이 중'}</p></div><div style="display:flex;gap:7px;align-items:center"><span class="mm-indicator">● ${onlineRoom?'온라인 연결':'플레이 중'}</span>${button('toggleEffects',effectsOn?'✨ 연출 켜짐':'✨ 연출 꺼짐','mm-neutral')}${button('leave','↩ 나가기','mm-neutral')}</div></div>
  <div class="mm-owner-legend" aria-label="플레이어별 소유 건물 색상">${s.players.map((x,i)=>`<div class="mm-owner-key" style="--key-color:${paint[i]}"><span>${icons[i]}</span><strong>${escapeHTML(x.name)}</strong><small>소유 도시 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개</small></div>`).join('')}</div>
  <section class="mm-action-ribbon" aria-label="최근 행동 현황">${recentAction(s)}</section><div class="mm-gamewrap"><div class="mm-main-panel"><section class="mm-board-frame"><div class="mm-board">${TILES.map((t,i)=>renderTile(s,t,i)).join('')}${scenePawnMarkup(s)}<section class="mm-board-center"><span class="mm-center-kicker">🎲 DREAM · OWN · WIN</span><h2 class="mm-center-title">모여<span>마블</span></h2><p class="mm-center-sub">도시를 모아 세상을 정복해봐!</p>${s.phase==='finished'?'':`<div class="mm-dice-row"><span class="mm-die ${scene?.stage==='dice'?'mm-die-rolling':''}">${dice[scene?.event.dice?.a||a]}</span><span class="mm-die ${scene?.stage==='dice'?'mm-die-rolling':''}">${dice[scene?.event.dice?.b||b]}</span></div>`}${sceneMarkup(s)}${actionPanel(s)}<span class="mm-center-tip">🌷 행운은 짧게, 전략은 길게!</span></section></div></section>
- ${s.phase==='travel'&&!p.ai&&(!onlineRoom||p.id===SID)?`<section class="mm-option-panel"><h3 class="mm-option-title">✈️ 여행할 도시를 선택해주세요</h3><div class="mm-travel-grid">${TILES.map((t,i)=>({t,i})).filter(z=>z.t.kind==='city').map(({t,i})=>`<button data-land="${i}">${t.emoji} ${escapeHTML(t.name)}</button>`).join('')}</div></section>`:''}</div>${sidePanel(s)}</div>`;
+ ${s.phase==='travel'&&!p.ai&&(!onlineRoom||p.id===SID)?`<section class="mm-option-panel"><h3 class="mm-option-title">✈️ 여행할 도시를 선택해주세요</h3><div class="mm-travel-grid">${TILES.map((t,i)=>({t,i})).filter(z=>['city','tourist','start','olympic'].includes(z.t.kind)).map(({t,i})=>`<button data-land="${i}">${t.emoji} ${escapeHTML(t.name)}</button>`).join('')}</div></section>`:''}</div>${sidePanel(s)}</div>`;
 }
 function render(){
  const s=getState();if(s)consumeEvents(s);
@@ -229,8 +267,13 @@ root.addEventListener('click',async e=>{
  case 'createOnline':await createOnline();break;
  case 'joinOnline':await joinOnline(document.querySelector('#mmJoinCode')?.value);break;
  case 'startOnline':await startOnline();break;
- case 'roll':case 'buy':case 'upgrade':case 'takeover':case 'pass':executeAction(action);break;
- case 'travelBest':{const s=getState();if(!s||s.phase!=='travel')break;const available=TILES.map((t,i)=>({t,i})).filter(({t,i})=>t.kind==='city'&&!s.properties[i]);const best=available.sort((a,b)=>a.t.price-b.t.price)[0]?.i??0;executeAction('travel',{index:best});break;}
+ case 'roll':case 'pass':case 'islandRoll':case 'payBail':executeAction(action);break;
+ case 'rollOdd':executeAction('roll',{parity:'odd'});break;
+ case 'rollEven':executeAction('roll',{parity:'even'});break;
+ case 'buy':case 'upgrade':case 'takeover':executeAction(action,{targetLevel:Number(e.target.closest('[data-action]').dataset.level)});break;
+ case 'startBuild':executeAction('startBuild',{index:Number(e.target.closest('[data-action]').dataset.index),targetLevel:Number(e.target.closest('[data-action]').dataset.level)});break;
+ case 'olympic':executeAction('olympic',{index:Number(e.target.closest('[data-action]').dataset.index)});break;
+ case 'travelBest':{const s=getState();if(!s||s.phase!=='travel')break;const available=TILES.map((t,i)=>({t,i})).filter(({t,i})=>t.kind==='city'&&!s.properties[i]);const tourism=TILES.map((t,i)=>({t,i})).find(({t,i})=>t.kind==='tourist'&&!s.properties[i]&&TILES.some((x,j)=>x.kind==='tourist'&&j!==i&&s.properties[j]?.owner===current(s).id));const best=tourism?.i??available.sort((a,b)=>a.t.price-b.t.price)[0]?.i??0;executeAction('travel',{index:best});break;}
  case 'copyInvite':await copyInvite();break;
  case 'leave':await leave();break;
  case 'rematch':startLocal();break;
