@@ -237,3 +237,54 @@
 
 /* Respect the user's lobby animation setting in addition to OS reduced-motion. */
 .mm-app[data-effects="off"] .mm-hero-scene .mm-avatar-art,.mm-app[data-effects="off"] .mm-opponent-card .mm-avatar-art,.mm-app[data-effects="off"] .mm-hero-star,.mm-app[data-effects="off"] .mm-setup-die,.mm-app[data-effects="off"] .mm-guide-art,.mm-app[data-effects="off"] .mm-round-section,.mm-app[data-effects="off"] .mm-endless-explainer{animation:none!important}
+
+/* Marble shared pre-game layout: match the other Moyeo Games setup screens. */
+.mm-app:has(>.pg-page){max-width:none;padding:0 0 50px}
+.mm-app>.pg-page{max-width:1240px}
+.pg-marble .pg-hero{background:linear-gradient(115deg,#ffe7ed,#fff2d8);min-height:278px}
+.pg-marble .pg-hero-copy h1{color:#5d4359}
+.pg-marble .pg-hero-badges span{color:#8d6171}
+.pg-marble .pg-config{background:#fffefd}
+.pg-marble .pg-config-panel:nth-child(1){background:#fffaf8}
+.pg-marble .pg-config-panel:nth-child(2){background:#fffdfc}
+.pg-marble .pg-launch{background:linear-gradient(100deg,#ffe5e9,#fff0d8)}
+.pg-marble .pg-marble-extras{
+  display:flex;flex-direction:column;gap:9px;
+  border-top:1px dashed #f1dfe5;padding-top:16px;margin-top:2px;
+}
+.pg-marble .pg-marble-nicklabel{
+  display:flex;justify-content:space-between;align-items:baseline;
+  gap:8px;flex-wrap:wrap;font-weight:900;font-size:13px;color:#5d4b5f;
+}
+.pg-marble .pg-marble-nicklabel small{font-size:10px;color:#aa98a3;font-weight:650}
+.pg-marble .pg-marble-nickname{width:100%;min-width:0;min-height:42px}
+.pg-marble .pg-marble-nickname[readonly]{background:#faf7f8;color:#7b6f7c;cursor:not-allowed}
+.pg-marble .pg-marble-toggles{display:flex;align-items:stretch;gap:9px;flex-wrap:wrap;margin-top:7px}
+.pg-marble .pg-marble-toggles .mm-setting-toggle{
+  flex:1 1 170px;min-width:0;display:flex;align-items:center;justify-content:space-between;
+  gap:8px;padding:11px 12px;border-radius:12px;
+  background:#fff9fc;border:1px solid #f0e0e7;color:#6f6173;
+  font-size:11px;font-weight:800
+}
+.pg-marble .pg-marble-toggles .mm-setting-toggle span:first-child{white-space:normal}
+.pg-marble .pg-marble-join{
+  margin-top:14px;padding:15px 17px;border:1px solid #efe0e7;
+  background:#fffafc;border-radius:15px;display:flex;align-items:center;
+  gap:12px;flex-wrap:wrap
+}
+.pg-marble .pg-marble-join>div{display:flex;flex-direction:column;gap:4px;margin-right:auto}
+.pg-marble .pg-marble-join strong{font-size:13px;color:#735b71}
+.pg-marble .pg-marble-join small{font-size:11px;color:#a18f9c}
+.pg-marble .pg-marble-join .mm-input{width:160px;max-width:100%;min-height:42px;text-transform:uppercase}
+.pg-marble .pg-marble-join button{
+  border:1px solid #f0c4d3;border-radius:12px;background:#fff1f5;color:#b15d7b;
+  padding:11px 16px;font-weight:900;font-size:12px
+}
+.pg-marble .pg-marble-join button:hover{background:#ffe5ee}
+@media(max-width:700px){
+ .mm-app:has(>.pg-page){padding:0 0 35px}
+ .pg-marble .pg-marble-join{align-items:stretch}
+ .pg-marble .pg-marble-join>div{width:100%}
+ .pg-marble .pg-marble-join .mm-input{flex:1;min-width:0}
+ .pg-marble .pg-marble-toggles .mm-setting-toggle{flex-basis:120px}
+}
