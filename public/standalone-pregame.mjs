@@ -1,6 +1,6 @@
 // Standalone pre-game pages for Tetris, Nonogram and the 13 Arcade minigames.
 // The overlay is a separate pre-game route phase; it calls the original game engines on Start.
-import {renderPregame} from './pregame-lobbies.mjs?v=20261120pg1';
+import {renderPregame} from './pregame-lobbies.mjs?v=20261120catlevels1';
 const arcadeModes=[
  ['drill','낙하대작전'],['hurdle','폴짝도로'],['cloud','구름사다리'],
  ['flight','로켓고양이'],['shooter','별뿅대전'],['swim','바다냥냥'],
