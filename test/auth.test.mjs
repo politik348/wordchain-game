@@ -9,7 +9,7 @@ import path from 'node:path';
 const dir=await mkdtemp(path.join(tmpdir(),'moyeo-auth-test-'));
 process.env.MOYEO_ADMIN_KEY='0123456789abcdefghijklmnopqrstuvwxyz-TEST-ONLY-0123456789';
 process.env.AUTH_STORE_PATH=path.join(dir,'auth.json');
-const {handleAccountRequest,requireAuthenticatedAccount}=await import('../auth.mjs');
+const {handleAccountRequest,requireAuthenticatedAccount,multiplayerAccount}=await import('../auth.mjs');
 const server=http.createServer(async(req,res)=>{
  const route=new URL(req.url,'http://localhost').pathname;
  const handled=await handleAccountRequest(req,res,route);
@@ -58,6 +58,14 @@ test('admin-issued 4-digit codes are nickname-bound and spent once',async()=>{
  const cookie=login.cookie.split(';')[0];
  const whoami=await fetch(base+'/api/auth/me',{headers:{Cookie:cookie}});
  assert.equal((await whoami.json()).account.username,'tester123');
+ const wasProduction=process.env.NODE_ENV;process.env.NODE_ENV='production';
+ try{
+  const accountRequest={headers:{cookie}};
+  await assert.rejects(multiplayerAccount(accountRequest,'forged-participant'),e=>e.status===403);
+  const checked=await multiplayerAccount(accountRequest,register.data.account.id);
+  assert.equal(checked.dripNickname,'테스터');
+ }finally{process.env.NODE_ENV=wasProduction;}
+
  const logout=await post('/api/auth/logout',{},null,cookie);
  assert.equal(logout.status,200);
  const whoamiAfter=await fetch(base+'/api/auth/me',{headers:{Cookie:cookie}});
