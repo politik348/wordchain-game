@@ -154,6 +154,17 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
   box-shadow:0 10px 24px #b9552a1b;
 }
 .game-card.cat-feature-card.cat-feature-image-card::before{content:none}
+/* The supplied PNG was cropped before its bottom/right illustrated border.
+   Complete those two edges without covering the artwork or its CTA. */
+.game-card.cat-feature-card.cat-feature-image-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-right:2px solid #ef604b;
+  border-bottom:2px solid #ef604b;
+  border-radius:23px;
+  pointer-events:none;
+}
 .cat-feature-image-card .cat-feature-image{
   position:absolute;
   inset:0;
