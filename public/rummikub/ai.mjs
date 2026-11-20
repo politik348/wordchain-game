@@ -43,13 +43,13 @@ const effort = (ids) => ids.length*240 + ids.reduce((sum,id)=>{
 },0);
 
 /** Bounded beam search favors the most rack tiles played; no hidden information. */
-function bestOwnMelds(hand,{opened=false,limit=280}={}) {
+function bestOwnMelds(hand,{opened=false,limit=280,beamWidth=80,maxGroups=6}={}) {
   const candidates=enumerateMelds(hand).sort((a,b)=>effort(b.ids)-effort(a.ids)).slice(0,limit);
   const indexed=new Map(hand.map((id,i)=>[id,BigInt(i)]));
   const a=candidates.map(c=>({ ...c, mask:c.ids.reduce((m,id)=>m|(1n<<indexed.get(id)),0n)}));
   let beam=[{groups:[],used:0n,score:0,points:0}];let best=null;
   const evaluate=(s)=>{if(s.groups.length && (opened||s.points>=30) && (!best||s.score>best.score))best=s;};
-  for(let depth=0;depth<Math.min(6,Math.floor(hand.length/3));depth++){
+  for(let depth=0;depth<Math.min(maxGroups,Math.floor(hand.length/3));depth++){
     const next=[];const seen=new Set();
     for(const state of beam){
       for(const c of a){
@@ -61,18 +61,25 @@ function bestOwnMelds(hand,{opened=false,limit=280}={}) {
       }
     }
     if(!next.length)break;
-    beam=next.sort((x,y)=>y.score-x.score).slice(0,80);
+    beam=next.sort((x,y)=>y.score-x.score).slice(0,beamWidth);
   }
   return best?{groups:best.groups,score:best.score,ids:best.groups.flat()}:null;
 }
 
 /** Search additions to existing melds, then independently pack remaining rack tiles. */
-export function chooseCatMove(state,catId,{maxExtensions=70}={}){
+export function chooseCatMove(state,catId,{maxExtensions,difficulty='beginner'}={}){
+  const profiles={
+   beginner:{ownLimit:280,beamWidth:80,maxGroups:6,extensions:70,pairLimit:32},
+   intermediate:{ownLimit:440,beamWidth:140,maxGroups:7,extensions:135,pairLimit:44},
+   advanced:{ownLimit:760,beamWidth:240,maxGroups:8,extensions:240,pairLimit:60}
+  };
+  const profile=profiles[difficulty]||profiles.beginner;
+  maxExtensions=maxExtensions??profile.extensions;
   const hand=state.hands[catId];if(!hand?.length)return null;
   let best=null;
   const consider=(groups,used)=>{
     const remaining=hand.filter(id=>!used.has(id));
-    const own=bestOwnMelds(remaining,{opened:true,limit:140});
+    const own=bestOwnMelds(remaining,{opened:true,limit:profile.ownLimit,beamWidth:profile.beamWidth,maxGroups:profile.maxGroups});
     const proposalGroups=groups.concat(own?.groups||[]);
     const allUsed=[...used,...(own?.ids||[])];
     if(!allUsed.length)return;
@@ -80,7 +87,7 @@ export function chooseCatMove(state,catId,{maxExtensions=70}={}){
     if(!best||score>best.score)best={groups:proposalGroups,score,used:allUsed.length};
   };
   if(!state.opened[catId]){
-    const own=bestOwnMelds(hand,{opened:false});
+    const own=bestOwnMelds(hand,{opened:false,limit:profile.ownLimit,beamWidth:profile.beamWidth,maxGroups:profile.maxGroups});
     return own?{groups:state.table.map(g=>[...g]).concat(own.groups),used:own.ids.length,score:own.score}:null;
   }
   consider(state.table.map(g=>[...g]),new Set());
@@ -101,7 +108,7 @@ export function chooseCatMove(state,catId,{maxExtensions=70}={}){
     consider(groups,new Set(ext.ids));
   }
   // Pair of extensions to different groups; look ahead to the possible follow-up melds.
-  for(let i=0;i<Math.min(32,extensions.length);i++)for(let j=i+1;j<Math.min(32,extensions.length);j++){
+  for(let i=0;i<Math.min(profile.pairLimit,extensions.length);i++)for(let j=i+1;j<Math.min(profile.pairLimit,extensions.length);j++){
     const a=extensions[i],b=extensions[j];if(a.gi===b.gi||a.ids[0]===b.ids[0])continue;
     const groups=state.table.map(g=>[...g]);groups[a.gi]=a.newGroup;groups[b.gi]=b.newGroup;
     consider(groups,new Set([a.ids[0],b.ids[0]]));
