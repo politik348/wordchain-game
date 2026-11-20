@@ -136,3 +136,19 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
 .cat-setup-actions .button:first-child{flex:1}
 @media(max-width:790px){.game-card.cat-feature-card{min-height:280px;grid-column:span 2}.cat-feature-graphic{font-size:125px}.cat-hub-hero{gap:20px}.cat-choice-grid{grid-template-columns:1fr}}
 @media(max-width:520px){.game-card.cat-feature-card{grid-column:span 2;min-height:230px;padding:20px 15px;gap:2px}.cat-feature-graphic{font-size:88px}.cat-feature-text{max-width:68%;gap:10px}.cat-feature-text>strong{font-size:25px}.cat-feature-text>span:not(.cat-feature-kicker):not(.cat-feature-go){font-size:10px}.cat-feature-go{font-size:11px;padding:10px 12px}.cat-hub-hero,.cat-setup-banner{padding:22px 16px;gap:14px;min-height:160px}.cat-hub-mascot{font-size:75px}.cat-setup-icon{font-size:53px}.cat-hub-hero h1,.cat-setup-banner h1{font-size:25px}.cat-hub-hero p,.cat-setup-banner p{font-size:12px}.cat-choice-card{padding:14px;min-height:104px}.cat-choice-icon{width:52px;height:52px;font-size:33px}.cat-choice-copy strong{font-size:16px}.cat-choice-copy small{font-size:11px}.cat-setup-panel{padding:14px}.cat-setup-actions .button{width:100%}}
+
+/* Illustrated cat challenge entry (button artwork includes all visible lettering). */
+.game-card.cat-feature-card.cat-feature-image-card{
+  display:block;
+  min-height:0;
+  padding:0;
+  gap:0;
+  aspect-ratio:775 / 470;
+  border:0;
+  border-radius:23px;
+  background:transparent;
+  overflow:hidden;
+  box-shadow:0 10px 24px #b9552a1b;
+}
+.game-card.cat-feature-card.cat-feature-image-card::before{content:none}
+.cat-feature-image-card .cat-feature-image{display:block;width:100%;height:100%;object-fit:fill}

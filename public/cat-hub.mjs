@@ -13,12 +13,10 @@ const escapeHtml = text => String(text ?? '').replace(/[&<>"']/g, char => ({
 }[char]));
 
 export function renderCatFeatured() {
-  return '<button type="button" class="game-card cat-feature-card" data-action="openCatHub" aria-label="고양이를 이겨라 모드로 이동">'+
-    '<span class="cat-feature-graphic" aria-hidden="true">🐱</span>'+
-    '<span class="cat-feature-text"><span class="cat-feature-kicker">SOLO CHALLENGE · 6 GAMES</span>'+
-    '<strong>고양이를 이겨라!</strong>'+
-    '<span>오목 · 윷놀이 · 루미큐브 · 모여마블 · 테트리스 · 끝말잇기</span>'+
-    '<span class="cat-feature-go">고양이와 승부하기 →</span></span></button>';
+  // The full illustration includes the title and CTA; the whole card stays clickable.
+  return '<button type="button" class="game-card cat-feature-card cat-feature-image-card" data-action="openCatHub" aria-label="고양이를 이겨라! 고양이와 승부하기">' +
+    '<img class="cat-feature-image" src="/assets/cat-feature-banner.png" alt="고양이를 이겨라! SOLO CHALLENGE · 6 GAMES. 고양이와 승부하기" width="775" height="470" loading="eager" decoding="async" />' +
+    '</button>';
 }
 
 export function renderCatHub(games) {
