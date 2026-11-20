@@ -1,4 +1,4 @@
-import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,propertyValue,countMonopolies,winnerRanking} from './engine.mjs';
+import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,propertyValue,countMonopolies,winnerRanking} from './engine.mjs?v=20261120marble2';
 const root=document.querySelector('#mmApp');
 const toastZone=document.querySelector('#mmToast');
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

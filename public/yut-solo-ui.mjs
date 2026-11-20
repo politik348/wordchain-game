@@ -1,4 +1,4 @@
-import {renderYutBoard,renderYutThrow,renderYutRouteChooser} from './yut-board.mjs';
+import {renderYutBoard,renderYutThrow,renderYutRouteChooser} from './yut-board.mjs?v=20261120yut2';
 // The solo and online modes use the same clickable SVG board + wooden throw UI.
 export function renderSoloYut(s,helpers={}){
  const {timeBar=()=>'',esc=String,rolling=false,selected=null}=helpers;

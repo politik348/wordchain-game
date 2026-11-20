@@ -1,4 +1,4 @@
-import {YUT_ROUTES, YUT_NAMES, legalYutMoves, yutDestination} from './yut-solo-engine.mjs';
+import {YUT_ROUTES, YUT_NAMES, legalYutMoves, yutDestination} from './yut-solo-engine.mjs?v=20261120yut2';
 
 // Matches the historic 525x525 drawing coordinate system used by 모여게임즈.
 export const YUT_COORDS={

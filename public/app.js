@@ -1,9 +1,9 @@
 import {TURN_SECONDS, dictionaryIndex, replies as chainReplies, validReply, turnsLabel} from './chain-utils.mjs';
-import {configureRummikubUI, renderRummikubGame} from './rummikub/ui.mjs';
+import {configureRummikubUI, renderRummikubGame} from './rummikub/ui.mjs?v=20261120rk2';
 import {createSoloRummikub, soloRoom, soloPlayRummikub, soloTickRummikub, catPlayRummikub} from './rummikub/solo.mjs';
-import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove} from './yut-solo-engine.mjs';
-import {renderSoloYut} from './yut-solo-ui.mjs';
-import {renderYutBoard,renderYutThrow,renderYutRouteChooser} from './yut-board.mjs';
+import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove} from './yut-solo-engine.mjs?v=20261120yut2';
+import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut2';
+import {renderYutBoard,renderYutThrow,renderYutRouteChooser} from './yut-board.mjs?v=20261120yut2';
 import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs';
 const GAMES=[
  {id:'rummikub',name:'루미큐브',genre:'두뇌 · 숫자타일',players:'2~4명',emoji:'🀄',color:'#e4f5e9',badge:'친구 대전',desc:'숫자 타일을 조합하고 재배열하는 전략 게임. 친구들과 대결!',rules:[['최초 등록','내 타일만으로 30점 이상의 유효한 조합을 만듭니다.'],['묶음과 연속','같은 숫자 다른 색 3~4개, 같은 색 연속 숫자 3개 이상을 만듭니다.'],['재배열','최초 등록 이후 테이블의 모든 타일을 합법적으로 재배열할 수 있습니다.']]},
