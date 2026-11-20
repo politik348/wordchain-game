@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {YUT_ROUTES, freshYutPieces, legalYutMoves, applyYutMove, moveOwnYutPieces, yutDestination, chooseCatYutMove} from '../public/yut-solo-engine.mjs';
-import {YUT_COORDS,renderYutBoard,renderYutThrow,renderYutRouteChooser,throwFaces} from '../public/yut-board.mjs';
+import {YUT_ROUTES, freshYutPieces, legalYutMoves, applyYutMove, moveOwnYutPieces, yutDestination, chooseCatYutMove, yutSelectedSteps, usableYutRolls, yutTravelNodes} from '../public/yut-solo-engine.mjs';
+import {YUT_COORDS,renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats,throwFaces} from '../public/yut-board.mjs';
 import {renderSoloYut} from '../public/yut-solo-ui.mjs';
 const placed=(node,route,index)=>({node,route,index,done:false});
 
@@ -62,7 +62,7 @@ test('AI values the short exit from the center',()=>{
 });
 test('board HTML contains missing diagonal and clickable reserve + occupied pieces',()=>{
  const p=freshYutPieces();p[0]=placed(23,'left',8);
- const html=renderYutBoard({pieces:{player:p,ai:freshYutPieces()},me:'player',turn:'player',pending:1,action:'soloYutPick',selected:0});
+ const html=renderYutBoard({pieces:{player:p,ai:freshYutPieces()},me:'player',turn:'player',steps:1,action:'soloYutPick',selected:0});
  assert.match(html,/L318 318/);assert.match(html,/L408 408/);
  assert.match(html,/data-action="soloYutPick" data-index="0"/);
  assert.match(html,/yut-target/);assert.match(html,/내 말 4개/);
@@ -76,13 +76,46 @@ test('four-stick throw visual gives correct roll badge and backdo',()=>{
  assert.deepEqual(throwFaces(4),[1,1,1,1]);
 });
 test('solo mode still renders throw button and both teams',()=>{
- const s={pieces:{player:freshYutPieces(),ai:freshYutPieces()},turn:'player',pending:null,finished:false,history:[],msg:'준비!'};
+ const s={pieces:{player:freshYutPieces(),ai:freshYutPieces()},turn:'player',pending:null,phase:'throw',rolls:[],throwsRemaining:1,finished:false,history:[],msg:'준비!'};
  const html=renderSoloYut(s);
  assert.match(html,/soloYutRoll/);assert.match(html,/고양이/);assert.match(html,/yut-liveboard/);
 });
 test('selected branch has two explicit route choices',()=>{
  const mine=freshYutPieces();mine[0]=placed(23,'left',8);
  const html=renderYutRouteChooser(mine,1,0,'yutRoute');
- assert.match(html,/지름길로 가기/);assert.match(html,/바깥길로 가기/);
+ assert.match(html,/지름길/);assert.match(html,/바깥길/);
  assert.match(html,/data-shortcut="0"/);assert.match(html,/data-shortcut="1"/);
+});
+
+test('윷과 개를 합쳐 6칸을 이동하고 남은 윷 결과는 개별 선택 가능',()=>{
+ const rolls=[4,2,1];
+ assert.equal(yutSelectedSteps(rolls,[0,1]),6);
+ assert.equal(yutSelectedSteps(rolls,[1,2]),3);
+ const mine=freshYutPieces();
+ const moved=applyYutMove(mine,freshYutPieces(),0,6);
+ assert.equal(moved.mine[0].node,6);
+ assert.ok(legalYutMoves(mine,6).length>0);
+});
+test('빽도는 단독 사용이며 윷 이후 출발한 말에서 사용 가능',()=>{
+ assert.throws(()=>yutSelectedSteps([4,-1],[0,1]));
+ assert.deepEqual(usableYutRolls(freshYutPieces(),[4,-1]),[4,-1]);
+ const first=applyYutMove(freshYutPieces(),[],0,4);
+ assert.ok(legalYutMoves(first.mine,-1).length>0);
+ assert.equal(usableYutRolls(first.mine,[-1]).length,1);
+});
+test('말 이동은 경로 미리보기와 명시적 확정 버튼을 제공',()=>{
+ const p=freshYutPieces();
+ const board=renderYutBoard({pieces:{player:p,ai:freshYutPieces()},me:'player',turn:'player',steps:6,selected:0});
+ assert.match(board,/yut-preview-path/);
+ assert.match(board,/yut-target/);
+ const picker=renderYutRouteChooser(p,6,0,'soloYutRoute');
+ assert.match(picker,/이동 확정/);
+ assert.deepEqual(yutTravelNodes(p[0],6,true),[0,1,2,3,4,5,6]);
+});
+test('상대 말 현황과 누적 던지기 결과가 표시된다',()=>{
+ const p=freshYutPieces();
+ const score=renderYutPieceStats({player:p,ai:p},{player:'나',ai:'고양이'},'player');
+ assert.match(score,/고양이/);assert.match(score,/대기/);assert.match(score,/완주/);
+ const tray=renderYutRollTray({rolls:[4,2],phase:'move',chosen:[0,1],myTurn:true});
+ assert.match(tray,/선택: 6칸/);assert.match(tray,/yutRollChoice/);
 });
