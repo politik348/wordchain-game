@@ -70,7 +70,7 @@ test('no secret-bearing data from chat becomes HTML in the waiting room',()=>{
 
 test('main game modes, option saving, start dispatch and lobby chat all use real wiring',()=>{
  const app=read('public/app.js'),server=read('server.js'),index=read('public/index.html');
- assert.match(app,/catGames=new Set\(\['omok','yut','wordchain','rummikub'\]\)/);
+ assert.match(app,/catGamesSupported=new Set\(\['omok','yut','wordchain','rummikub'\]\)/);
  assert.match(app,/return catOnly\?\['cat'\]:catGames\.has\(game\)\?\['online','cat'\]:\['online'\]/);
  assert.match(app,/persistPregamePrefs/);
  assert.match(app,/b\.dataset\.action==='lobbyStart'/);
@@ -88,7 +88,7 @@ test('standalone pregame starts real engines with selections, and retains Marble
  const logic=read('public/logic/index.html');
  const gamehell=read('public/gamehell/index.html');
  const marble=read('public/marble/app.mjs');
- assert.match(standalone,/MOYEO_TETRIS_START\(\{mode:cat\?'versus':'solo',difficulty:values\.difficulty\}\)/);
+ assert.match(standalone,/MOYEO_TETRIS_START\(\{mode:cat\?'versus':'solo',difficulty:values\.difficulty,aiDifficulty:values\.aiDifficulty/);
  assert.match(standalone,/size\.dispatchEvent\(new Event\('change'/);
  assert.match(standalone,/choice\.click\(\);duration\.click\(\)/);
  assert.match(standalone,/arcadeModes=\[/);
