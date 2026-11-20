@@ -583,7 +583,9 @@ function soloYutNext(turn,message){
  solo.turn=turn;solo.pending=null;solo.rolls=[];solo.phase='throw';solo.throwsRemaining=1;solo.rollName=null;
  solo.deadline=Date.now()+solo.timeSeconds*1000;
  solo.msg=message||(turn==='player'?'당신 차례입니다. 윷을 던지세요.':'고양이가 생각하고 있어요.');
- yutRollSelection=null;yutRouteChoice=null;render();
+ yutRollSelection=null;yutRouteChoice=null;
+ if(yutRolling?.scope==='cat')yutRolling=null;
+ render();
  if(turn==='ai')soloYutAiTurn();
 }
 function soloYutRoll(){
@@ -632,26 +634,48 @@ function soloYutApply(side,index,shortcut=true,rollIndices=[0]){
  }else if(solo.rolls.length){
   solo.phase='move';solo.msg=message+' 남은 윷 결과로 더 이동하세요.';
   render();if(side==='ai')soloYutAiTurn();
- }else soloYutNext(side==='player'?'ai':'player',message);
+ }else if(side==='ai'){
+  solo.msg=message+' · 잠시 후 당신 차례입니다.';
+  render();
+  const current=solo;
+  setTimeout(()=>{
+   if(solo===current&&!current.finished&&current.turn==='ai'&&!current.rolls.length)soloYutNext('player',message);
+  },1150);
+ }else soloYutNext('ai',message);
 }
-function soloYutAiTurn(){
+function soloYutAiTurn(delay=750){
  const current=solo;
  if(!current||current.game!=='yut'||current.turn!=='ai'||current.finished)return;
  setTimeout(()=>{
   if(solo!==current||current.turn!=='ai'||current.finished)return;
   if(current.phase==='throw'){
-   const roll=rollYut(Math.random,true);
-   current.rolls.push(roll);current.lastRoll=roll;current.rollName=YUT_NAMES[roll];
-   current.throwsRemaining--;if(roll===4||roll===5)current.throwsRemaining++;
-   if(current.rolls.length>=24)current.throwsRemaining=0;
-   current.history.push('🐱 고양이: '+current.rollName+' 던짐');current.history=current.history.slice(-8);
-   current.msg='🐱 고양이가 윷을 던지고 있어요. '+current.rollName+'!';
-   if(current.throwsRemaining===0){
-    current.rolls=usableYutRolls(current.pieces.ai,current.rolls);
-    if(!current.rolls.length){soloYutNext('player','고양이가 움직일 수 없어 당신 차례입니다!');return;}
-    current.phase='move';
-   }
-   render();soloYutAiTurn();return;
+   // Show wind-up + airborne sticks before revealing each cat result.
+   current.msg='🐱 고양이가 윷을 흔들어 던집니다...';
+   yutRolling={scope:'cat',power:62};
+   render();
+   setTimeout(()=>{
+    if(solo!==current||current.turn!=='ai'||current.finished||current.phase!=='throw')return;
+    yutRolling=null;
+    const roll=rollYut(Math.random,true);
+    current.rolls.push(roll);current.lastRoll=roll;current.rollName=YUT_NAMES[roll];
+    current.throwsRemaining--;if(roll===4||roll===5)current.throwsRemaining++;
+    if(current.rolls.length>=24)current.throwsRemaining=0;
+    current.history.push('🐱 고양이: '+current.rollName+' 던짐');current.history=current.history.slice(-8);
+    current.msg='🐱 고양이의 결과: '+current.rollName+'!'+(current.throwsRemaining>0?' 추가로 한 번 더 던집니다.':' 이제 이동할 말을 고릅니다.');
+    if(current.throwsRemaining===0){
+     current.rolls=usableYutRolls(current.pieces.ai,current.rolls);
+     if(!current.rolls.length){
+      current.msg='🐱 고양이: '+current.rollName+'! 움직일 말이 없어 다음 차례로 넘어갑니다.';
+      render();
+      setTimeout(()=>{if(solo===current&&!current.finished&&current.turn==='ai')soloYutNext('player','고양이가 움직일 수 없어 당신 차례입니다!');},1400);
+      return;
+     }
+     current.phase='move';
+    }
+    render();
+    soloYutAiTurn(1450); // Let players read the actual Yut result.
+   },850);
+   return;
   }
   if(current.phase!=='move'||!current.rolls.length){soloYutNext('player','당신 차례입니다!');return;}
   const rolls=current.rolls,mine=current.pieces.ai,enemy=current.pieces.player;
@@ -669,13 +693,16 @@ function soloYutAiTurn(){
    if(score>bestScore){bestScore=score;best={indices,move};}
   }
   if(best){
-   current.msg='🐱 고양이가 이동 중입니다.';
+   const label=best.indices.map(i=>YUT_NAMES[rolls[i]]).join('+');
+   current.msg='🐱 고양이: '+label+' · '+(best.move.index+1)+'번 말을 움직이겠습니다.';
    render();
-   setTimeout(()=>{if(solo===current&&current.turn==='ai'&&!current.finished&&current.phase==='move')soloYutApply('ai',best.move.index,best.move.shortcut,best.indices);},340);
+   setTimeout(()=>{
+    if(solo===current&&current.turn==='ai'&&!current.finished&&current.phase==='move')soloYutApply('ai',best.move.index,best.move.shortcut,best.indices);
+   },950);
   }else{
    current.rolls=[];soloYutNext('player','고양이가 이동할 말을 찾지 못했어요. 당신 차례!');
   }
- },430);
+ },delay);
 }
 function updateTick(){
  if(view==='solo'&&solo?.game==='rummikub'&&solo.engine.turn==='player'&&!solo.finished&&Date.now()>solo.engine.deadline){
