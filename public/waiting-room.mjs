@@ -1,4 +1,4 @@
-import {renderPregameArt,PRE_GAME_THEMES} from './pregame-lobbies.mjs?v=20261120pg2';
+import {renderPregameArt,PRE_GAME_THEMES} from './pregame-lobbies.mjs?v=20261120catlevels1';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const avatars=['rabbit.svg','cat.svg','bear.svg','fox.svg'];
 const maxPlayers={mafia:12,omok:2,yut:4,doodle:8,bell:4,liar:8,wordchain:10,rummikub:4};
