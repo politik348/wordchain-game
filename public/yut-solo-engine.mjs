@@ -110,7 +110,7 @@ function threatened(enemy,node){
  }
  return false;
 }
-export function chooseCatYutMove(mine,enemy,steps,random=Math.random){
+export function chooseCatYutMove(mine,enemy,steps,random=Math.random,{difficulty='beginner'}={}){
  let best=null,top=-Infinity;
  for(const move of legalYutMoves(mine,steps)){
   const result=applyYutMove(mine,enemy,move.index,steps,move.shortcut);
@@ -118,8 +118,24 @@ export function chooseCatYutMove(mine,enemy,steps,random=Math.random){
   const progress=stepsRemaining(p)-stepsRemaining(result.mine[move.index]);
   const stack=result.mine.some((q,i)=>i!==move.index&&!q.done&&q.node!==0&&q.node===result.to);
   let score=progress*5+result.caught*70+(result.done?68*result.moving:0)+(stack?10:0)+(result.won?10000:0);
-  if(!result.done&&threatened(result.enemy,result.to))score-=15*result.moving;
-  score+=random()*1.5;
+  const inDanger=!result.done&&threatened(result.enemy,result.to);
+  if(inDanger)score-=15*result.moving;
+  if(difficulty==='intermediate'){
+   // More decisive captures, quicker finishes and a safer position.
+   score+=result.caught*50+(result.done?40*result.moving:0)+progress*3;
+   if(inDanger)score-=25*result.moving;
+   if(result.won)score+=10000;
+  }else if(difficulty==='advanced'){
+   // Tactical tier: protect stacked pieces, prevent easy recaptures, value
+   // shortcut position and keep opponent pieces in reserve when possible.
+   score+=result.caught*125+(result.done?105*result.moving:0)+progress*6;
+   if(inDanger)score-=75*result.moving;
+   if(stack)score+=20;
+   if(result.won)score+=25000;
+   const opponentProgress=result.enemy.reduce((total,p)=>total+stepsRemaining(p),0);
+   score+=opponentProgress*0.35;
+  }
+  score+=random()*(difficulty==='advanced'?0.15:difficulty==='intermediate'?0.65:1.5);
   if(score>top){top=score;best=move;}
  }
  return best;
