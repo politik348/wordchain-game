@@ -7,10 +7,10 @@ const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const home=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
 const marble=readFileSync(new URL('../public/marble/app.mjs',import.meta.url),'utf8');
 const arcade=readFileSync(new URL('../public/gamehell/index.html',import.meta.url),'utf8');
-test('Game Hell is a standalone tenth home game and Cat Challenge stays first',()=>{
+test('Game Hell remains a standalone home game and Cat Challenge stays first',()=>{
  assert.match(app,/id:'gamehell'/);
- assert.match(app,/10 GAMES/);
- assert.match(app,/10가지 게임/);
+ assert.ok(app.includes('${GAMES.length} GAMES'));
+ assert.ok(app.includes('${GAMES.length}가지 게임'));
  assert.ok(app.includes('/gamehell/index.html'));
  assert.ok(app.indexOf('renderCatFeatured()}')<app.indexOf('GAMES.map(card)'));
  assert.match(home,/모여게임즈/);
@@ -30,7 +30,7 @@ test('New independent arcade assets are served by existing static handler',async
  await once(server,'listening');
  try{
   const base='http://127.0.0.1:'+server.address().port;
-  for(const path of ['/gamehell/index.html','/gamehell/gamehell.css','/gamehell/gamehell.js','/marble/index.html']){
+  for(const path of ['/gamehell/index.html','/gamehell/gamehell.css','/gamehell/gamehell.js','/gamehell/characters.js','/marble/index.html','/tetris/index.html','/logic/index.html']){
    const response=await fetch(base+path);
    assert.equal(response.status,200,path);
    assert.ok((await response.text()).length>300,path);

@@ -1,0 +1,1 @@
+이 폴더에 나중에 캐릭터 이미지를 추가하세요. characters.js에서 해당 캐릭터의 image를 예: "./assets/characters/royal.png"로 바꿉니다. 투명 배경 PNG 또는 WebP 권장, 정사각형 권장. 파일명은 영문/숫자 권장.
