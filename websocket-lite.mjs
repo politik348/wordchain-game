@@ -18,7 +18,10 @@ export function acceptWebSocket(req,socket,head,{message,close=()=>{}}){
  function frame(opcode,payload=Buffer.alloc(0)){
   if(ended||socket.destroyed)return false;
   const bytes=Buffer.isBuffer(payload)?payload:Buffer.from(payload);
-  const hdr=bytes.length<126?Buffer.from([0x80|opcode,bytes.length]):Buffer.from([0x80|opcode,126,bytes.length>>8,bytes.length&255]);
+  let hdr;
+  if(bytes.length<126)hdr=Buffer.from([0x80|opcode,bytes.length]);
+  else if(bytes.length<=65535)hdr=Buffer.from([0x80|opcode,126,bytes.length>>8,bytes.length&255]);
+  else {hdr=Buffer.alloc(10);hdr[0]=0x80|opcode;hdr[1]=127;hdr.writeBigUInt64BE(BigInt(bytes.length),2);}
   if(socket.writableLength>1024*1024){terminate();return false;}
   socket.write(Buffer.concat([hdr,bytes]));return true;
  }
@@ -27,7 +30,8 @@ export function acceptWebSocket(req,socket,head,{message,close=()=>{}}){
  socket.on('data',chunk=>{
   if(ended)return;
   pending=Buffer.concat([pending,chunk]);
-  if(pending.length>MAX_FRAME*3){terminate(1009);return;}
+  // A single TCP read may legitimately contain many small masked frames.
+  // Enforce each frame's size below, not the concatenated read size.
   while(pending.length>=2){
    const op=pending[0]&15,fin=Boolean(pending[0]&0x80),reserved=pending[0]&0x70,masked=Boolean(pending[1]&0x80);
    let len=pending[1]&0x7f,offset=2;

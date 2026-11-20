@@ -74,6 +74,22 @@ test('Doodle streams strokes and clears over WebSockets instead of POST',async()
   assert.equal((await state(a)).state.chat.at(-1).text,'이건 뭘까요?');
  }finally{artist.ws.close();viewer.ws.close();}
 });
+test('Doodle reconnect sync handles a snapshot larger than 64 KiB',async()=>{
+ const a=await make('doodle',2);
+ const artist=connectDoodle(a,0);
+ let viewer;
+ try{
+  await waitFor(()=>artist.messages.find(x=>x.type==='sync'));
+  const points=Array.from({length:105},(_,i)=>[i/105,(i%19)/19]);
+  for(let i=0;i<85;i++)artist.ws.send(JSON.stringify({type:'stroke',round:a.room.state.round,payload:{points,color:'#29283f',width:5}}));
+  await waitFor(()=>artist.messages.filter(x=>x.type==='stroke').length>=85,4000);
+  viewer=connectDoodle(a,1);
+  const sync=await waitFor(()=>viewer.messages.find(x=>x.type==='sync'),4000);
+  assert.equal(sync.strokes.length,85);
+  assert.equal(sync.seq,85);
+  assert.ok(Buffer.byteLength(JSON.stringify(sync))>65535,'snapshot should exercise 64-bit payload length');
+ }finally{artist.ws.close();viewer?.ws.close();}
+});
 test('Liar game keeps word hidden from liar, accepts clues, voting and final guess',async()=>{
  const a=await make('liar',3);const views=await Promise.all(a.players.map((_,i)=>state(a,i)));
  const liarIndex=views.findIndex(v=>v.state.isLiar);assert.ok(liarIndex>=0);assert.equal(views[liarIndex].state.myWord,null);
