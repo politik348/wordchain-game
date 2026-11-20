@@ -1,5 +1,6 @@
 import {TURN_SECONDS, dictionaryIndex, replies as chainReplies, validReply, turnsLabel} from './chain-utils.mjs';
 import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove} from './yut-solo-engine.mjs';
+import {renderSoloYut} from './yut-solo-ui.mjs';
 const GAMES=[
  {id:'mafia',name:'가면단',genre:'마피아 · 심리전',players:'4~12명',emoji:'🎭',color:'#e8e0f7',badge:'인기 게임',desc:'낮에는 토론, 밤에는 비밀 임무! 가면 뒤의 마피아를 찾아내세요.',rules:[['낮과 밤','밤에는 직업별 능력을 사용하고, 낮에는 토론과 투표를 진행해요.'],['비밀 직업','마피아·의사·경찰·시민 역할을 비밀리에 배정받아요.'],['승리 조건','마피아를 모두 찾아내면 시민 승리, 마피아 수가 시민 이상이면 마피아 승리.']]},
  {id:'omok',name:'오목',genre:'두뇌 · 보드',players:'2명',emoji:'⚫',color:'#f4dfb8',badge:'1:1 대결',desc:'15×15 바둑판 위에서 펼쳐지는 흑과 백의 전략 대결!',rules:[['돌 놓기','흑돌이 먼저 시작하고 번갈아 빈 교차점에 돌을 둡니다.'],['승리 조건','가로·세로·대각선으로 같은 색 돌 다섯 개를 이으면 승리합니다.'],['금수','흑돌의 직선 열린 쌍삼 금수를 간소화하여 검사합니다.']]},
@@ -355,6 +356,8 @@ function soloGame(){
  if(game==='wordchain'){
   const last=solo.history.at(-1);
   content=`<div class="game-topline"><span class="stage-badge">🐱 ${turnsLabel(solo.mode)} · 고양이를 이겨라</span>${!solo.finished?timeBar(solo.deadline,solo.timeSeconds):''}</div><div class="word-scoreboard"><div class="word-player ${solo.turn==='player'?'active':''}"><strong>🙂 ${esc(user.nick)}</strong>♥ ${solo.playerLives} · ${solo.score}점</div><div class="word-player ${solo.turn==='ai'?'active':''}"><strong>🐱 고양이</strong>♥ ${solo.aiLives}</div></div>${solo.oneShot?'<div class="one-shot-banner">⚡ 한방단어! 즉시 종료</div>':''}<div class="wordchain-word central"><span class="wordchain-caption">마지막으로 나온 단어</span><div class="last-word">${esc(last.slice(0,-1))}<span>${esc(last.at(-1))}</span></div><span class="next-letter">${esc(last.at(-1))}</span></div><p class="game-note">${esc(solo.msg)} · ${dictionaryLabel}</p><form data-form="soloWord" class="action-form"><input class="text-input" name="word" autocomplete="off" placeholder="${solo.mode==='kungkungtta'?'3글자 단어':'단어를 입력하세요'}" ${solo.turn!=='player'||solo.finished?'readonly':''} maxlength="${solo.mode==='kungkungtta'?3:24}" required/><button type="submit" class="button button-primary" ${solo.turn!=='player'||solo.finished?'disabled':''}>내기 →</button></form>${solo.helpWords?responseTips(solo.helpWords):''}<div class="word-tags">${solo.history.map(w=>`<span class="word-tag">${esc(w)}</span>`).join('')}</div>`;
+ }else if(game==='yut'){
+  content=renderSoloYut(solo,{coords:yutCoords,line,btn,timeBar,esc});
  }else{
   let cells='';for(let y=0;y<15;y++)for(let x=0;x<15;x++){const v=solo.board[y*15+x];const edge=`${y===0?'top':''} ${y===14?'bottom':''} ${x===0?'left':''} ${x===14?'right':''}`;cells+=`<button class="omok-cell ${edge}" data-action="soloPlace" data-x="${x}" data-y="${y}" ${v||solo.turn!=='player'||solo.finished?'disabled':''}>${v?`<span class="stone ${v}"></span>`:''}</button>`;}
   content=`<div class="game-topline"><span class="stage-badge">⚫ 나 vs ⚪ 🐱 고양이 · ${solo.stoneStyle==='crazy'?'미친 버전':'정상 버전'}</span><span class="time-badge">${solo.moves}수</span>${solo.turn==='player'&&!solo.finished?timeBar(solo.deadline,solo.timeSeconds):''}</div><div class="game-prompt"><strong>${esc(solo.msg)}</strong></div><div class="omok-wrapper"><div class="omok-board ${solo.stoneStyle==='crazy'?'crazy-board':''}">${cells}</div></div>`;
@@ -525,6 +528,9 @@ function updateTick(){
   }else if(solo.game==='omok'){
    solo.finished=true;solo.msg='한 수 제한시간 초과. 고양이 승리!';
    activeGomokuWorker?.terminate();activeGomokuWorker=null;
+  }else if(solo.game==='yut'){
+   soloYutNext('ai','시간 초과! 고양이 차례가 되었습니다.');
+   return;
   }
   render();
  }
@@ -569,6 +575,15 @@ document.addEventListener('click',async e=>{
  if(action==='soloReset'){soloStart(selection);return;}
  if(action==='backDetail'){view='detail';solo=null;await refreshRooms(selection);render();return;}
  if(action==='soloPlace'){soloPlace(Number(b.dataset.x),Number(b.dataset.y));return;}
+ if(action==='soloYutRoll'){soloYutRoll();return;}
+ if(action==='soloYutMove'){soloYutApply('player',Number(b.dataset.index),b.dataset.shortcut!=='0');return;}
+ if(b.hasAttribute('data-stone-style-choice')){
+   const style=b.dataset.stoneStyleChoice;if(style!=='normal'&&style!=='crazy')return;
+   if(b.hasAttribute('data-stone-style-room')){
+     if(room?.status==='lobby'&&amHost())await act('settings',{stoneStyle:style});
+   }else if(gamePrefs[selection]){gamePrefs[selection].stoneStyle=style;render();}
+   return;
+ }
 });
 document.addEventListener('change',async e=>{
  const p=e.target.closest?.('select[data-pref]');
