@@ -4,7 +4,7 @@ import {createSoloRummikub, soloRoom, soloPlayRummikub, soloTickRummikub, catPla
 import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove} from './yut-solo-engine.mjs?v=20261120yut2';
 import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut2';
 import {renderYutBoard,renderYutThrow,renderYutRouteChooser} from './yut-board.mjs?v=20261120yut2';
-import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs';
+import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261120hell2tetrislogic1';
 const GAMES=[
  {id:'gamehell',name:'모여게임지옥',genre:'아케이드 · 13종',players:'1명',emoji:'😼',color:'#e8dffd',badge:'캐릭터 상점',desc:'13가지 원터치 아케이드! 별조각을 모아 고양이 캐릭터를 사고 장착해 보세요.',rules:[['13종 게임','낙하·점프·로켓·얼음 등 13가지 원터치 게임을 선택합니다.'],['기록 도전','최고 점수와 별조각은 현재 브라우저에 저장됩니다.'],['고양이 목표','고정 목표 점수에 도전하는 모드이며 실시간 고양이 AI 대전은 아닙니다.']]},
  {id:'tetris',name:'모여 테트리스',genre:'퍼즐 · 블록',players:'1명',emoji:'🧩',color:'#f3e1c4',badge:'고전 퍼즐',desc:'클래식 테트리스! 블록을 회전·이동해 줄을 지우고 최고 점수에 도전해요.',rules:[['조작','방향키로 이동, 위쪽 방향키로 회전, 스페이스로 하드 드롭합니다.'],['점수','가로줄을 채우면 지워지며, 연속으로 지울수록 높은 점수를 얻습니다.'],['기록','최고 점수는 이 브라우저에 저장됩니다.']]},
