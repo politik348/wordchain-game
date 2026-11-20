@@ -8,7 +8,7 @@ async function request(route,payload){
  return data;
 }
 export function createMembershipUI({onAccountChanged,afterLogin}={}){
- let account=null,configured=false,invitesEnabled=false,regToken=null,tab='login',postLogin=null,adminMode=false;
+ let account=null,configured=false,invitesEnabled=false,regToken=null,tab='login',postLogin=null,adminMode=false,statusChecking=false,statusFailed=false;
  const node=document.createElement('dialog');node.id='membershipDialog';node.className='membership-dialog';
  node.innerHTML=`<div class="membership-shell"><button type="button" class="member-close" data-member="close" aria-label="닫기">×</button><header class="member-heading"><span class="member-cat">🐱</span><div><span class="member-kicker">MOYEO MEMBERS ONLY</span><h2 id="memberTitle">모여게임즈 로그인</h2><p id="memberDescription">고양이 대전은 자유롭게, 친구와의 온라인 대전은 회원 전용!</p></div></header><div id="memberContent"></div><p class="member-error" id="memberError" role="alert" hidden></p></div>`;
  document.body.append(node);
@@ -25,7 +25,11 @@ export function createMembershipUI({onAccountChanged,afterLogin}={}){
   }else{
    $('memberTitle').textContent=tab==='register'?'드립대학 인증 후 가입':'모여게임즈 로그인';
    $('memberDescription').textContent='친구들과 온라인으로 플레이하려면 운영자가 발급한 인증번호로 가입해야 합니다.';
-   const help=!configured?'<p class="member-warning">현재 계정 저장소가 준비되지 않았습니다. 운영자에게 문의하세요.</p>':!invitesEnabled?'<p class="member-warning">운영자 인증키 설정을 확인해주세요.</p>':'';
+   if(statusChecking){
+    $('memberContent').innerHTML=tabs()+'<p class="member-info">서버에서 회원가입 상태를 확인하고 있습니다...</p>';
+    return;
+   }
+   const help=statusFailed?'<p class="member-warning">서버 상태를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.</p>':!configured?'<p class="member-warning">회원 데이터베이스 연결 설정을 확인해주세요.</p>':!invitesEnabled?'<p class="member-warning">운영자 인증키 설정을 확인해주세요.</p>':'';
    if(tab==='login'){
     $('memberContent').innerHTML=tabs()+help+`<form id="memberLogin"><label>아이디<input name="username" type="text" minlength="4" maxlength="20" required autocomplete="username" autocapitalize="off"></label><label>비밀번호<input name="password" type="password" minlength="10" required autocomplete="current-password"></label><button class="member-primary" type="submit">로그인</button></form>`;
    }else if(regToken){
@@ -38,11 +42,24 @@ export function createMembershipUI({onAccountChanged,afterLogin}={}){
  function open(mode='login',callback=null){
   if(callback)postLogin=callback;
   if(!account){tab=mode;regToken=null;}
+  if(!account)statusChecking=true;
   content();if(!node.open)node.showModal();
+  if(!account)void refresh();
  }
  async function refresh(){
-  try{const response=await request('/api/auth/me');account=response.account||null;configured=Boolean(response.storageConfigured);invitesEnabled=Boolean(response.invitesEnabled);}
-  catch{account=null;configured=false;invitesEnabled=false;}
+  statusChecking=true;
+  try{
+   const response=await request('/api/auth/me');
+   account=response.account||null;
+   configured=Boolean(response.storageConfigured);
+   invitesEnabled=Boolean(response.invitesEnabled);
+   statusFailed=false;
+  }catch{
+   account=null;configured=false;invitesEnabled=false;statusFailed=true;
+  }finally{
+   statusChecking=false;
+   if(node.open)content();
+  }
   onAccountChanged?.(account);return account;
  }
  async function completed(person){
@@ -55,7 +72,12 @@ export function createMembershipUI({onAccountChanged,afterLogin}={}){
   const command=event.target.closest('[data-member]')?.dataset.member;
   if(command==='close'){close();return;}
   if(command==='tab-login'){tab='login';regToken=null;content();return;}
-  if(command==='tab-register'){tab='register';regToken=null;content();return;}
+  if(command==='tab-register'){
+   tab='register';regToken=null;
+   if(!configured||!invitesEnabled||statusFailed){statusChecking=true;content();void refresh();}
+   else content();
+   return;
+  }
   if(command==='reset-register'){regToken=null;content();return;}
   if(command==='logout'){
    try{await request('/api/auth/logout',{});account=null;onAccountChanged?.(null);content();}
