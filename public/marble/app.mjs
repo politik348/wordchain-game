@@ -9,7 +9,9 @@ const formatM=n=>Math.round(n).toLocaleString('ko-KR')+'M';
 const SID=sessionStorage.getItem('moyeo-sid')||crypto.randomUUID();
 sessionStorage.setItem('moyeo-sid',SID);
 let nick=localStorage.getItem('moyeo-nick')||'말랑감자';
-let mode='ai',rounds=12,people=2,seconds=30;
+const catChallenge=new URLSearchParams(location.search).get('cat')==='1';
+const backLink=document.getElementById('mmReturnLink');if(backLink)backLink.href=catChallenge?'/?cat=1':'/';
+let mode=catChallenge?'ai':'local',rounds=12,people=2,seconds=30;
 let localGame=null,onlineRoom=null,stream=null,inFlight=false,aiTimer=null,showResult=false;
 let lastDice=null,turnHint='';
 let clockOffset=0;
@@ -18,11 +20,9 @@ const getState=()=>onlineRoom?.state||localGame;
 function toast(message){const n=document.createElement('div');n.className='mm-toast';n.textContent=message;toastZone.append(n);setTimeout(()=>n.remove(),3300);}
 function button(action,text,kind='mm-primary',disabled=false){return `<button class="mm-btn ${kind}" data-action="${action}" ${disabled?'disabled':''}>${text}</button>`;}
 function renderLobby(){
- const modes=[
-  ['ai','🐱','고양이를 이겨라','생각보다 영리한 고양이와 1:1 두뇌 대결'],
-  ['online','🎮','친구와 온라인','다른 기기에서도 링크로 2~4인 접속'],
-  ['local','🎲','한 화면에서 함께','한 기기에서 돌아가며 2~4인 플레이']
- ];
+ const modes=catChallenge
+  ? [['ai','🐱','고양이를 이겨라','생각보다 영리한 고양이와 1:1 두뇌 대결']]
+  : [['online','🎮','친구와 온라인','다른 기기에서도 링크로 2~4인 접속'],['local','🎲','한 화면에서 함께','한 기기에서 돌아가며 2~4인 플레이']];
  root.innerHTML=`<section class="mm-lobby-hero"><span class="mm-eyebrow">MOYEO GAMES PRESENTS</span><h1>어서 와, <span>모여마블!</span></h1><p>세상을 돌며 도시를 사고, 랜드마크를 세우고,<br>친구의 통행료를 받아 보세요. 한 판은 짧고 전략은 진하게!</p><div class="mm-hero-cards"><span>🗺️ 24칸 압축 맵</span><span>⏱️ 8 · 12 · 16라운드</span><span>🏙️ 랜드마크 & 독점</span></div></section>
  <section class="mm-setup"><h2>어떤 대결을 할까요?</h2><p class="mm-setup-sub">로그인 필요 없이 바로 시작해요. 온라인 대결은 초대 코드로 친구가 들어올 수 있어요.</p>
  <div class="mm-mode-grid">${modes.map(([id,icon,title,description])=>`<button class="mm-mode ${id===mode?'selected':''}" data-mode="${id}" aria-pressed="${id===mode}"><span class="mm-mode-emoji">${icon}</span><strong>${title}</strong><small>${description}</small>${id===mode?'<span class="mm-selected-check">✓</span>':''}</button>`).join('')}</div>
@@ -114,7 +114,7 @@ async function leave(){
  if(onlineRoom){
   try{await post(`/api/marble/rooms/${onlineRoom.code}/leave`,{sid:SID});}catch{}
  }
- localGame=null;onlineRoom=null;lastDice=null;mode='ai';location.hash='';render();}
+ localGame=null;onlineRoom=null;lastDice=null;mode=catChallenge?'ai':'local';location.hash='';render();}
 async function copyInvite(){const url=`${location.origin}${location.pathname}#room=${onlineRoom?.code||''}`;
  try{await navigator.clipboard.writeText(url);toast('초대 링크가 복사되었습니다!');}catch{toast('초대 코드: '+(onlineRoom?.code||''));}}
 function updateClock(){const el=document.querySelector('[data-clock]');if(!el||!onlineRoom?.deadline)return;
@@ -124,7 +124,7 @@ function updateClock(){const el=document.querySelector('[data-clock]');if(!el||!
 }
 setInterval(updateClock,1000);
 root.addEventListener('click',async e=>{
- const modeBtn=e.target.closest('[data-mode]');if(modeBtn){persistNick();mode=modeBtn.dataset.mode;render();return;}
+ const modeBtn=e.target.closest('[data-mode]');if(modeBtn){if((catChallenge&&modeBtn.dataset.mode!=='ai')||(!catChallenge&&modeBtn.dataset.mode==='ai'))return;persistNick();mode=modeBtn.dataset.mode;render();return;}
  const land=e.target.closest('[data-land]');if(land){executeAction('travel',{index:Number(land.dataset.land)});return;}
  const action=e.target.closest('[data-action]')?.dataset.action;if(!action)return;
  switch(action){
