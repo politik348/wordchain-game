@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {YUT_ROUTES, freshYutPieces, legalYutMoves, applyYutMove, moveOwnYutPieces, yutDestination, chooseCatYutMove, yutSelectedSteps, usableYutRolls, yutTravelNodes} from '../public/yut-solo-engine.mjs';
 import {YUT_COORDS,renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats,throwFaces} from '../public/yut-board.mjs';
+import {chargePower} from '../public/yut-power.mjs';
 import {renderSoloYut} from '../public/yut-solo-ui.mjs';
 const placed=(node,route,index)=>({node,route,index,done:false});
 
@@ -118,4 +119,27 @@ test('상대 말 현황과 누적 던지기 결과가 표시된다',()=>{
  assert.match(score,/고양이/);assert.match(score,/대기/);assert.match(score,/완주/);
  const tray=renderYutRollTray({rolls:[4,2],phase:'move',chosen:[0,1],myTurn:true});
  assert.match(tray,/선택: 6칸/);assert.match(tray,/yutRollChoice/);
+});
+
+test('power charge increases, peaks and can be released at a chosen strength',()=>{
+ assert.equal(chargePower(0),0);
+ assert.equal(chargePower(800),50);
+ assert.equal(chargePower(1600),100);
+ assert.equal(chargePower(2400),50);
+ assert.equal(chargePower(3200),0);
+});
+test('Yut throw uses a touch-accessible hold button and visual power meter',()=>{
+ const html=renderYutThrow({roll:null,showAction:true,action:'soloYutRoll',power:74});
+ assert.match(html,/data-yut-hold="1"/);
+ assert.match(html,/yut-power-meter/);
+ assert.match(html,/꾹 눌렀다 놓기/);
+ assert.match(html,/--yut-power:74%/);
+ assert.match(html,/파워는 연출용/);
+});
+test('Yut cat roll UI announces the slower visible throw',()=>{
+ const s={pieces:{player:freshYutPieces(),ai:freshYutPieces()},turn:'ai',phase:'throw',rolls:[],lastRoll:2,finished:false,msg:'🐱 고양이가 윷을 흔들어 던집니다...',history:[]};
+ const html=renderSoloYut(s,{rolling:true,catThrowing:true,power:62});
+ assert.match(html,/고양이가 던지는 중/);
+ assert.match(html,/던지는 중…/);
+ assert.match(html,/is-rolling/);
 });
