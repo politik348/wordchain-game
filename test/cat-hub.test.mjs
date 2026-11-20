@@ -37,12 +37,14 @@ test('Cat setup supports existing room-independent game preferences',()=>{
  assert.match(app,/if\(action==='backCatHub'\)/);
 });
 
-test('Multiplayer details do not include a Cat Challenge button',()=>{
+test('Pre-game detail uses shared illustrated UI and exposes only supported play modes',()=>{
  const detailLine=app.split('\n').find(line=>line.startsWith('function detail(){'));
  assert.ok(detailLine);
- assert.doesNotMatch(detailLine,/btn\('solo'/);
- assert.match(detailLine,/createRoom/);
- assert.match(detailLine,/openJoin/);
+ assert.match(detailLine,/pregameFor\(selection,false\)/);
+ assert.match(app,/catGames=new Set\(\['omok','yut','wordchain','rummikub'\]\)/);
+ assert.match(app,/data-pg-setting/);
+ assert.match(app,/persistPregamePrefs/);
+ assert.match(app,/b\.dataset\.action==='lobbyStart'/);
 });
 
 test('Marble isolates Cat mode from friend modes and returns to the Cat hub',()=>{
