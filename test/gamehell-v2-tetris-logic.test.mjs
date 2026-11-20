@@ -36,7 +36,8 @@ test('Cat hub contains Tetris AI entry and regular Tetris stays solo',()=>{
  assert.match(tetris,/const catChallenge=new URLSearchParams\(location\.search\)\.get\('cat'\)==='1'/);
  assert.match(tetris,/\$\('versus'\)\.hidden=!catChallenge/);
  assert.match(tetris,/\$\('solo'\)\.hidden=catChallenge/);
- assert.match(tetris,/if\(catChallenge\)setMode\('versus'\)/);
+ assert.match(tetris,/window\.MOYEO_TETRIS_START=options=>/);
+ assert.match(tetris,/standalone-pregame\.mjs/);
  assert.match(tetris,/tetrisBackLink/);
  new Script(inline(tetris));
 });
