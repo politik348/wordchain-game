@@ -58,7 +58,7 @@ test('Game Hell v2.1 includes 8 collectible character sprites and preserves v1 r
  assert.match(hell,/shopModal/);
  assert.match(hell,/shopBalance/);
  assert.match(hell,/characters\.js\?v=20261120hell21/);
- assert.match(hell,/gamehell\.js\?v=20261120hell21/);
+ assert.match(hell,/gamehell\.js\?v=20261120pg3/);
  assert.match(hellJs,/moyeo-gamehell-v1/);
  assert.match(hellJs,/buyOrEquip/);
  assert.match(hellJs,/renderShop/);
