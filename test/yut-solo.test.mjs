@@ -66,7 +66,7 @@ test('A piece completes once it crosses the route end; four finishes win',()=>{
 
 test('Solo Yut UI renders the board, the throw button and both players',()=>{
   const now=Date.now();
-  const s={pieces:{player:freshYutPieces(),ai:freshYutPieces()},turn:'player',pending:null,rollName:null,finished:false,deadline:now+30000,timeSeconds:30,msg:'시작!',history:[]};
+  const s={pieces:{player:freshYutPieces(),ai:freshYutPieces()},turn:'player',pending:null,phase:'throw',rolls:[],throwsRemaining:1,rollName:null,finished:false,deadline:now+30000,timeSeconds:30,msg:'시작!',history:[]};
   const html=renderSoloYut(s,{coords:{0:[0,0],1:[1,1]},line:()=>'',btn:(action,label)=>'<button data-action="'+action+'">'+label+'</button>',timeBar:()=>'',esc:String});
   assert.match(html,/고양이/);
   assert.match(html,/soloYutRoll/);
