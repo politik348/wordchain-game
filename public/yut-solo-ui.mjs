@@ -1,4 +1,4 @@
-import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut4';
+import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut5';
 // Solo cat mode uses the same Yut board, toss queue and path confirmation as multiplayer.
 export function renderSoloYut(s,helpers={}){
  const {timeBar=()=>' ',esc=String,rolling=false,catThrowing=false,power=0,selected=null,chosen=[0],steps=null}=helpers;
