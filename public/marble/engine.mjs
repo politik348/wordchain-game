@@ -341,7 +341,8 @@ export function applyAction(input,id,type,payload={},rng=Math.random){
  if(!checkVictory(s))nextTurn(s);return commit();
 }
 export function olympicCost(s,index){return 75+25*((s.olympics?.[index]||1)-1);}
-export function chooseCatAction(s){
+export function chooseCatAction(s,difficulty='intermediate'){
+ const skill=['beginner','intermediate','advanced'].includes(difficulty)?difficulty:'intermediate';
  const p=current(s);if(!p?.ai||p.bankrupt||s.phase==='finished')return null;
  if(!p.loanUsed&&p.cash<140)return {type:'takeLoan'};
  if(s.phase==='chance')return {type:'pickCard',payload:{index:Math.floor(Math.random()*3)}};
@@ -360,34 +361,35 @@ export function chooseCatAction(s){
    if(p.cash<cost+70)value-=800;
    return {i,value};
   }).sort((a,b)=>b.value-a.value);
-  return {type:'travel',payload:{index:scored[0]?.i??0}};
+  const travelRank=skill==='beginner'&&scored.length>1?Math.floor(Math.random()*Math.min(4,scored.length)):0;
+  return {type:'travel',payload:{index:scored[travelRank]?.i??0}};
  }
  if(s.phase!=='choice')return {type:'pass'};
  const {kind,index}=s.pending;
  if(kind==='startBuild'||kind==='olympic'){
   const candidates=ownTiles(s,p.id).filter(i=>kind==='olympic'? (s.olympics[i]||1)<5 : TILES[i].kind==='city'&&property(s,i).level<maxBuildLevel(s,p.id,i));
   const preferred=candidates.map(i=>({i,score:toll(s,i)+propertyValue(i,property(s,i).level)*.2})).sort((a,b)=>b.score-a.score);
-  for(const {i} of preferred){if(kind==='olympic'){if(p.cash>=olympicCost(s,i)+200)return {type:'olympic',payload:{index:i}};}
-   else{const level=property(s,i).level+1;if(p.cash>=upgradeCost(i,property(s,i).level,level)+160)return {type:'startBuild',payload:{index:i,targetLevel:level}};}}
+  for(const {i} of preferred){if(kind==='olympic'){if(p.cash>=olympicCost(s,i)+(skill==='advanced'?100:skill==='beginner'?320:200))return {type:'olympic',payload:{index:i}};}
+   else{const level=property(s,i).level+1;if(p.cash>=upgradeCost(i,property(s,i).level,level)+(skill==='advanced'?95:skill==='beginner'?300:160))return {type:'startBuild',payload:{index:i,targetLevel:level}};}}
   return {type:'pass'};
  }
  const tile=TILES[index],held=property(s,index);
  if(kind==='purchase'){
   const partner=TILES.findIndex((t,i)=>t.kind==='city'&&tile.kind==='city'&&i!==index&&t.group===tile.group);
   const premium=partner>=0&&property(s,partner)?.owner===p.id||tile.kind==='tourist'&&TILES.some((x,i)=>x.kind==='tourist'&&i!==index&&property(s,i)?.owner===p.id);
-  if(p.cash<tile.price+(premium?70:145))return {type:'pass'};
-  const villa=tile.kind==='city'&&p.cash>=tile.price+buildingCost(index,0)+(premium?110:250);
+  if(p.cash<tile.price+(premium?70:skill==='advanced'?55:skill==='beginner'?225:145))return {type:'pass'};
+  const villa=tile.kind==='city'&&p.cash>=tile.price+buildingCost(index,0)+(premium?110:skill==='advanced'?110:skill==='beginner'?400:250);
   return {type:'buy',payload:{targetLevel:villa?1:0}};
  }
  if(kind==='upgrade'){
   const next=held.level+1,cost=upgradeCost(index,held.level,next);
-  const reserve=next===4?90:210;
+  const reserve=skill==='advanced'?(next===4?55:125):skill==='beginner'?(next===4?240:360):(next===4?90:210);
   return {type:p.cash>=cost+reserve?'upgrade':'pass',payload:{targetLevel:next}};
  }
  if(kind==='takeover'){
   const cost=propertyValue(index,held.level)*2;
   const partner=TILES.some((t,i)=>t.kind==='city'&&i!==index&&t.group===tile.group&&property(s,i)?.owner===p.id);
-  return {type:p.cash>=cost+(partner?130:490)?'takeover':'pass'};
+  return {type:p.cash>=cost+(partner?(skill==='advanced'?60:skill==='beginner'?250:130):(skill==='advanced'?250:skill==='beginner'?650:490))?'takeover':'pass'};
  }
  return {type:'pass'};
 }
