@@ -45,6 +45,8 @@ test('Logic preserves puzzle controls, stages and local progress',()=>{
  for(const id of ['board','fill','cross','erase','undo','hint','levels','reset'])
    assert.match(logic,new RegExp('id="'+id+'"'));
  assert.match(logic,/moyeo-logic-v1/);
+ assert.match(logic,/name:'왕관',size:15/);
+ assert.match(logic,/15×15 도전/);
  assert.match(logic,/모여로직/);
  assert.match(logic,/logic-home-link/);
  new Script(inline(logic));
