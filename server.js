@@ -492,6 +492,33 @@ function gameTick(){
 }
 const ticker=setInterval(gameTick,300);ticker.unref();
 
+// Keep social-preview tags consistent even when public/index.html is regenerated.
+const SHARE_URL = 'https://wordchain-game-0nb3.onrender.com/';
+const SHARE_IMAGE = SHARE_URL + 'preview-20261120.jpg';
+const SOCIAL_TAGS = [
+  '<meta property="og:type" content="website" />',
+  '<meta property="og:site_name" content="모여게임즈" />',
+  '<meta property="og:locale" content="ko_KR" />',
+  '<meta property="og:title" content="모여게임즈 | 친구들과 함께하는 게임" />',
+  '<meta property="og:description" content="끝말잇기, 오목, 그림 퀴즈까지! 친구들과 실시간으로 즐겨보세요." />',
+  '<meta property="og:image" content="' + SHARE_IMAGE + '" />',
+  '<meta property="og:image:secure_url" content="' + SHARE_IMAGE + '" />',
+  '<meta property="og:image:type" content="image/jpeg" />',
+  '<meta property="og:image:width" content="360" />',
+  '<meta property="og:image:height" content="189" />',
+  '<meta property="og:url" content="' + SHARE_URL + '" />',
+  '<meta name="twitter:card" content="summary_large_image" />',
+  '<meta name="twitter:title" content="모여게임즈 | 친구들과 함께하는 게임" />',
+  '<meta name="twitter:image" content="' + SHARE_IMAGE + '" />'
+].join('\n  ');
+
+function injectSocialTags(buffer) {
+  let html = buffer.toString('utf8');
+  // Replace old OG/Twitter tags instead of appending conflicting duplicates.
+  html = html.replace(/^[ \t]*<meta\b(?=[^>]*\b(?:property\s*=\s*["']og:|name\s*=\s*["']twitter:))[^>]*>\s*/gmi, '');
+  return Buffer.from(html.replace(/<\/head>/i, '  ' + SOCIAL_TAGS + '\n</head>'), 'utf8');
+}
+
 const MIME={'.webp':'image/webp','.png':'image/png','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json; charset=utf-8'};
 const handler=async(req,res)=>{
   const u=new URL(req.url,'http://localhost');const pathname=decodeURIComponent(u.pathname);
@@ -555,7 +582,8 @@ const handler=async(req,res)=>{
       if(!absolute.startsWith(PUBLIC+path.sep)&&absolute!==path.join(PUBLIC,'index.html'))throw err(403,'허용되지 않은 경로입니다.');
       let s;try{s=await stat(absolute);}catch{throw err(404,'파일이 없습니다.');}
       if(!s.isFile())throw err(404,'파일이 없습니다.');
-      const data=await readFile(absolute);
+      let data=await readFile(absolute);
+      if(file==='index.html') data=injectSocialTags(data);
       res.writeHead(200,{'Content-Type':MIME[path.extname(file)]||'application/octet-stream','Cache-Control':path.extname(file)==='.html'?'no-cache':'public, max-age=300'});
       return res.end(data);
     }
