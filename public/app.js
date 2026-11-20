@@ -7,6 +7,7 @@ import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,re
 import {installYutPowerControl} from './yut-power.mjs?v=20261120yut5';
 import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261120catHub5';
 import {createMembershipUI} from './auth-ui.mjs?v=20261120statusrefresh1';
+import {renderPregame} from './pregame-lobbies.mjs?v=20261120pg1';
 const GAMES=[
  {id:'gamehell',name:'모여게임지옥',genre:'아케이드 · 13종',players:'1명',emoji:'😼',color:'#e8dffd',badge:'기록·업적·상점',desc:'개인 최고기록에 도전하고, 별조각과 업적 보상으로 고양이 캐릭터 8종을 수집해요.',rules:[['13종 게임','낙하·점프·로켓·얼음 등 13가지 원터치 게임을 선택합니다.'],['기록 도전','최고 점수와 별조각은 현재 브라우저에 저장됩니다.'],['개인 기록 도전','다른 이용자와 대전하는 게임이 아니라 나의 최고기록을 갱신하는 아케이드입니다.']]},
  {id:'tetris',name:'모여 테트리스',genre:'퍼즐 · 블록',players:'1명',emoji:'🧩',color:'#f3e1c4',badge:'고전 퍼즐',desc:'클래식 테트리스! 블록을 회전·이동해 줄을 지우고 최고 점수에 도전해요.',rules:[['조작','방향키로 이동, 위쪽 방향키로 회전, 스페이스로 하드 드롭합니다.'],['점수','가로줄을 채우면 지워지며, 연속으로 지울수록 높은 점수를 얻습니다.'],['기록','최고 점수는 이 브라우저에 저장됩니다.']]},
@@ -40,6 +41,38 @@ const gamePrefs={
  rummikub:{turnSeconds:60},
  doodle:{turnSeconds:90}
 };
+const pregameModes={};
+try{
+ const previous=JSON.parse(localStorage.getItem('moyeo-pregame-settings-v1')||'{}');
+ for(const [game,options] of Object.entries(previous)){
+  if(!gamePrefs[game]||!options||typeof options!=='object')continue;
+  if(TURN_SECONDS.includes(Number(options.turnSeconds)))gamePrefs[game].turnSeconds=Number(options.turnSeconds);
+  if(game==='omok'&&['normal','crazy'].includes(options.stoneStyle))gamePrefs[game].stoneStyle=options.stoneStyle;
+  if(game==='wordchain'&&['wordchain','kungkungtta'].includes(options.wordMode))gamePrefs[game].wordMode=options.wordMode;
+ }
+}catch{}
+function persistPregamePrefs(){try{localStorage.setItem('moyeo-pregame-settings-v1',JSON.stringify(gamePrefs));}catch{}}
+const catGames=new Set(['omok','yut','wordchain','rummikub']);
+function pregameModesFor(game,catOnly=false){return catOnly?['cat']:catGames.has(game)?['cat','online']:['online'];}
+function pregameSettingGroups(game){
+ const prefs=gamePrefs[game];if(!prefs)return [];
+ const groups=[];
+ if(game==='omok')groups.push({key:'stoneStyle',label:'오목 스타일',large:true,value:prefs.stoneStyle||'normal',choices:[
+  {value:'normal',label:'정상 모드',description:'깔끔한 흑돌과 백돌'},
+  {value:'crazy',label:'미친 모드',description:'캐릭터 오목돌이 펼치는 대결'}
+ ]});
+ if(game==='wordchain')groups.push({key:'wordMode',label:'단어 대전 규칙',large:true,value:prefs.wordMode||'wordchain',choices:[
+  {value:'wordchain',label:'끝말잇기',description:'마지막 글자를 이어 말하기'},
+  {value:'kungkungtta',label:'쿵쿵따',description:'세 글자 단어만 사용'}
+ ]});
+ groups.push({key:'turnSeconds',label:game==='omok'?'한 수 제한시간':'턴 제한시간',hint:'실제 게임에 적용됩니다',value:prefs.turnSeconds,choices:TURN_SECONDS.map(n=>({value:n,label:n+'초'}))});
+ return groups;
+}
+function pregameFor(game,catOnly=false){
+ const g=GAME[game],allowedModes=pregameModesFor(game,catOnly);
+ const mode=catOnly?'cat':allowedModes.includes(pregameModes[game])?pregameModes[game]:allowedModes[0];
+ return renderPregame({game:g,allowedModes,mode,settings:pregameSettingGroups(game),rules:g.rules,rooms:catOnly?[]:roomList.filter(x=>x.game===game),showJoin:!catOnly,backAction:catOnly?'openCatHub':'home'});
+}
 const dictionaryLabel='국립국어원 우리말샘 + 표준국어대사전 (확장 명사 437,875개)';
 function optionsFor(game){return {...(gamePrefs[game]||{})};}
 function settingsFields(game,values=optionsFor(game),roomSettings=false){
@@ -182,9 +215,9 @@ function updateRoom(next) {
 }
 function card(g){return `<button class="game-card" data-game="${g.id}" aria-label="${g.name} 게임 선택"><div class="game-illust" style="--art-bg:${g.color}"><span class="art-sticker">${g.badge}</span><span class="game-emoji">${g.emoji}</span></div><div class="game-card-body"><div class="game-title-row"><h3>${g.name}</h3><span class="game-arrow">↗</span></div><p class="game-desc">${g.desc}</p><div class="game-meta"><span>👥 ${g.players}</span><span class="mini-tag">${g.genre.split(' · ')[0]}</span></div></div></button>`;}
 function catHub(){setNav('cat');return renderCatHub(CAT_CHALLENGE_GAMES.map(id=>GAME[id]));}
-function catSetup(){setNav('cat');return renderCatSetup(GAME[selection],settingsFields(selection));}
+function catSetup(){setNav('cat');return pregameFor(selection,true);}
 function home(){setNav('home');return `<div class="home-wrap"><section class="hero"><div class="hero-content"><span class="hero-kicker">WELCOME TO MOYEO GAMES ✦</span><h1>친구들이랑 모여서<br/><em>오늘도 한 판!</em> 🎉</h1><p class="hero-subtitle">고양이와 혼자 놀기는 자유롭게!<br/>친구와 온라인 대전을 하려면 회원가입이 필요해요.</p><div class="hero-buttons">${btn('openCatHub','🐱 고양이를 이겨라','button-primary')}${btn('scrollGames','친구와 게임하기 →','button-secondary')}</div></div><div class="hero-art"><div class="hero-blob"><span class="hero-bunny">🐰</span><span class="hero-bear">🐻</span><span class="hero-dice">🎲</span><span class="hero-cloud">☁️</span><span class="hero-spark one">✳</span><span class="hero-spark two">✦</span></div></div></section><div class="stat-strip"><div class="stat-item"><span class="stat-icon">🎮</span><div><strong>${GAMES.length}가지 게임</strong><small>골라 하는 즐거움</small></div></div><div class="stat-item"><span class="stat-icon">🫶</span><div><strong>친구와 실시간 대결</strong><small>코드 하나로 만나요</small></div></div><div class="stat-item"><span class="stat-icon">📱</span><div><strong>어디서든 바로</strong><small>PC · 모바일 모두 OK</small></div></div></div><section id="gamesSection"><div class="section-heading"><div><span class="section-eyebrow">PICK YOUR GAME</span><h2>어떤 게임부터 할까요? <span class="pill-count">${GAMES.length} GAMES</span></h2><p>친구들의 취향에 맞춰 골라보세요.</p></div></div><div class="game-grid">${renderCatFeatured()}${GAMES.map(card).join('')}</div></section><section class="intro-panel"><div><span class="section-eyebrow">HOW TO PLAY</span><h3>딱 3단계면 준비 완료!</h3><p>닉네임 정하기 → 게임방 만들기 → 친구에게 코드 보내기</p></div><span class="intro-emoji">💌</span>${btn('guide','이용 방법 보기 →','button')}</section></div>`;}
-function detail(){const g=GAME[selection];setNav('home');const list=roomList.filter(r=>r.game===g.id);return `<div class="page-wrap"><div class="breadcrumb"><button data-action="home">홈</button><span>›</span><span>게임 선택</span><span>›</span><span style="color:#5b5668">${g.name}</span></div><div class="detail-banner" style="--detail-bg:${g.color}"><div><span class="eyebrow">${g.genre.toUpperCase()}</span><h1>${g.name}</h1><p>${g.desc}</p></div><span class="detail-emoji">${g.emoji}</span></div><div class="detail-layout"><div><section class="panel"><div class="panel-title"><h2>📖 게임 방법</h2><span class="game-mode-tag">${g.players} 플레이</span></div><ul class="rule-list">${g.rules.map(([h,t],i)=>`<li><span class="rule-count">${i+1}</span><div><strong>${h}</strong><small>${t}</small></div></li>`).join('')}</ul>${g.id==='wordchain'?`<p class="game-note">${dictionaryLabel}</p>`:''}${g.id==='yut'?`<p class="game-note">온라인 버전은 이동·지름길·잡기를 중심으로 일부 규칙을 간소화했습니다.</p>`:''}</section><section class="panel" style="margin-top:18px"><div class="panel-title"><h2>👥 참여할 수 있는 게임방</h2><button class="choice-button" data-action="refreshRooms">↻ 새로고침</button></div>${list.length?list.map(r=>`<button class="room-entry" data-join="${r.id}"><span><strong>🔑 ${esc(r.id)}</strong><br/><small>방장 ${esc(r.host)}</small></span><span class="game-mode-tag">${r.count}/${r.max}명 입장 →</span></button>`).join(''):`<div class="empty-state"><span class="icon">🛋️</span><strong>아직 공개 대기방이 없어요.</strong><p>첫 번째 게임방을 만들어 친구를 초대해 보세요!</p></div>`}</section></div><aside class="panel action-panel"><h2>🚀 바로 플레이하기</h2><p>드립대학 닉네임으로 가입·로그인하면 친구를 초대할 수 있습니다.</p><div class="game-prompt">내 닉네임 <strong>${esc(user.nick)}</strong> <button data-action="nick" class="choice-button" style="padding:5px 7px;margin-left:6px">✎ 변경</button></div>${settingsFields(g.id)}${btn('createRoom','＋ 새 게임방 만들기','button-primary full',!apiLive)}${btn('openJoin','🔑 코드로 친구 방 입장','button-secondary full',!apiLive)}<div class="side-message">${apiLive?'친구가 다른 기기에서 같은 주소로 접속해도 실시간으로 함께할 수 있어요.':'현재 정적 모드입니다. 고양이 대전은 가능하며 멀티플레이는 Node.js 서버 연결이 필요해요.'}</div></aside></div></div>`;}
+function detail(){setNav('home');return pregameFor(selection,false);}
 function roomsPage(){setNav('rooms');return `<div class="page-wrap"><div class="breadcrumb"><button data-action="home">홈</button><span>›</span>열린 게임방</div><div class="panel"><div class="rooms-controls"><div><span class="section-eyebrow">PLAY TOGETHER</span><h2 style="margin:7px 0 0">현재 열린 게임방</h2></div><button class="choice-button" data-action="refreshRooms">↻ 새로고침</button></div>${roomList.length?roomList.map(r=>`<button class="room-entry" data-join="${r.id}"><span><strong>${GAME[r.game]?.emoji||'🎮'} ${gname(r.game)} · ${esc(r.id)}</strong><br/><small>방장 ${esc(r.host)}</small></span><span class="game-mode-tag">${r.count}/${r.max}명 참가 →</span></button>`).join(''):'<div class="empty-state"><span class="icon">🌤️</span><strong>대기 중인 공개 게임방이 없어요.</strong><p>홈에서 게임을 선택한 뒤 방을 만들어 보세요.</p></div>'}</div></div>`;}
 function guidePage(){setNav('guide');return `<div class="page-wrap"><div class="breadcrumb"><button data-action="home">홈</button><span>›</span>이용 방법</div><div class="panel" style="max-width:780px;margin:auto"><span class="section-eyebrow">GETTING STARTED</span><h2 style="font-size:29px;margin-top:10px">함께 플레이하는 방법</h2><ul class="rule-list"><li><span class="rule-count">1</span><div><strong>닉네임 정하기</strong><small>오른쪽 상단 닉네임을 눌러 원하는 이름을 입력하세요.</small></div></li><li><span class="rule-count">2</span><div><strong>게임 고르고 방 만들기</strong><small>게임을 골라 방을 생성하면 여섯 자리 초대 코드와 공유 링크가 만들어집니다.</small></div></li><li><span class="rule-count">3</span><div><strong>친구를 초대하고 준비하기</strong><small>친구들이 링크나 코드로 입장해 준비 완료를 누르면 방장이 시작할 수 있습니다.</small></div></li><li><span class="rule-count">4</span><div><strong>즐겁게 플레이하기</strong><small>모든 게임 동작은 서버에서 검증하며 참가자의 화면으로 실시간 전달됩니다.</small></div></li></ul><div class="side-message">게임방 데이터는 서버 메모리에 저장됩니다. 서버가 재시작되면 현재 게임이 종료됩니다. 가입과 영구 전적 저장은 제공하지 않습니다.</div><div class="button-row" style="margin-top:22px">${btn('home','게임 선택으로 돌아가기','button-primary')}</div></div></div>`;}
 function personPanel(p,i){const s=room.state;const scores=s?.scores;const alive=s?.alive;const hearts=s?.hearts;const turn=s?.turn===p.id||s?.speaker===p.id;let subtitle=p.id===room.host?'방장':'참가자';if(alive&&!alive.includes(p.id))subtitle='탈락';const value=scores?`${scores[p.id]||0}점`:hearts?`♥ ${hearts[p.id]||0}`:alive?(alive.includes(p.id)?'생존':'탈락'):(p.id===room.host?'HOST':p.ready?'준비 완료':'준비 중');return `<div class="player-card ${turn?'current-player':''}"><div class="player-id"><span class="player-avatar">${chars[i%chars.length]}</span><div><strong>${esc(p.nick)} ${p.id===user.sid?'(나)':''}</strong><small>${subtitle}${turn?' · 차례':''}</small></div></div><span class="player-score">${value}</span></div>`;}
@@ -803,10 +836,25 @@ const yutPowerControl=installYutPowerControl({
  onThrow(mode,power){void startYutThrow(mode,power);}
 });
 document.addEventListener('click',async e=>{
+ const modeButton=e.target.closest?.('[data-pg-mode]');
+ if(modeButton&&(view==='detail'||view==='catSetup')){
+  const modes=pregameModesFor(selection,view==='catSetup'),next=modeButton.dataset.pgMode;
+  if(modes.includes(next)){pregameModes[selection]=next;render();}
+  return;
+ }
+ const settingButton=e.target.closest?.('[data-pg-setting]');
+ if(settingButton&&(view==='detail'||view==='catSetup')&&gamePrefs[selection]){
+  const key=settingButton.dataset.pgSetting,value=settingButton.dataset.pgValue;
+  const group=pregameSettingGroups(selection).find(g=>g.key===key);
+  if(!group||!group.choices.some(opt=>String(opt.value)===value))return;
+  gamePrefs[selection][key]=key==='turnSeconds'?Number(value):value;
+  persistPregamePrefs();render();return;
+ }
  const g=e.target.closest('[data-game]');if(g){if(g.dataset.game==='marble'){location.href='/marble/index.html';return;}if(g.dataset.game==='gamehell'){location.href='/gamehell/index.html';return;}if(g.dataset.game==='tetris'){location.href='/tetris/index.html';return;}if(g.dataset.game==='logic'){location.href='/logic/index.html';return;}selection=g.dataset.game;view='detail';await refreshRooms(selection);render();window.scrollTo(0,0);return;}
  const join=e.target.closest('[data-join]');if(join){await joinRoom(join.dataset.join);return;}
  const b=e.target.closest('[data-action]');if(!b)return;
- const action=b.dataset.action;
+ const pregameMode=view==='catSetup'?'cat':pregameModesFor(selection).includes(pregameModes[selection])?pregameModes[selection]:pregameModesFor(selection)[0];
+ const action=b.dataset.action==='lobbyStart'?(pregameMode==='cat'?'solo':'createRoom'):b.dataset.action;
  if(action==='home'){routeHome();return;}if(action==='homeConfirm'){if(confirm('현재 게임방을 나가고 홈으로 이동할까요?'))await leave();return;}
  if(action==='nick'){revealNickname();return;}if(action==='openLogin'){membership.open('login');return;}if(action==='openRegister'){membership.open('register');return;}if(action==='guide'){view='guide';render();scrollTo(0,0);return;}
  if(action==='openJoin'){
@@ -868,13 +916,13 @@ document.addEventListener('click',async e=>{
    const style=b.dataset.stoneStyleChoice;if(style!=='normal'&&style!=='crazy')return;
    if(b.hasAttribute('data-stone-style-room')){
      if(room?.status==='lobby'&&amHost())await act('settings',{stoneStyle:style});
-   }else if(gamePrefs[selection]){gamePrefs[selection].stoneStyle=style;render();}
+   }else if(gamePrefs[selection]){gamePrefs[selection].stoneStyle=style;persistPregamePrefs();render();}
    return;
  }
 });
 document.addEventListener('change',async e=>{
  const p=e.target.closest?.('select[data-pref]');
- if(p&&gamePrefs[selection]){gamePrefs[selection][p.dataset.pref]=p.dataset.pref==='turnSeconds'?Number(p.value):p.value;return;}
+ if(p&&gamePrefs[selection]){gamePrefs[selection][p.dataset.pref]=p.dataset.pref==='turnSeconds'?Number(p.value):p.value;persistPregamePrefs();return;}
  const r=e.target.closest?.('select[data-room-setting]');
  if(r&&room?.status==='lobby'&&amHost())await act('settings',{[r.dataset.roomSetting]:r.dataset.roomSetting==='turnSeconds'?Number(r.value):r.value});
 });
