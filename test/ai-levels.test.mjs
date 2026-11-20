@@ -60,9 +60,9 @@ test('Word Chain and Tetris use selected AI tier in actual computer decisions',(
  assert.match(app,/function chooseCatWord\(possible,difficulty/);
  assert.match(app,/chooseCatWord\(possible,solo\.aiDifficulty\)/);
  assert.match(app,/worker\.postMessage\(\{id:solo\.moves,board:solo\.board,difficulty:solo\.aiDifficulty/);
- assert.match(tetris,/catStrength==='advanced'/);
+ assert.match(tetris,/catStrength=\['beginner','intermediate','advanced'\]/);
  assert.match(tetris,/catStrength==='intermediate'/);
- assert.match(standalone,/data\.pgDifficulty/);
+ assert.match(standalone,/dataset\.pgDifficulty/);
  assert.match(standalone,/aiDifficulty:values\.aiDifficulty/);
 });
 
