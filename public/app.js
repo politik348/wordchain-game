@@ -1,9 +1,9 @@
 import {TURN_SECONDS, dictionaryIndex, replies as chainReplies, validReply, turnsLabel} from './chain-utils.mjs';
 import {configureRummikubUI, renderRummikubGame} from './rummikub/ui.mjs?v=20261120rk3';
 import {createSoloRummikub, soloRoom, soloPlayRummikub, soloTickRummikub, catPlayRummikub} from './rummikub/solo.mjs';
-import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove} from './yut-solo-engine.mjs?v=20261120yut2';
-import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut2';
-import {renderYutBoard,renderYutThrow,renderYutRouteChooser} from './yut-board.mjs?v=20261120yut2';
+import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove, yutSelectedSteps, usableYutRolls} from './yut-solo-engine.mjs?v=20261120yut3';
+import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut3';
+import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut3';
 import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261120hell2tetrislogic1';
 import {createMembershipUI} from './auth-ui.mjs?v=20261120statusrefresh1';
 const GAMES=[
@@ -31,7 +31,7 @@ let view='home',selection='wordchain',room=null,eventSource=null,apiLive=true,so
 // Keep live typing and canvas strokes intact when asynchronous room updates arrive.
 let deferredRoomRender=false, activeDoodleStroke=null, composingForm=false, pendingCompositionSubmit=null;
 let previousSoloStarter=null, activeGomokuWorker=null;
-let yutRolling=null, yutRouteChoice=null;
+let yutRolling=null, yutRouteChoice=null, yutRollSelection=null;
 const gamePrefs={
  wordchain:{turnSeconds:30,wordMode:'wordchain',stoneStyle:'normal'},
  omok:{turnSeconds:30,stoneStyle:'normal'},
@@ -64,7 +64,7 @@ const formatTime=n=>String(Math.max(0,Math.ceil(n))).padStart(2,'0');
 const scoreMap=()=>room?.state?.scores||{};
 const btn=(action,label,style='button-secondary',disabled=false,more='')=>`<button type="button" class="button ${style}" data-action="${action}" ${disabled?'disabled':''} ${more}>${label}</button>`;
 function toast(message){const zone=$('toastZone');const el=document.createElement('div');el.className='toast';el.textContent=message;zone.append(el);setTimeout(()=>el.remove(),3300);}
-function routeHome(){yutRouteChoice=null;yutRolling=null;closeDoodleSocket();view='home';selection='wordchain';room=null;solo=null;eventSource?.close();eventSource=null;sessionStorage.removeItem('moyeo-last-room');history.replaceState(null,'',location.pathname);render();}
+function routeHome(){yutRouteChoice=null;yutRollSelection=null;yutRolling=null;closeDoodleSocket();view='home';selection='wordchain';room=null;solo=null;eventSource?.close();eventSource=null;sessionStorage.removeItem('moyeo-last-room');history.replaceState(null,'',location.pathname);render();}
 function setNav(which){document.querySelectorAll('[data-nav]').forEach(x=>x.classList.toggle('is-current',x.dataset.nav===which));}
 function revealNickname(){membership?.open('login');}
 async function api(uri,options){
@@ -243,20 +243,30 @@ const cardEmoji={과일:'🍓',달:'🌙',별:'⭐',도깨비:'👹'};
 function bellGame(){const s=room.state;return `<div class="game-topline"><span class="stage-badge">🔔 도깨비 밤 장터</span><span class="time-badge">카드 ${s.draws}/${s.maxDraws}</span></div><div class="bell-table"><h2>짝이 나오면 종을 쳐요!</h2><p class="game-note">같은 그림이 2장 이상이거나 도깨비가 등장하면 성공!</p><div class="bell-cards">${room.players.map(p=>`<div class="bell-card ${s.cards[p.id]?'':'face-down'}"><span>${s.cards[p.id]?cardEmoji[s.cards[p.id]]:'❔'}</span><strong>${esc(p.nick)}</strong></div>`).join('')}</div><div style="display:flex;justify-content:center"><button type="button" class="big-bell" data-action="ring" aria-label="종 치기" ${room.status==='finished'?'disabled':''}>🔔</button></div><div class="bell-caption">${esc(s.feedback||'카드가 나오기를 기다리세요.')}</div><div class="roll-pill">쌓인 카드 ${s.pile}장 · 정답시 획득!</div></div>${endBanner()}`;}
 const yutCoords={0:[495,495],1:[495,402],2:[495,309],3:[495,216],4:[495,123],5:[495,30],6:[402,30],7:[309,30],8:[216,30],9:[123,30],10:[30,30],11:[30,123],12:[30,216],13:[30,309],14:[30,402],15:[30,495],16:[123,495],17:[216,495],18:[309,495],19:[402,495],20:[495,495],21:[408,117],22:[318,205],23:[263,263],24:[210,318],25:[117,408],26:[117,117],27:[205,205]};
 const line=(a,b)=>`<path class="yut-path" d="M${yutCoords[a].join(',')} L${yutCoords[b].join(',')}"/>`;
+
+function yutChoice(mode,s){
+ const roomId=mode==='room'?room?.id:null;
+ const rolls=s?.rolls||[];
+ const old=yutRollSelection;
+ let indices=old?.scope===mode&&old?.roomId===roomId?old.indices.filter(i=>Number.isInteger(i)&&i>=0&&i<rolls.length):[];
+ if(!indices.length&&rolls.length)indices=[0];
+ try{return {indices,steps:yutSelectedSteps(rolls,indices)};}catch{return {indices:[],steps:null};}
+}
 function yutGame(){
- const s=room.state;
- const mineTurn=s.turn===user.sid&&room.status==='playing';
- const canMove=mineTurn&&s.pending!==null;
- const canThrow=mineTurn&&s.pending===null;
+ const s=room.state,mineTurn=s.turn===user.sid&&room.status==='playing';
+ const canMove=mineTurn&&s.phase==='move';
+ const canThrow=mineTurn&&s.phase==='throw';
+ const choice=canMove?yutChoice('room',s):{indices:[],steps:null};
  const selected=canMove&&yutRouteChoice?.scope==='room'&&yutRouteChoice.roomId===room.id?yutRouteChoice.index:null;
  const names=Object.fromEntries(room.players.map(p=>[p.id,p.nick]));
  const status=`<div class="game-topline"><span class="stage-badge">🎲 ${esc(nick(s.turn))}님 차례</span>${room.status==='playing'?timeBar(s.deadline,room.options?.turnSeconds):''}<span class="time-badge">${esc(s.rollName||'윷놀이')}</span></div>`;
- const progress=`<div class="cat-yut-players">${room.players.map((p,i)=>`<span>${['🔴','🔵','🟢','🟣'][i]} ${esc(p.nick)} ${s.pieces[p.id].filter(t=>t.done).length}/4 완주</span>`).join('')}</div>`;
- const guide=`<div class="game-prompt"><strong>${room.status==='finished'?'대국 종료':canThrow?'윷을 던져보세요!':canMove?'움직일 말을 말판에서 직접 눌러 주세요.':esc(nick(s.turn))+'님이 플레이 중입니다.'}</strong> · 중앙에서 오른쪽 아래 HOME으로 향하는 지름길도 이용할 수 있어요.</div>`;
- const throwUi=renderYutThrow({roll:s.pending??s.lastRoll??null,rolling:yutRolling?.scope==='room'&&yutRolling?.roomId===room.id,actor:canThrow?'당신 차례입니다':canMove?'말을 선택하세요':`현재: ${nick(s.turn)}`,showAction:canThrow,action:'roll'});
- const board=renderYutBoard({pieces:s.pieces,me:user.sid,turn:s.turn,pending:s.pending,active:room.status==='playing',action:'yutPick',routeAction:'yutRoute',selected,lastMove:s.lastMove,labels:names});
- const picker=canMove?renderYutRouteChooser(s.pieces[user.sid],s.pending,selected,'yutRoute'):'';
- return status+progress+guide+throwUi+board+picker+'<p class="game-note">윷을 던진 뒤, 말판 위 내 말을 누르면 바로 이동합니다. 출발 전 말은 아래의 내 말 4개에서 누르세요.</p>'+endBanner();
+ const progress=renderYutPieceStats(s.pieces,names,user.sid);
+ const guide=`<div class="game-prompt"><strong>${room.status==='finished'?'대국 종료':canThrow?'추가 던지기를 모두 마치세요!':canMove?'윷 결과와 말을 골라 이동 경로를 확인하세요.':esc(nick(s.turn))+'님이 플레이 중입니다.'}</strong></div>`;
+ const throwUi=renderYutThrow({roll:s.lastRoll??null,rolling:yutRolling?.scope==='room'&&yutRolling?.roomId===room.id,actor:canThrow?'당신 차례입니다 · 던지기':canMove?'던지기 완료 · 이동 단계':`현재: ${nick(s.turn)}`,showAction:canThrow,action:'roll'});
+ const rolls=renderYutRollTray({rolls:s.rolls||[],phase:s.phase,chosen:choice.indices,action:'yutRollChoice',myTurn:mineTurn});
+ const board=renderYutBoard({pieces:s.pieces,me:user.sid,turn:s.turn,steps:canMove?choice.steps:null,active:room.status==='playing',action:'yutPick',routeAction:'yutRoute',selected,lastMove:s.lastMove,labels:names});
+ const picker=canMove?renderYutRouteChooser(s.pieces[user.sid],choice.steps,selected,'yutRoute'):'';
+ return status+progress+guide+`<div class="yut-play-layout"><div class="yut-board-column">${board}${picker}<p class="game-note">윷/모는 이어서 모두 던진 다음 이동합니다. 여러 윷 결과를 선택해 합쳐 이동할 수 있어요. 말을 누르면 이동 경로를 먼저 보여줍니다.</p></div><aside class="yut-control-column">${throwUi}${rolls}<h4>최근 진행</h4><div class="cat-yut-history">${(s.history||[]).slice(-6).reverse().map(h=>`<div>${esc(h)}</div>`).join('')}</div></aside></div>`+endBanner();
 }
 let drawColor='#29283f',drawWidth=5;
 function drawDoodleSegment(st){
@@ -386,13 +396,13 @@ function soloStart(game){
   view='solo';selection=game;room=null;solo=createSoloRummikub(seconds);render();return;
  }
  if(activeGomokuWorker){activeGomokuWorker.terminate();activeGomokuWorker=null;}
- yutRouteChoice=null;yutRolling=null;
+ yutRouteChoice=null;yutRollSelection=null;yutRolling=null;
  const opts=optionsFor(game);const seconds=opts.turnSeconds||30;
  view='solo';selection=game;room=null;
  solo=game==='wordchain'
   ?{game,mode:opts.wordMode||'wordchain',history:[soloOpeningWord(opts.wordMode)],usedEndings:{player:[],ai:[]},playerLives:2,aiLives:2,turn:'player',round:1,deadline:Date.now()+seconds*1000,timeSeconds:seconds,score:0,finished:false,msg:'당신 차례입니다.',helpWords:null,oneShot:false}
   :game==='yut'
-  ?{game,pieces:{player:freshYutPieces(),ai:freshYutPieces()},turn:'player',pending:null,rollName:null,bonus:false,history:[],timeSeconds:seconds,deadline:Date.now()+seconds*1000,finished:false,msg:'윷을 던져 고양이와 한판 승부하세요!'}
+  ?{game,pieces:{player:freshYutPieces(),ai:freshYutPieces()},turn:'player',pending:null,rolls:[],phase:'throw',throwsRemaining:1,rollName:null,history:[],timeSeconds:seconds,deadline:Date.now()+seconds*1000,finished:false,msg:'윷을 던져 고양이와 한판 승부하세요!'}
   :{game,stoneStyle:opts.stoneStyle||'normal',timeSeconds:seconds,deadline:Date.now()+seconds*1000,board:Array(225).fill(null),turn:'player',moves:0,finished:false,msg:'흑돌을 먼저 놓으세요.'};
  render();
 }
@@ -405,7 +415,7 @@ function soloGame(){
   const last=solo.history.at(-1);
   content=`<div class="game-topline"><span class="stage-badge">🐱 ${turnsLabel(solo.mode)} · 고양이를 이겨라</span>${!solo.finished?timeBar(solo.deadline,solo.timeSeconds):''}</div><div class="word-scoreboard"><div class="word-player ${solo.turn==='player'?'active':''}"><strong>🙂 ${esc(user.nick)}</strong>♥ ${solo.playerLives} · ${solo.score}점</div><div class="word-player ${solo.turn==='ai'?'active':''}"><strong>🐱 고양이</strong>♥ ${solo.aiLives}</div></div>${solo.oneShot?'<div class="one-shot-banner">⚡ 한방단어! 즉시 종료</div>':''}<div class="wordchain-word central"><span class="wordchain-caption">마지막으로 나온 단어</span><div class="last-word">${esc(last.slice(0,-1))}<span>${esc(last.at(-1))}</span></div><span class="next-letter">${esc(last.at(-1))}</span></div><p class="game-note">${esc(solo.msg)} · ${dictionaryLabel}</p><form data-form="soloWord" class="action-form"><input class="text-input" name="word" autocomplete="off" placeholder="${solo.mode==='kungkungtta'?'3글자 단어':'단어를 입력하세요'}" ${solo.turn!=='player'||solo.finished?'readonly':''} maxlength="${solo.mode==='kungkungtta'?3:24}" required/><button type="submit" class="button button-primary" ${solo.turn!=='player'||solo.finished?'disabled':''}>내기 →</button></form>${solo.helpWords?responseTips(solo.helpWords):''}<div class="word-tags">${solo.history.map(w=>`<span class="word-tag">${esc(w)}</span>`).join('')}</div>`;
  }else if(game==='yut'){
-  content=renderSoloYut(solo,{coords:yutCoords,line,btn,timeBar,esc,rolling:yutRolling?.scope==='solo',selected:yutRouteChoice?.scope==='solo'?yutRouteChoice.index:null});
+  const choice=yutChoice('solo',solo);content=renderSoloYut(solo,{timeBar,esc,rolling:yutRolling?.scope==='solo',selected:yutRouteChoice?.scope==='solo'?yutRouteChoice.index:null,chosen:choice.indices,steps:choice.steps});
  }else{
   let cells='';for(let y=0;y<15;y++)for(let x=0;x<15;x++){const v=solo.board[y*15+x];const edge=`${y===0?'top':''} ${y===14?'bottom':''} ${x===0?'left':''} ${x===14?'right':''}`;cells+=`<button class="omok-cell ${edge}" data-action="soloPlace" data-x="${x}" data-y="${y}" ${v||solo.turn!=='player'||solo.finished?'disabled':''}>${v?`<span class="stone ${v}"></span>`:''}</button>`;}
   content=`<div class="game-topline"><span class="stage-badge">⚫ 나 vs ⚪ 🐱 고양이 · ${solo.stoneStyle==='crazy'?'미친 버전':'정상 버전'}</span><span class="time-badge">${solo.moves}수</span>${solo.turn==='player'&&!solo.finished?timeBar(solo.deadline,solo.timeSeconds):''}</div><div class="game-prompt"><strong>${esc(solo.msg)}</strong></div><div class="omok-wrapper"><div class="omok-board ${solo.stoneStyle==='crazy'?'crazy-board':''}">${cells}</div></div>`;
@@ -566,67 +576,105 @@ function soloPlace(x,y){
  }else setTimeout(()=>finishAi(chooseOmokMove(solo.board),'보조 AI'),150);
 }
 
+
 function soloYutNext(turn,message){
  if(!solo||solo.game!=='yut'||solo.finished)return;
- solo.turn=turn;solo.pending=null;solo.rollName=null;solo.bonus=false;
+ solo.turn=turn;solo.pending=null;solo.rolls=[];solo.phase='throw';solo.throwsRemaining=1;solo.rollName=null;
  solo.deadline=Date.now()+solo.timeSeconds*1000;
  solo.msg=message||(turn==='player'?'당신 차례입니다. 윷을 던지세요.':'고양이가 생각하고 있어요.');
- render();
+ yutRollSelection=null;yutRouteChoice=null;render();
  if(turn==='ai')soloYutAiTurn();
 }
 function soloYutRoll(){
- if(!solo||solo.game!=='yut'||solo.turn!=='player'||solo.finished||solo.pending!==null)return;
+ if(!solo||solo.game!=='yut'||solo.turn!=='player'||solo.finished||solo.phase!=='throw')return;
  const roll=rollYut(Math.random,false);
- solo.pending=roll;solo.lastRoll=roll;solo.rollName=YUT_NAMES[roll];solo.bonus=roll===4||roll===5;
- if(!legalYutMoves(solo.pieces.player,roll).length){
-   solo.history.push('나: '+solo.rollName+' · 움직일 말 없음');
-   soloYutNext('ai','빽도! 움직일 말이 없어 고양이에게 차례가 넘어갑니다.');
-   return;
+ solo.rolls.push(roll);solo.lastRoll=roll;solo.rollName=YUT_NAMES[roll];
+ solo.throwsRemaining--;if(roll===4||roll===5)solo.throwsRemaining++;
+ if(solo.rolls.length>=24)solo.throwsRemaining=0;
+ solo.deadline=Date.now()+solo.timeSeconds*1000;
+ solo.history.push('나: '+solo.rollName+' 던짐');solo.history=solo.history.slice(-8);
+ if(solo.throwsRemaining>0)solo.msg='나: '+solo.rollName+'! 한 번 더 던지세요. 말은 나중에 움직입니다.';
+ else{
+  solo.rolls=usableYutRolls(solo.pieces.player,solo.rolls);
+  if(!solo.rolls.length){soloYutNext('ai','움직일 말이 없어 고양이 차례가 됩니다.');return;}
+  solo.phase='move';solo.msg='모두 던졌어요! 결과를 선택하고 말을 눌러 경로를 미리 확인하세요.';
  }
- solo.msg='나: '+solo.rollName+'! 움직일 말을 선택하세요.';
  render();
 }
-function soloYutApply(side,index,shortcut=true){
- if(!solo||solo.game!=='yut'||solo.turn!==side||solo.finished||solo.pending===null)return;
+function soloYutApply(side,index,shortcut=true,rollIndices=[0]){
+ if(!solo||solo.game!=='yut'||solo.turn!==side||solo.finished||solo.phase!=='move')return;
+ const mine=solo.pieces[side];
+ let steps;
+ try{steps=yutSelectedSteps(solo.rolls,rollIndices);}catch{toast('사용할 윷 결과를 다시 선택하세요.');return;}
+ if(!legalYutMoves(mine,steps).some(m=>m.index===index&&m.shortcut===shortcut)){toast('선택한 결과로 움직일 수 없습니다.');return;}
+ const usedNames=rollIndices.map(i=>YUT_NAMES[solo.rolls[i]]).join('+');
  let result;
- try{result=applyYutMove(solo.pieces[side],solo.pieces[side==='player'?'ai':'player'],index,solo.pending,shortcut);}
- catch(error){if(side==='player')toast('이동할 수 없는 말입니다.');return;}
+ try{result=applyYutMove(mine,solo.pieces[side==='player'?'ai':'player'],index,steps,shortcut);}
+ catch{toast('이동할 수 없는 말입니다.');return;}
  solo.lastMove={sid:side,index,to:result.to,at:Date.now(),shortcut};
- solo.pieces[side]=result.mine;
- solo.pieces[side==='player'?'ai':'player']=result.enemy;
+ solo.pieces[side]=result.mine;solo.pieces[side==='player'?'ai':'player']=result.enemy;
  const name=side==='player'?'나':'🐱 고양이';
- const message=name+': '+solo.rollName+' → '+(index+1)+'번 말'+(result.caught?' · 상대 말 '+result.caught+'개 잡기!':'')+(result.done?' · 완주!':'');
+ const message=name+': '+usedNames+' → '+(index+1)+'번 말'+(result.caught?' · 상대 말 '+result.caught+'개 잡기!':'')+(result.done?' · 완주!':'');
  solo.history.push(message);solo.history=solo.history.slice(-8);
+ yutRouteChoice=null;yutRollSelection=null;
  if(result.won){
-   solo.finished=true;solo.pending=null;solo.msg=side==='player'?'당신 승리! 윷놀이에서 고양이를 이겼어요!':'고양이 승리! 다음 판에 다시 도전해 보세요.';
-   render();return;
+  solo.finished=true;solo.rolls=[];solo.msg=side==='player'?'당신 승리! 윷놀이에서 고양이를 이겼어요!':'고양이 승리! 다음 판에 다시 도전해 보세요.';
+  render();return;
  }
- if(solo.bonus||result.caught){
-   solo.pending=null;solo.rollName=null;solo.deadline=Date.now()+solo.timeSeconds*1000;
-   solo.msg=message+' 한 번 더 던져요!';
-   render();
-   if(side==='ai')soloYutAiTurn();
+ const used=new Set(rollIndices);solo.rolls=solo.rolls.filter((_,i)=>!used.has(i));
+ solo.rolls=usableYutRolls(solo.pieces[side],solo.rolls);
+ solo.deadline=Date.now()+solo.timeSeconds*1000;
+ if(result.caught){
+  solo.phase='throw';solo.throwsRemaining=1;
+  solo.msg=message+' 상대 말을 잡아서 먼저 한 번 더 던져요!';
+  render();if(side==='ai')soloYutAiTurn();
+ }else if(solo.rolls.length){
+  solo.phase='move';solo.msg=message+' 남은 윷 결과로 더 이동하세요.';
+  render();if(side==='ai')soloYutAiTurn();
  }else soloYutNext(side==='player'?'ai':'player',message);
 }
 function soloYutAiTurn(){
  const current=solo;
- if(!current||current.game!=='yut'||current.turn!=='ai'||current.finished||current.pending!==null)return;
+ if(!current||current.game!=='yut'||current.turn!=='ai'||current.finished)return;
  setTimeout(()=>{
-   if(solo!==current||current.finished||current.turn!=='ai')return;
+  if(solo!==current||current.turn!=='ai'||current.finished)return;
+  if(current.phase==='throw'){
    const roll=rollYut(Math.random,true);
-   current.pending=roll;current.lastRoll=roll;current.rollName=YUT_NAMES[roll];current.bonus=roll===4||roll===5;
-   current.msg='🐱 고양이: '+current.rollName+'! 다음 수를 계산 중...';
+   current.rolls.push(roll);current.lastRoll=roll;current.rollName=YUT_NAMES[roll];
+   current.throwsRemaining--;if(roll===4||roll===5)current.throwsRemaining++;
+   if(current.rolls.length>=24)current.throwsRemaining=0;
+   current.history.push('🐱 고양이: '+current.rollName+' 던짐');current.history=current.history.slice(-8);
+   current.msg='🐱 고양이가 윷을 던지고 있어요. '+current.rollName+'!';
+   if(current.throwsRemaining===0){
+    current.rolls=usableYutRolls(current.pieces.ai,current.rolls);
+    if(!current.rolls.length){soloYutNext('player','고양이가 움직일 수 없어 당신 차례입니다!');return;}
+    current.phase='move';
+   }
+   render();soloYutAiTurn();return;
+  }
+  if(current.phase!=='move'||!current.rolls.length){soloYutNext('player','당신 차례입니다!');return;}
+  const rolls=current.rolls,mine=current.pieces.ai,enemy=current.pieces.player;
+  const candidates=rolls.map((_,i)=>[i]);
+  const positives=rolls.map((x,i)=>x>0?i:-1).filter(i=>i>=0);
+  if(positives.length>1)candidates.push(positives);
+  for(let i=0;i<Math.min(positives.length,5);i++)for(let j=i+1;j<Math.min(positives.length,5);j++)candidates.push([positives[i],positives[j]]);
+  let best=null,bestScore=-Infinity;
+  for(const indices of candidates){
+   const steps=yutSelectedSteps(rolls,indices);
+   const move=chooseCatYutMove(mine,enemy,steps);
+   if(!move)continue;
+   const projected=applyYutMove(mine,enemy,move.index,steps,move.shortcut);
+   const score=projected.caught*150+(projected.won?10000:0)+(projected.done?80:0)+steps*3+Math.random()*2;
+   if(score>bestScore){bestScore=score;best={indices,move};}
+  }
+  if(best){
+   current.msg='🐱 고양이가 이동 중입니다.';
    render();
-   const choice=chooseCatYutMove(current.pieces.ai,current.pieces.player,roll);
-   setTimeout(()=>{
-     if(solo!==current||current.finished||current.turn!=='ai'||current.pending!==roll)return;
-     if(choice)soloYutApply('ai',choice.index,choice.shortcut);
-     else {
-       current.history.push('🐱 고양이: '+current.rollName+' · 움직일 말 없음');
-       soloYutNext('player','고양이가 움직일 말을 찾지 못했어요. 당신 차례!');
-     }
-   },390);
- },460);
+   setTimeout(()=>{if(solo===current&&current.turn==='ai'&&!current.finished&&current.phase==='move')soloYutApply('ai',best.move.index,best.move.shortcut,best.indices);},340);
+  }else{
+   current.rolls=[];soloYutNext('player','고양이가 이동할 말을 찾지 못했어요. 당신 차례!');
+  }
+ },430);
 }
 function updateTick(){
  if(view==='solo'&&solo?.game==='rummikub'&&solo.engine.turn==='player'&&!solo.finished&&Date.now()>solo.engine.deadline){
@@ -650,33 +698,43 @@ function updateTick(){
  }
 }
 
+
+function yutSelectRoll(mode,index){
+ const isSolo=mode==='solo',s=isSolo?solo:room?.state,id=isSolo?'player':user.sid;
+ if(!s||s.phase!=='move'||s.turn!==id||(isSolo?s.finished:room.status!=='playing'))return;
+ if(!Number.isInteger(index)||index<0||index>=s.rolls.length)return;
+ const roomId=isSolo?null:room.id,old=yutChoice(mode,s).indices;
+ let next;
+ if(old.includes(index)){next=old.length===1?old:old.filter(i=>i!==index);}
+ else if(s.rolls[index]===-1||old.some(i=>s.rolls[i]===-1))next=[index];
+ else next=[...old,index].sort((a,b)=>a-b);
+ yutRollSelection={scope:mode,roomId,indices:next};yutRouteChoice=null;render();
+}
 async function yutMovePick(mode,index){
- const isSolo=mode==='solo';
- const s=isSolo?solo:room?.state;
- const id=isSolo?'player':user.sid;
+ const isSolo=mode==='solo',s=isSolo?solo:room?.state,id=isSolo?'player':user.sid;
  const pieces=isSolo?s?.pieces?.player:s?.pieces?.[id];
- if(!s||!pieces||s.pending===null||(isSolo?s.turn!=='player'||s.finished:s.turn!==id||room.status!=='playing'))return;
- const opts=legalYutMoves(pieces,s.pending).filter(m=>m.index===index);
- if(!opts.length){toast('현재 이 말은 이동할 수 없습니다.');return;}
- if(opts.length>1){yutRouteChoice={scope:mode,roomId:room?.id||null,index};render();return;}
- yutRouteChoice=null;
- if(isSolo)soloYutApply('player',index,opts[0].shortcut);
- else await act('move',{index,shortcut:opts[0].shortcut});
+ if(!s||!pieces||s.phase!=='move'||(isSolo?s.turn!=='player'||s.finished:s.turn!==id||room.status!=='playing'))return;
+ const steps=yutChoice(mode,s).steps;
+ if(!Number.isInteger(steps)||!legalYutMoves(pieces,steps).some(m=>m.index===index)){toast('선택한 윷 결과로 이 말은 이동할 수 없습니다.');return;}
+ // Preview first, never move the piece on the first click.
+ yutRouteChoice={scope:mode,roomId:room?.id||null,index};
+ render();
 }
 async function yutMoveRoute(mode,index,shortcut){
  const isSolo=mode==='solo',s=isSolo?solo:room?.state,id=isSolo?'player':user.sid;
  const pieces=isSolo?s?.pieces?.player:s?.pieces?.[id];
- if(!pieces||s.pending===null||(isSolo?s.turn!=='player'||s.finished:s.turn!==id||room.status!=='playing'))return;
- if(!legalYutMoves(pieces,s.pending).some(m=>m.index===index&&m.shortcut===shortcut))return toast('이 경로로 이동할 수 없습니다.');
- yutRouteChoice=null;
- if(isSolo)soloYutApply('player',index,shortcut);
- else await act('move',{index,shortcut});
+ if(!pieces||s.phase!=='move'||(isSolo?s.turn!=='player'||s.finished:s.turn!==id||room.status!=='playing'))return;
+ const {steps,indices}=yutChoice(mode,s);
+ if(!legalYutMoves(pieces,steps).some(m=>m.index===index&&m.shortcut===shortcut))return toast('이 경로로 이동할 수 없습니다.');
+ yutRouteChoice=null;yutRollSelection=null;
+ if(isSolo)soloYutApply('player',index,shortcut,indices);
+ else await act('move',{index,shortcut,rollIndices:indices});
 }
 async function startYutThrow(mode){
  const isSolo=mode==='solo',s=isSolo?solo:room?.state;
- if(yutRolling||!s||s.pending!==null||(isSolo?s.turn!=='player'||s.finished:s.turn!==user.sid||room.status!=='playing'))return;
- const oldSolo=solo, oldRoom=room?.id;
- yutRouteChoice=null;yutRolling={scope:mode,roomId:oldRoom};render();
+ if(yutRolling||!s||s.phase!=='throw'||(isSolo?s.turn!=='player'||s.finished:s.turn!==user.sid||room.status!=='playing'))return;
+ const oldSolo=solo,oldRoom=room?.id;
+ yutRouteChoice=null;yutRollSelection=null;yutRolling={scope:mode,roomId:oldRoom};render();
  await new Promise(resolve=>setTimeout(resolve,730));
  const stillHere=isSolo?solo===oldSolo&&view==='solo':room?.id===oldRoom&&room.status==='playing';
  if(stillHere){if(isSolo)soloYutRoll();else await act('roll');}
@@ -734,6 +792,8 @@ document.addEventListener('click',async e=>{
  if(action==='night'||action==='mafiaVote'||action==='liarVote'){await act(action==='mafiaVote'?'vote':action==='liarVote'?'vote':'night',{target:b.dataset.target});return;}
  if(action==='drawColor'){drawColor=b.dataset.color;document.querySelectorAll('.color-dot').forEach(el=>el.classList.toggle('selected',el.dataset.color===drawColor));return;}
  if(action==='roll'){await startYutThrow('room');return;}
+  if(action==='yutRollChoice'){yutSelectRoll('room',Number(b.dataset.rollIndex));return;}
+  if(action==='soloYutRollChoice'){yutSelectRoll('solo',Number(b.dataset.rollIndex));return;}
  if(action==='yutPick'){await yutMovePick('room',Number(b.dataset.index));return;}
  if(action==='yutRoute'){await yutMoveRoute('room',Number(b.dataset.index),b.dataset.shortcut==='1');return;}
  if(action==='soloYutPick'){await yutMovePick('solo',Number(b.dataset.index));return;}
