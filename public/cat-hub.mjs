@@ -22,30 +22,49 @@ export function renderCatFeatured() {
 export function renderCatHub(games) {
   return '<div class="page-wrap cat-hub-page">'+
     '<div class="breadcrumb"><button data-action="home">홈</button><span>›</span><span>고양이를 이겨라</span></div>'+
-    '<section class="cat-hub-hero"><span class="cat-hub-mascot" aria-hidden="true">🐱</span>'+
-    '<div><span class="cat-feature-kicker">BEAT THE CAT</span>'+
-    '<h1>고양이를 이겨라!</h1>'+
-    '<p>이번엔 고양이가 상대입니다. 마음에 드는 게임을 골라 한 판 승부해 보세요.</p></div></section>'+
-    '<div class="cat-hub-heading"><h2>어떤 게임으로 도전할까요?</h2><span>6가지 고양이 대전</span></div>'+
-    '<div class="cat-choice-grid">'+games.map(g=>{
+    '<section class="cat-hub-hero cat-hub-hero-refresh" aria-labelledby="cat-hub-title">'+
+      '<div class="cat-hub-intro">'+
+        '<span class="cat-hub-eyebrow">✦ SOLO CHALLENGE · 6 GAMES</span>'+
+        '<h1 id="cat-hub-title">고양이에게<br>도전할 시간!</h1>'+
+        '<p>오목부터 끝말잇기까지. 마음에 드는 게임을 고르고 고양이와 한 판 승부해 보세요!</p>'+
+        '<a href="#cat-game-choices" class="cat-hub-jump">게임 선택하기 <span aria-hidden="true">↓</span></a>'+
+      '</div>'+
+      '<a class="cat-hub-art" href="#cat-game-choices" aria-label="고양이를 이겨라 배너 — 대전 게임 선택으로 이동">'+
+        '<img src="/assets/cat-feature-banner.png" alt="왕관을 쓴 고양이와 함께하는 고양이를 이겨라! 게임 배너" width="775" height="470" loading="eager" decoding="async">'+
+      '</a>'+
+    '</section>'+
+    '<div class="cat-hub-heading" id="cat-game-choices"><h2>어떤 게임으로 도전할까요?</h2><span>6가지 고양이 대전</span></div>'+
+    '<div class="cat-choice-grid">'+games.map((g,index)=>{
       const id=escapeHtml(g.id),name=escapeHtml(g.name),icon=escapeHtml(g.emoji);
-      return '<button type="button" class="cat-choice-card" data-action="catChoose" data-cat-game="'+id+'">'+
-      '<span class="cat-choice-icon" aria-hidden="true">'+icon+'</span>'+
-      '<span class="cat-choice-copy"><strong>'+name+'</strong><small>'+escapeHtml(catDetails[g.id]||g.desc)+'</small></span>'+
-      '<span class="cat-choice-arrow" aria-hidden="true">→</span></button>';
+      return '<button type="button" class="cat-choice-card cat-choice-'+id+'" data-action="catChoose" data-cat-game="'+id+'">'+
+        '<span class="cat-choice-icon" aria-hidden="true">'+icon+'</span>'+
+        '<span class="cat-choice-copy"><span class="cat-choice-number">CHALLENGE '+String(index+1).padStart(2,'0')+'</span>'+
+        '<strong>'+name+'</strong><small>'+escapeHtml(catDetails[g.id]||g.desc)+'</small></span>'+
+        '<span class="cat-choice-arrow" aria-hidden="true">↗</span></button>';
     }).join('')+'</div>'+
-    '<p class="cat-hub-note">여기는 고양이 AI와의 1인 대전 전용입니다. 친구와 하려면 홈의 일반 게임 목록을 이용하세요.</p>'+
-    '</div>';
+    '<p class="cat-hub-note">고양이 AI와의 1인 대전 전용입니다. 친구와 대전하려면 홈에서 일반 게임을 선택하세요.</p>'+
+  '</div>';
 }
 
 export function renderCatSetup(game, settings) {
-  const label=escapeHtml(game.name);
+  const label=escapeHtml(game.name),icon=escapeHtml(game.emoji);
+  const detail=escapeHtml(catDetails[game.id]||game.desc);
   return '<div class="page-wrap cat-setup-page">'+
     '<div class="breadcrumb"><button data-action="home">홈</button><span>›</span><button data-action="openCatHub">고양이를 이겨라</button><span>›</span>'+label+'</div>'+
-    '<section class="cat-setup-banner"><span class="cat-setup-icon" aria-hidden="true">'+escapeHtml(game.emoji)+'</span>'+
-    '<div><span class="cat-feature-kicker">🐱 CAT CHALLENGE</span><h1>'+label+' · 고양이를 이겨라</h1>'+
-    '<p>고양이와 1:1로 대결합니다. 설정을 선택하고 시작하세요.</p></div></section>'+
-    '<div class="cat-setup-panel">'+settings+
-    '<div class="cat-setup-actions"><button type="button" class="button button-primary" data-action="solo">🐱 고양이를 이겨라 시작하기</button>'+
-    '<button type="button" class="button button-secondary" data-action="openCatHub">다른 게임 선택</button></div></div></div>';
+    '<section class="cat-setup-banner cat-setup-hero" aria-labelledby="cat-setup-title">'+
+      '<div class="cat-setup-copy"><span class="cat-setup-eyebrow">✦ SOLO CHALLENGE · VS CAT</span>'+
+        '<h1 id="cat-setup-title">'+label+' <span>대전</span></h1>'+
+        '<p>'+detail+'<br>규칙을 정하고 고양이와 승부해 보세요!</p>'+
+      '</div>'+
+      '<div class="cat-setup-illustration" aria-hidden="true"><span class="cat-setup-spark">✦</span>'+
+        '<span class="cat-setup-graphic-cat">😼</span><span class="cat-setup-graphic-vs">VS</span>'+
+        '<span class="cat-setup-graphic-game">'+icon+'</span></div>'+
+    '</section>'+
+    '<div class="cat-setup-panel cat-setup-panel-refresh">'+
+      '<div class="cat-setup-panel-header"><span aria-hidden="true">⚙️</span>'+
+      '<div><strong>게임 시작 전 설정</strong><p>원하는 규칙과 제한시간을 골라주세요.</p></div></div>'+
+      settings+
+      '<div class="cat-setup-actions"><button type="button" class="button button-primary" data-action="solo">고양이와 대전 시작하기 →</button>'+
+      '<button type="button" class="button button-secondary" data-action="openCatHub">다른 게임 선택</button></div>'+
+    '</div></div>';
 }
