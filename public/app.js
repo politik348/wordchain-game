@@ -5,6 +5,7 @@ import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseC
 import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut2';
 import {renderYutBoard,renderYutThrow,renderYutRouteChooser} from './yut-board.mjs?v=20261120yut2';
 import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261120hell2tetrislogic1';
+import {createMembershipUI} from './auth-ui.mjs';
 const GAMES=[
  {id:'gamehell',name:'모여게임지옥',genre:'아케이드 · 13종',players:'1명',emoji:'😼',color:'#e8dffd',badge:'캐릭터 상점',desc:'13가지 원터치 아케이드! 별조각을 모아 고양이 캐릭터를 사고 장착해 보세요.',rules:[['13종 게임','낙하·점프·로켓·얼음 등 13가지 원터치 게임을 선택합니다.'],['기록 도전','최고 점수와 별조각은 현재 브라우저에 저장됩니다.'],['고양이 목표','고정 목표 점수에 도전하는 모드이며 실시간 고양이 AI 대전은 아닙니다.']]},
  {id:'tetris',name:'모여 테트리스',genre:'퍼즐 · 블록',players:'1명',emoji:'🧩',color:'#f3e1c4',badge:'고전 퍼즐',desc:'클래식 테트리스! 블록을 회전·이동해 줄을 지우고 최고 점수에 도전해요.',rules:[['조작','방향키로 이동, 위쪽 방향키로 회전, 스페이스로 하드 드롭합니다.'],['점수','가로줄을 채우면 지워지며, 연속으로 지울수록 높은 점수를 얻습니다.'],['기록','최고 점수는 이 브라우저에 저장됩니다.']]},
@@ -23,6 +24,7 @@ const GAMES=[
 const GAME=Object.fromEntries(GAMES.map(g=>[g.id,g]));
 const root=document.getElementById('app');
 const $=id=>document.getElementById(id);
+let membership=null;
 const user={nick:localStorage.getItem('moyeo-nick')||`게스트${Math.floor(Math.random()*899+100)}`,sid:sessionStorage.getItem('moyeo-sid')||crypto.randomUUID()};
 sessionStorage.setItem('moyeo-sid',user.sid);
 let view='home',selection='wordchain',room=null,eventSource=null,apiLive=true,solo=null,allWords=[],allWordSet=new Set(),allWordsByFirst=new Map(),startCounts=new Map(),soloTimer=null,roomList=[],lastRoomUrl='';
@@ -64,17 +66,24 @@ const btn=(action,label,style='button-secondary',disabled=false,more='')=>`<butt
 function toast(message){const zone=$('toastZone');const el=document.createElement('div');el.className='toast';el.textContent=message;zone.append(el);setTimeout(()=>el.remove(),3300);}
 function routeHome(){yutRouteChoice=null;yutRolling=null;closeDoodleSocket();view='home';selection='wordchain';room=null;solo=null;eventSource?.close();eventSource=null;sessionStorage.removeItem('moyeo-last-room');history.replaceState(null,'',location.pathname);render();}
 function setNav(which){document.querySelectorAll('[data-nav]').forEach(x=>x.classList.toggle('is-current',x.dataset.nav===which));}
-function revealNickname(){const dialog=$('nickDialog');$('nicknameInput').value=user.nick;dialog.showModal();setTimeout(()=>$('nicknameInput').focus(),50);}
+function revealNickname(){membership?.open('login');}
 async function api(uri,options){
  const res=await fetch(uri,{...options,headers:{'Content-Type':'application/json',...(options?.headers||{})}});
  let data;try{data=await res.json();}catch{throw new Error('서버 응답을 읽을 수 없습니다.');}
  if(!res.ok)throw new Error(data.error||'요청에 실패했습니다.');return data;
 }
 function handleErr(e){toast(e.message||'요청에 실패했습니다.');console.error(e);}
-async function refreshRooms(game=''){try{const result=await api('/api/rooms'+(game?`?game=${encodeURIComponent(game)}`:''));roomList=result.rooms;apiLive=true;$('serverStatus').textContent='실시간 서버 연결됨';document.querySelector('.online-dot').classList.remove('off');}
+async function refreshRooms(game=''){
+ if(membership&&!membership.hasAccount()){
+  roomList=[];
+  try{await api('/api/health');apiLive=true;$('serverStatus').textContent='멀티플레이는 로그인 필요';document.querySelector('.online-dot')?.classList.remove('off');}
+  catch{apiLive=false;$('serverStatus').textContent='서버 연결 확인 필요';document.querySelector('.online-dot')?.classList.add('off');}
+  return;
+ }
+ try{const result=await api('/api/rooms'+(game?`?game=${encodeURIComponent(game)}`:''));roomList=result.rooms;apiLive=true;$('serverStatus').textContent='실시간 서버 연결됨';document.querySelector('.online-dot').classList.remove('off');}
  catch(e){roomList=[];apiLive=false;$('serverStatus').textContent='고양이 대전 모드';document.querySelector('.online-dot').classList.add('off');}}
-async function createRoom(game){if(!apiLive)return toast('실시간 방은 Node.js 서버에서 실행해야 합니다.');try{const data=await api('/api/rooms',{method:'POST',body:JSON.stringify({game,sid:user.sid,nick:user.nick,options:optionsFor(game)})});enterRoom(data.room);}catch(e){handleErr(e);}}
-async function joinRoom(code){if(!apiLive)return toast('실시간 서버 연결이 필요합니다.');try{const data=await api(`/api/rooms/${code.toUpperCase()}/join`,{method:'POST',body:JSON.stringify({sid:user.sid,nick:user.nick})});enterRoom(data.room);$('joinDialog').close();}catch(e){handleErr(e);}}
+async function createRoom(game){if(!(await membership.requireLogin(()=>createRoom(game))))return;if(!apiLive)return toast('실시간 방은 Node.js 서버에서 실행해야 합니다.');try{const data=await api('/api/rooms',{method:'POST',body:JSON.stringify({game,sid:user.sid,nick:user.nick,options:optionsFor(game)})});enterRoom(data.room);}catch(e){handleErr(e);}}
+async function joinRoom(code){if(!(await membership.requireLogin(()=>joinRoom(code))))return;if(!apiLive)return toast('실시간 서버 연결이 필요합니다.');try{const data=await api(`/api/rooms/${code.toUpperCase()}/join`,{method:'POST',body:JSON.stringify({sid:user.sid,nick:user.nick})});enterRoom(data.room);$('joinDialog').close();}catch(e){handleErr(e);}}
 async function act(type,payload={}){if(!room)return false;try{const data=await api(`/api/rooms/${room.id}/action`,{method:'POST',body:JSON.stringify({sid:user.sid,type,payload})});if(data.room)updateRoom(data.room);return true;}catch(e){handleErr(e);return false;}}
 async function leave(){if(room){try{await api(`/api/rooms/${room.id}/leave`,{method:'POST',body:JSON.stringify({sid:user.sid})});}catch{}}routeHome();}
 function closeDoodleSocket(){
@@ -702,8 +711,11 @@ document.addEventListener('click',async e=>{
  const b=e.target.closest('[data-action]');if(!b)return;
  const action=b.dataset.action;
  if(action==='home'){routeHome();return;}if(action==='homeConfirm'){if(confirm('현재 게임방을 나가고 홈으로 이동할까요?'))await leave();return;}
- if(action==='nick'){revealNickname();return;}if(action==='guide'){view='guide';render();scrollTo(0,0);return;}
- if(action==='openJoin'){$('joinInput').value='';$('joinDialog').showModal();return;}
+ if(action==='nick'){revealNickname();return;}if(action==='openLogin'){membership.open('login');return;}if(action==='openRegister'){membership.open('register');return;}if(action==='guide'){view='guide';render();scrollTo(0,0);return;}
+ if(action==='openJoin'){
+  if(!(await membership.requireLogin(()=>{$('joinInput').value='';$('joinDialog').showModal();})))return;
+  $('joinInput').value='';$('joinDialog').showModal();return;
+ }
  if(action==='openCatHub'){solo=null;view='catHub';render();window.scrollTo(0,0);return;}
  if(action==='catChoose'){
   const target=b.dataset.catGame;
@@ -791,7 +803,7 @@ document.addEventListener('focusout',e=>{
  setTimeout(()=>{if(deferredRoomRender&&!userEditing()&&view==='room'&&room){deferredRoomRender=false;render();}},0);
 });
 document.addEventListener('submit',async e=>{
- const form=e.target;if(form.id==='nickForm'){e.preventDefault();user.nick=($('nicknameInput').value.trim().slice(0,14)||'게스트');localStorage.setItem('moyeo-nick',user.nick);$('nickDialog').close();if(room)await act('rename',{nick:user.nick});render();toast('닉네임을 변경했습니다.');return;}
+ const form=e.target;if(form.id==='nickForm'){e.preventDefault();$('nickDialog').close();membership.open('login');return;}
  if(form.id==='joinForm'){e.preventDefault();const code=$('joinInput').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==6){toast('6자리 코드를 입력하세요.');return;}await joinRoom(code);return;}
  if(!form.dataset.form)return;e.preventDefault();if(composingForm)return;const values=Object.fromEntries(new FormData(form).entries());const type=form.dataset.form;
  if(type==='soloWord'){const input=form.querySelector('input[name=word]');if(input)input.value='';const worked=soloPlayWord(values.word);if(worked===false&&input){input.value=values.word;input.focus({preventScroll:true});}return;}
@@ -815,5 +827,23 @@ $('closeJoin').addEventListener('click',()=>$('joinDialog').close());
 document.addEventListener('change',e=>{if(e.target.id==='drawWidth')drawWidth=Number(e.target.value);});
 document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',async()=>{if(room&&!(confirm('게임방을 나가고 이동할까요?')))return;if(room)await leave();if(b.dataset.nav==='home'){routeHome();}else if(b.dataset.nav==='cat'){view='catHub';solo=null;render();}else if(b.dataset.nav==='rooms'){view='rooms';await refreshRooms();render();}else{view='guide';render();}scrollTo(0,0);}));
 setInterval(updateTick,200);
-async function init(){await refreshRooms();const url=new URLSearchParams(location.search),catReturn=url.get('cat')==='1'&&!url.get('room'),code=catReturn?null:url.get('room')||sessionStorage.getItem('moyeo-last-room');if(catReturn){view='catHub';}if(code&&/^[A-Za-z0-9]{6}$/.test(code)&&apiLive){try{await joinRoom(code);return;}catch(e){sessionStorage.removeItem('moyeo-last-room');}}render();}
+async function init(){await membership.refresh();await refreshRooms();const url=new URLSearchParams(location.search),catReturn=url.get('cat')==='1'&&!url.get('room'),code=catReturn?null:url.get('room')||sessionStorage.getItem('moyeo-last-room');if(catReturn){view='catHub';}if(code&&/^[A-Za-z0-9]{6}$/.test(code)&&apiLive){try{await joinRoom(code);return;}catch(e){sessionStorage.removeItem('moyeo-last-room');}}render();}
+membership=createMembershipUI({
+ onAccountChanged(account){
+  if(account){
+   user.sid=account.id;user.nick=account.dripNickname;
+   sessionStorage.setItem('moyeo-sid',account.id);localStorage.setItem('moyeo-nick',account.dripNickname);
+  }else{
+   const guestSid=crypto.randomUUID();user.sid=guestSid;sessionStorage.setItem('moyeo-sid',guestSid);
+   user.nick='게스트';
+  }
+  if(document.getElementById('headerNickname'))$('headerNickname').textContent=account?account.dripNickname:'로그인 / 회원가입';
+  if(root?.innerHTML&&!root.querySelector('.loading-area'))render();
+ },
+ afterLogin(){
+  const params=new URLSearchParams(location.search),next=params.get('next');
+  if(next&&/^\/(?:marble\/index\.html)(?:\?[^#]*)?(?:#.*)?$/.test(next)){location.href=next;return;}
+  refreshRooms(view==='detail'?selection:'').then(()=>render());
+ }
+});
 init();
