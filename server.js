@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, randomInt } from 'node:crypto';
 import {acceptWebSocket} from './websocket-lite.mjs';
-import {applyYutMove,legalYutMoves} from './public/yut-solo-engine.mjs';
+import {applyYutMove,legalYutMoves,yutSelectedSteps,usableYutRolls} from './public/yut-solo-engine.mjs';
 import {startRummikub, sanitizeRummikub, actRummikub, tickRummikub, labelRummikub} from './rummikub/multiplayer.mjs';
 import {handleMarbleRequest} from './marble-server.mjs';
 import {handleAccountRequest,multiplayerAccount} from './auth.mjs';
@@ -169,7 +169,7 @@ function start(r) {
       r.state={roles:Object.fromEntries(ids.map((x,i)=>[x,roles[i]])),alive:[...ids],phase:'night',day:1,nightActions:{},investigations:{},votes:{},chat:[],history:[{text:'첫 번째 밤이 시작되었습니다. 역할을 확인하고 행동하세요.'}],result:null};break;
     }
     case 'bell':r.state={cards:Object.fromEntries(ids.map(x=>[x,null])),scores:Object.fromEntries(ids.map(x=>[x,0])),pile:0,draws:0,maxDraws:24,lastDraw:Date.now(),round:1,feedback:'카드가 뒤집힐 때를 기다려요.',deadline:Date.now()+1900};break;
-    case 'yut':r.state={turn:ids[0],turnIndex:0,pieces:Object.fromEntries(ids.map(x=>[x,Array.from({length:4},()=>({node:0,route:'outer',index:0,done:false}))])),pending:null,rollName:null,bonus:false,history:[],result:null,deadline:Date.now()+r.options.turnSeconds*1000};break;
+    case 'yut':r.state={turn:ids[0],turnIndex:0,pieces:Object.fromEntries(ids.map(x=>[x,Array.from({length:4},()=>({node:0,route:'outer',index:0,done:false}))])),pending:null,rolls:[],phase:'throw',throwsRemaining:1,rollName:null,history:[],result:null,deadline:Date.now()+r.options.turnSeconds*1000};break;
   }
   touch(r,'게임이 시작되었습니다!');
 }
@@ -263,28 +263,35 @@ const initials = (c)=>{
   if(cho===2&&[2,6,12,17,20].includes(jung))set.add(String.fromCharCode(44032+11*588+code%588));
   return set;
 };
-function moveYut(r,sid,pieceIndex,shortcut=true) {
-  const s=r.state,n=Number(pieceIndex);
-  if(!Number.isInteger(n)||n<0||n>3)throw err(400,'말을 선택하세요.');
-  if(s.pending===null)throw err(400,'먼저 윷을 던지세요.');
-  const mine=s.pieces[sid];
-  if(!legalYutMoves(mine,s.pending).some(m=>m.index===n&&m.shortcut===shortcut))throw err(400,'그 방향으로 이동할 수 없습니다.');
-  const result=applyYutMove(mine,[],n,s.pending,shortcut);
-  s.pieces[sid]=result.mine;
-  let caught=false;
-  if(!result.done&&result.to!==0)for(const [otherId,ps] of Object.entries(s.pieces)) {
-    if(otherId===sid)continue;
-    ps.forEach((p,j)=>{if(!p.done&&p.node===result.to){ps[j]={node:0,route:'outer',index:0,done:false};caught=true;}});
-  }
-  s.lastMove={sid,index:n,to:result.to,at:Date.now(),shortcut};
-  s.history.push(`${player(r,sid)?.nick}: ${s.rollName} → ${n+1}번 말${caught?' (잡기!)':''}${result.done?' (완주!)':''}`);
-  s.history=s.history.slice(-8);
-  if(result.won){finish(r,`${player(r,sid).nick}님이 윷놀이에서 승리했습니다!`);return;}
-  const bonus=s.bonus||caught;
-  s.pending=null;s.rollName=null;s.bonus=false;
-  if(!bonus){s.turnIndex=(s.turnIndex+1)%r.players.length;s.turn=r.players[s.turnIndex].id;}
-  s.deadline=Date.now()+r.options.turnSeconds*1000;
-  touch(r,bonus?'한 번 더 던지세요!':'다음 차례입니다.');
+
+function nextYutTurn(r,message){
+ const s=r.state;s.rolls=[];s.pending=null;s.rollName=null;s.phase='throw';s.throwsRemaining=1;
+ s.turnIndex=(s.turnIndex+1)%r.players.length;s.turn=r.players[s.turnIndex].id;
+ s.deadline=Date.now()+r.options.turnSeconds*1000;touch(r,message||'다음 차례입니다.');
+}
+function moveYut(r,sid,pieceIndex,shortcut=true,rollIndices=[0]){
+ const s=r.state,n=Number(pieceIndex);
+ if(!Number.isInteger(n)||n<0||n>3)throw err(400,'말을 선택하세요.');
+ if(s.phase!=='move'||!s.rolls?.length)throw err(400,'추가 던지기를 마친 뒤 말을 이동하세요.');
+ let steps;try{steps=yutSelectedSteps(s.rolls,rollIndices);}catch{throw err(400,'이동할 윷 결과를 다시 선택하세요.');}
+ const mine=s.pieces[sid];
+ if(!legalYutMoves(mine,steps).some(m=>m.index===n&&m.shortcut===shortcut))throw err(400,'그 방향으로 이동할 수 없습니다.');
+ const labels=rollIndices.map(i=>({'1':'도','2':'개','3':'걸','4':'윷','5':'모','-1':'빽도'})[s.rolls[i]]).join('+');
+ const result=applyYutMove(mine,[],n,steps,shortcut);s.pieces[sid]=result.mine;let caught=0;
+ if(!result.done&&result.to!==0)for(const [otherId,ps] of Object.entries(s.pieces)){
+  if(otherId===sid)continue;
+  ps.forEach((p,j)=>{if(!p.done&&p.node===result.to){ps[j]={node:0,route:'outer',index:0,done:false};caught++;}});
+ }
+ s.lastMove={sid,index:n,to:result.to,at:Date.now(),shortcut};
+ s.history.push(`${player(r,sid)?.nick}: ${labels} → ${n+1}번 말${caught?' (상대 말 '+caught+'개 잡기!)':''}${result.done?' (완주!)':''}`);
+ s.history=s.history.slice(-8);
+ if(result.won){finish(r,`${player(r,sid).nick}님이 윷놀이에서 승리했습니다!`);return;}
+ const used=new Set(rollIndices);s.rolls=s.rolls.filter((_,i)=>!used.has(i));
+ s.rolls=usableYutRolls(s.pieces[sid],s.rolls);
+ s.deadline=Date.now()+r.options.turnSeconds*1000;
+ if(caught){s.phase='throw';s.throwsRemaining=1;touch(r,'상대 말을 잡았어요! 남은 결과를 유지하고 먼저 추가로 던지세요.');}
+ else if(s.rolls.length){s.phase='move';touch(r,'남은 윷 결과를 골라 말을 움직이세요.');}
+ else nextYutTurn(r,'모든 윷 결과를 사용했습니다. 다음 차례입니다.');
 }
 function act(r,sid,type,data={},transport='http') {
   requireMember(r,sid);
@@ -441,21 +448,23 @@ function act(r,sid,type,data={},transport='http') {
     touch(r,s.feedback);return;
   }
   if(r.game==='yut'){
-    if(s.turn!==sid)throw err(403,'다른 사람의 차례입니다.');
-    if(type==='roll'){
-      if(s.pending!==null)throw err(400,'먼저 말을 이동하세요.');
-      const roll=pick([1,1,1,2,2,2,3,3,3,4,4,5,-1]);
-      s.pending=roll;s.lastRoll=roll;s.rollName=({'1':'도','2':'개','3':'걸','4':'윷','5':'모','-1':'빽도'})[roll];s.bonus=roll===4||roll===5;
-      if(roll===-1&&!s.pieces[sid].some(x=>x.node!==0&&!x.done)){
-        s.pending=null;s.turnIndex=(s.turnIndex+1)%r.players.length;s.turn=r.players[s.turnIndex].id;s.deadline=Date.now()+r.options.turnSeconds*1000;
-        touch(r,'움직일 말이 없어 빽도 차례를 넘깁니다.');return;
-      }
-      touch(r,`${player(r,sid).nick}: ${s.rollName}!`);return;
-    }
-    if(type==='move'){
-      if(s.pending===null)throw err(400,'먼저 윷을 던지세요.');
-      moveYut(r,sid,data.index,data.shortcut!==false);return;
-    }
+   if(s.turn!==sid)throw err(403,'다른 사람의 차례입니다.');
+   if(type==='roll'){
+    if(s.phase!=='throw'||s.throwsRemaining<=0)throw err(400,'먼저 말을 이동하세요.');
+    const roll=pick([1,1,1,2,2,2,3,3,3,4,4,5,-1]);
+    s.rolls.push(roll);s.pending=null;s.lastRoll=roll;
+    s.rollName=({'1':'도','2':'개','3':'걸','4':'윷','5':'모','-1':'빽도'})[roll];
+    s.throwsRemaining--;if(roll===4||roll===5)s.throwsRemaining++;
+    if(s.rolls.length>=24)s.throwsRemaining=0;
+    s.deadline=Date.now()+r.options.turnSeconds*1000;
+    if(s.throwsRemaining===0){
+     s.rolls=usableYutRolls(s.pieces[sid],s.rolls);
+     if(!s.rolls.length){nextYutTurn(r,'사용할 수 있는 윷 결과가 없어 다음 차례입니다.');return;}
+     s.phase='move';touch(r,`${player(r,sid).nick}: ${s.rollName}! 모두 던졌습니다. 말을 움직이세요.`);
+    }else touch(r,`${player(r,sid).nick}: ${s.rollName}! 추가로 던지세요.`);
+    return;
+   }
+   if(type==='move'){moveYut(r,sid,data.index,data.shortcut!==false,Array.isArray(data.rollIndices)?data.rollIndices:[0]);return;}
   }
   throw err(400,'현재 상태에서 사용할 수 없는 행동입니다.');
 }
@@ -474,9 +483,7 @@ function gameTick(){
     } else if(r.game==='omok'&&now>s.deadline){
       const winner=r.players.find(p=>p.id!==s.turn);finish(r,`${player(r,s.turn).nick}님 시간 초과! ${winner?.nick}님 승리!`);
     } else if(r.game==='yut'&&now>s.deadline){
-      s.pending=null;s.rollName=null;s.bonus=false;s.turnIndex=(s.turnIndex+1)%r.players.length;
-      s.turn=r.players[s.turnIndex].id;s.deadline=now+r.options.turnSeconds*1000;
-      touch(r,'시간 초과! 다음 사람에게 차례가 넘어갑니다.');
+      nextYutTurn(r,'시간 초과! 다음 사람에게 차례가 넘어갑니다.');
     } else if(r.game==='doodle'&&now>s.deadline){
       touch(r,`시간 종료! 정답: ${s.word}`);nextDoodle(r);
     } else if(r.game==='bell'&&now>s.deadline){
