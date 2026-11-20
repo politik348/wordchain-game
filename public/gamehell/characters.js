@@ -1,11 +1,11 @@
-/* 캐릭터 목록 편집 파일. image에 "./assets/characters/파일명.png"를 넣으면 게임 화면에도 적용됩니다. */
+/* MOYEO CHARACTER REGISTRY. Later, replace image paths with your own PNG/WebP/SVG files. */
 window.MOYEO_CHARACTERS = [
-  {id:'cheese', name:'치즈냥', price:0, color:'#ffbd78', emoji:'🐱', image:'', detail:'모여게임지옥의 기본 고양이'},
-  {id:'peach', name:'복숭냥', price:15, color:'#ffc1c8', emoji:'🌸', image:'', detail:'발랄한 분홍빛 친구'},
-  {id:'mint', name:'민트냥', price:40, color:'#a9e9ca', emoji:'🍀', image:'', detail:'상쾌한 민트색 고양이'},
-  {id:'space', name:'우주냥', price:90, color:'#a5b4fc', emoji:'🌌', image:'', detail:'별을 좋아하는 보랏빛 친구'},
-  {id:'night', name:'밤냥이', price:150, color:'#6d729d', emoji:'🌙', image:'', detail:'밤하늘을 누비는 탐험가'},
-  {id:'sunny', name:'햇살냥', price:250, color:'#ffdc76', emoji:'☀️', image:'', detail:'눈부신 황금빛 모험가'},
-  {id:'cloudy', name:'구름냥', price:400, color:'#e3e8fa', emoji:'☁️', image:'', detail:'폭신한 구름을 닮은 고양이'},
-  {id:'royal', name:'왕관냥', price:650, color:'#d8a7f9', emoji:'👑', image:'', detail:'캐릭터 수집가의 최종 목표'}
+  {id:'cheese',name:'치즈냥',price:0,color:'#f6ad65',rarity:'common',image:'./assets/characters/cheese.svg',detail:'치즈색 줄무늬 탐험가',perk:{type:'star_bonus',extra:0}},
+  {id:'peach',name:'복숭냥',price:15,color:'#f4a8bb',rarity:'common',image:'./assets/characters/peach.svg',detail:'봄처럼 화사한 친구',perk:{type:'star_bonus',extra:1}},
+  {id:'mint',name:'민트냥',price:40,color:'#7fceb5',rarity:'common',image:'./assets/characters/mint.svg',detail:'초록빛 숲의 친구',perk:{type:'star_bonus',extra:1,mode:'slalom'}},
+  {id:'space',name:'우주냥',price:90,color:'#8998e7',rarity:'rare',image:'./assets/characters/space.svg',detail:'밤하늘의 조각을 모으는 친구',perk:{type:'star_bonus',extra:1,mode:'flight'}},
+  {id:'night',name:'밤냥이',price:150,color:'#7377ab',rarity:'rare',image:'./assets/characters/night.svg',detail:'별빛을 사랑하는 친구',perk:{type:'star_bonus',extra:1,mode:'hurdle'}},
+  {id:'sunny',name:'햇살냥',price:250,color:'#f5ce72',rarity:'rare',image:'./assets/characters/sunny.svg',detail:'맑은 날의 질주왕',perk:{type:'star_bonus',extra:2,mode:'dash'}},
+  {id:'cloudy',name:'구름냥',price:400,color:'#dde7f2',rarity:'epic',image:'./assets/characters/cloudy.svg',detail:'하늘을 가볍게 건너는 친구',perk:{type:'star_bonus',extra:2,mode:'cloud'}},
+  {id:'royal',name:'왕관냥',price:650,color:'#cda2e3',rarity:'epic',image:'./assets/characters/royal.svg',detail:'컬렉션의 작은 왕',perk:{type:'star_bonus',extra:2}},
 ];

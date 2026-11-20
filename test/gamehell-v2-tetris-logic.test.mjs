@@ -52,12 +52,12 @@ test('Logic preserves puzzle controls, stages and local progress',()=>{
  new Script(inline(logic));
 });
 
-test('Game Hell v2 includes 8 purchasable characters and preserves v1 records',()=>{
+test('Game Hell v2.1 includes 8 collectible character sprites and preserves v1 records',()=>{
  assert.match(hell,/shopHeaderBtn/);
  assert.match(hell,/shopModal/);
  assert.match(hell,/shopBalance/);
- assert.match(hell,/characters\.js\?v=20261120hell2/);
- assert.match(hell,/gamehell\.js\?v=20261120hell2/);
+ assert.match(hell,/characters\.js\?v=20261120hell21/);
+ assert.match(hell,/gamehell\.js\?v=20261120hell21/);
  assert.match(hellJs,/moyeo-gamehell-v1/);
  assert.match(hellJs,/buyOrEquip/);
  assert.match(hellJs,/renderShop/);

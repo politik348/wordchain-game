@@ -136,3 +136,18 @@
  .mm-monopoly-flag{font-size:6px;right:0}
  .mm-olympic-flag{font-size:6px;right:0;top:10px}
 }
+
+/* v4: endless mode, Fortune draw and one-time loan */
+.mm-fortune-picks{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:14px auto}
+.mm-fortune-card{min-width:80px;min-height:116px;border:2px solid #e9b5cf;border-radius:14px;color:#57364d;background:linear-gradient(145deg,#fff4e0,#f9d7ec);box-shadow:0 5px 0 #e2b1c5,0 10px 18px #7c366122;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:transform .18s,box-shadow .18s}
+.mm-fortune-card span{font-size:27px;color:#d472aa}.mm-fortune-card strong{font-size:13px;font-weight:900}.mm-fortune-card small{font-size:11px;color:#936d81}
+.mm-fortune-card:hover:not(:disabled),.mm-fortune-card:focus-visible{transform:translateY(-8px) rotate(-2deg);box-shadow:0 12px 0 #e2b1c5,0 20px 25px #7c366122}
+.mm-fortune-card:disabled{opacity:.45;cursor:default}.mm-bank-loan{margin:9px auto 0;text-align:center}.mm-bank-loan .mm-btn{font-size:11px;padding:8px 12px;white-space:normal;max-width:100%}
+.mm-endless-progress{padding:12px;margin-top:14px;text-align:center;background:#f3efff;color:#6b55a6;border-radius:12px;font-weight:850;font-size:12px}
+@media(max-width:500px){.mm-fortune-card{min-width:65px;min-height:92px;gap:3px}.mm-fortune-card span{font-size:23px}.mm-bank-loan .mm-btn{font-size:10px}}
+
+@keyframes mmFortuneEntrance{0%{transform:scale(.72) rotate(-5deg);opacity:.45}60%{transform:scale(1.09) rotate(2deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+.mm-scene-card.mm-fortune-reveal{background:linear-gradient(135deg,#fff3d4 0%,#ffe6ec 48%,#e9ddff 100%);border:2px solid #f7b2c3;animation:mmFortuneEntrance .55s cubic-bezier(.2,.8,.2,1)}
+.mm-scene-card.mm-fortune-reveal .mm-scene-icon{filter:drop-shadow(0 8px 12px #e583a266);animation:mmFortuneEntrance .65s both}
+.mm-scene-card.mm-loan-reveal{background:linear-gradient(135deg,#e2f7ed,#e8eafd);border:2px solid #b6dac6;animation:mmFortuneEntrance .45s both}
+@media(prefers-reduced-motion:reduce){.mm-scene-card.mm-fortune-reveal,.mm-scene-card.mm-loan-reveal,.mm-scene-card.mm-fortune-reveal .mm-scene-icon{animation:none}}

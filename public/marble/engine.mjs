@@ -1,4 +1,4 @@
-/** 모여마블 v3: original 24-tile, short-form property board game.
+/** 모여마블 v4: original 24-tile, short-form property board game.
  * Rules inspired by the publicly documented classic Modoo Marble features.
  * No copyrighted art, names, card text or code from the commercial game.
  * Pure deterministic engine: same actions run locally or on the multiplayer server.
@@ -24,6 +24,24 @@ export const TILES=[
 ];
 export const MAX_PLAYERS=4, START_CASH=1900, PASS_BONUS=220;
 export const ALLOWED_ROUNDS=[8,12,16], DEFAULT_ROUNDS=12;
+export const ENDLESS_ROUNDS=0, BANK_LOAN=450, BANK_REPAY=540;
+export const FORTUNE_CARDS=[
+ {title:'대박 굿즈 출시!',effect:'cash',amount:240,emoji:'🎁'},
+ {title:'세계 축제 흥행!',effect:'cash',amount:170,emoji:'🎉'},
+ {title:'깜짝 세금 환급!',effect:'cash',amount:115,emoji:'💰'},
+ {title:'고양이 복권 당첨!',effect:'cash',amount:300,emoji:'🐱'},
+ {title:'특별 수리 비용!',effect:'cash',amount:-135,emoji:'🧰'},
+ {title:'비행기 연착료!',effect:'cash',amount:-95,emoji:'✈️'},
+ {title:'지역 바자회 후원!',effect:'cash',amount:-80,emoji:'🤝'},
+ {title:'통행료 면제 천사카드!',effect:'angel',emoji:'🪽'},
+ {title:'통행료 50% 할인권!',effect:'discount',emoji:'🎟️'},
+ {title:'무료 세계여행!',effect:'travel',emoji:'🌎'},
+ {title:'출발지로 순간 이동!',effect:'start',emoji:'🚩'},
+ {title:'한 건물 무료 업그레이드!',effect:'freeBuild',emoji:'🏗️'},
+ {title:'고양이의 특별 선물!',effect:'cash',amount:200,emoji:'🎀'},
+ {title:'긴급 보수비!',effect:'cash',amount:-180,emoji:'🧾'},
+ {title:'통행료 면제 천사카드!',effect:'angel',emoji:'🪽'}
+];
 export const TOLL_MULTIPLIERS=[.25,1,2.5,5,9];
 export const LEVEL_NAMES=['토지','별장','빌딩','호텔','랜드마크'];
 export const ISLAND_TURNS=3, BAIL_COST=110, PARITY_USES=3;
@@ -65,10 +83,13 @@ export function toll(s,i){
  if(t.kind==='tourist'&&tourismComplete(s,v.owner))n*=2;
  if(s.olympics?.[i])n*=s.olympics[i];
  if(s.festival?.index===i&&s.turnCount<s.festival.expires)n*=2;
- if(s.round>s.maxRounds/2)n*=1+0.12*(s.round-Math.floor(s.maxRounds/2));
+ if(s.maxRounds===ENDLESS_ROUNDS){
+  // A gradual late-game multiplier keeps bankruptcy-only games from stagnating.
+  if(s.round>8)n*=Math.min(4.5,1+Math.floor((s.round-8)/3)*.12);
+ }else if(s.round>s.maxRounds/2)n*=1+0.12*(s.round-Math.floor(s.maxRounds/2));
  return roundMoney(n);
 }
-export function netWorth(s,id){const p=s.players.find(p=>p.id===id);if(!p||p.bankrupt)return 0;return p.cash+ownTiles(s,id).reduce((sum,i)=>sum+propertyValue(i,property(s,i).level),0);}
+export function netWorth(s,id){const p=s.players.find(p=>p.id===id);if(!p||p.bankrupt)return 0;return p.cash+ownTiles(s,id).reduce((sum,i)=>sum+propertyValue(i,property(s,i).level),0)-(p.bankDebt||0);}
 const log=(s,message)=>{s.log=[{at:s.turnCount,text:String(message)},...(s.log||[])].slice(0,40);};
 const randomIndex=(rng,n)=>Math.min(n-1,Math.max(0,Math.floor(rng()*n)));
 const nextAliveIndex=(s,i)=>{for(let d=1;d<=s.players.length;d++){const next=(i+d)%s.players.length;if(!s.players[next].bankrupt)return next;}return i;};
@@ -76,6 +97,7 @@ const name=s=>current(s).name;
 function checkVictory(s){
  const survivors=active(s);
  if(survivors.length===1){s.winner=survivors[0].id;s.reason='파산 승리';s.phase='finished';return true;}
+ if(s.maxRounds===ENDLESS_ROUNDS)return false;
  for(const p of survivors){
   if(countMonopolies(s,p.id)>=3){s.winner=p.id;s.reason='트리플 컬러 독점';s.phase='finished';return true;}
   const edges=[[1,2,4,5],[7,8,10,11],[13,14,16,17],[19,20,22,23]];
@@ -92,9 +114,10 @@ function limitVictory(s){
 function nextTurn(s){
  s.pending=null;s.lastRoll=null;
  if(checkVictory(s))return;
+ if(current(s).bankrupt)s.extraRoll=false;
  if(s.extraRoll){s.extraRoll=false;s.phase='roll';log(s,`${name(s)}님, 더블 보너스로 주사위 한 번 더!`);return;}
  s.doubles=0;s.turnCount++;
- if(s.turnCount>=s.maxRounds*s.players.length){limitVictory(s);return;}
+ if(s.maxRounds!==ENDLESS_ROUNDS&&s.turnCount>=s.maxRounds*s.players.length){limitVictory(s);return;}
  s.turnIndex=nextAliveIndex(s,s.turnIndex);
  s.round=Math.floor(s.turnCount/s.players.length)+1;
  const p=current(s);
@@ -115,7 +138,29 @@ function spend(s,p,amount,receiver){
   p.travelTicket=false;p.stuck=0;log(s,`${p.name}님이 자금 부족으로 파산했어요.`);}
  return paid;
 }
-function credit(s,p,amount,source){p.cash+=amount;log(s,`${p.name}님 ${source} +${amount}M`);}
+function credit(s,p,amount,source){
+ let net=amount;
+ if((p.bankDebt||0)>0&&source.includes('출발지')){const repay=Math.min(p.bankDebt,net);p.bankDebt-=repay;net-=repay;log(s,`${p.name}님 ${source}에서 은행 대출 ${repay}M 상환 · 잔액 ${p.bankDebt}M`);}
+ p.cash+=net;log(s,`${p.name}님 ${source} +${net}M`);
+}
+function drawFortune(s,p,choiceIndex,rng){
+ const card=FORTUNE_CARDS[(randomIndex(rng,FORTUNE_CARDS.length)+choiceIndex*4)%FORTUNE_CARDS.length];
+ s.lastCard=card.title;s.cardReveal={...card,owner:p.id};
+ log(s,`행운 편지 ${choiceIndex+1}번 공개: ${card.title}`);
+ switch(card.effect){
+  case 'cash':if(card.amount>=0)credit(s,p,card.amount,'행운 편지');else log(s,`${p.name}님 행운 편지 비용 ${spend(s,p,-card.amount)}M`);break;
+  case 'angel':p.angel++;log(s,`${p.name}님이 천사카드 1장을 받았어요!`);break;
+  case 'discount':p.discountCards++;log(s,`${p.name}님이 통행료 50% 할인권을 받았어요!`);break;
+  case 'travel':p.travelTicket=true;log(s,`${p.name}님이 다음 차례 세계여행권을 받았어요!`);break;
+  case 'start':p.position=0;p.laps++;credit(s,p,PASS_BONUS,'출발지 순간이동 보너스');break;
+  case 'freeBuild':{
+   const owned=ownCities(s,p.id).filter(i=>property(s,i).level<maxBuildLevel(s,p.id,i));
+   owned.sort((a,b)=>toll(s,b)-toll(s,a));
+   if(owned.length){const i=owned[0];property(s,i).level++;log(s,`${p.name}님의 ${TILES[i].name}을 무료로 ${LEVEL_NAMES[property(s,i).level]}까지 건설!`);}
+   else credit(s,p,140,'건설할 곳이 없어 현금 보너스');break;
+  }
+ }
+}
 function arrive(s,index,rng){
  const p=current(s),tile=TILES[index],held=property(s,index);
  if(isProperty(index)){
@@ -127,8 +172,11 @@ function arrive(s,index,rng){
    }else{log(s,`${p.name}님의 안전한 ${tile.name}!`);nextTurn(s);}return;
   }
   const owner=s.players.find(x=>x.id===held.owner),charge=toll(s,index);
-  const paid=p.angel>0?(p.angel--,0):spend(s,p,charge,owner);
-  log(s,paid===0?`${p.name}님이 면제 카드로 ${tile.name} 통행료 ${charge}M 회피!`:`${p.name}님이 ${owner?.name||'상대'}님에게 ${tile.name} 통행료 ${paid}M 지불!`);
+  let paid=0,defense='';
+  if(p.angel>0){p.angel--;defense='천사카드 면제';}
+  else if(p.discountCards>0){p.discountCards--;paid=spend(s,p,roundMoney(charge*.5),owner);defense='50% 할인권';}
+  else paid=spend(s,p,charge,owner);
+  log(s,defense==='천사카드 면제'?`${p.name}님이 천사카드로 ${tile.name} 통행료 ${charge}M 면제!`:`${p.name}님이 ${owner?.name||'상대'}님에게 ${tile.name} 통행료 ${paid}M 지불${defense?' · '+defense:''}!`);
   if(checkVictory(s))return;
   if(tile.kind==='city'&&held.level<4&&p.cash>=propertyValue(index,held.level)*2){
    s.pending={kind:'takeover',index};s.phase='choice';log(s,`${p.name}님은 ${tile.name}을(를) 인수할 수 있어요.`);
@@ -152,22 +200,7 @@ function arrive(s,index,rng){
    if(available.length){s.phase='choice';s.pending={kind:'olympic'};log(s,`${p.name}님, 올림픽 개최지를 선택해 통행료를 높이세요!`);return;}
    credit(s,p,100,'올림픽 참가 보너스');break;
   }
-  case 'chance':{
-   const cards=[
-    {title:'고양이 굿즈 대박!',amount:240},{title:'축제 공연 수익!',amount:155},
-    {title:'세금 환급!',amount:120},{title:'복권 당첨!',amount:290},
-    {title:'숙소 수리비!',amount:-140},{title:'공항 추가 비용!',amount:-100},
-    {title:'자선 바자회 후원!',amount:-85},{title:'통행료 면제권!',angel:true},
-    {title:'무인도 구조 봉사!',amount:130},{title:'무료 세계여행!',travel:true}
-   ];
-   const card=cards[randomIndex(rng,cards.length)];s.lastCard=card.title;
-   log(s,`행운 편지: ${card.title}`);
-   if(card.amount>0)credit(s,p,card.amount,'행운 편지');
-   else if(card.amount<0){const paid=spend(s,p,-card.amount);log(s,`${p.name}님 행운 편지 비용 ${paid}M`);}
-   if(card.angel){p.angel++;log(s,`${p.name}님이 통행료 면제권을 획득했어요.`);}
-   if(card.travel){p.travelTicket=true;log(s,`${p.name}님이 다음 차례에 쓸 세계여행권을 받았어요.`);}
-   break;
-  }
+  case 'chance':s.phase='chance';s.pending={kind:'fortune'};log(s,`${p.name}님, 행운 편지 3장 중 하나를 고르세요!`);return;
   case 'travel':p.travelTicket=true;log(s,`${p.name}님 세계여행 티켓 획득! 다음 자기 차례에 목적지를 선택해요.`);break;
  }
  if(checkVictory(s))return;nextTurn(s);
@@ -175,7 +208,7 @@ function arrive(s,index,rng){
 function move(s,target,rng,teleport=false){
  const p=current(s);
  if(!teleport&&target>=TILES.length){p.laps+=Math.floor(target/TILES.length);
-  credit(s,p,PASS_BONUS,'출발지 통과 보너스');}
+  credit(s,p,PASS_BONUS*Math.floor(target/TILES.length),'출발지 통과 보너스');}
  p.position=((target%TILES.length)+TILES.length)%TILES.length;
  log(s,`${p.name}님이 ${TILES[p.position].name}에 도착했어요.`);
  arrive(s,p.position,rng);
@@ -183,9 +216,9 @@ function move(s,target,rng,teleport=false){
 export function createGame({players,maxRounds=DEFAULT_ROUNDS}={}){
  if(!Array.isArray(players)||players.length<2||players.length>MAX_PLAYERS)throw Error('2~4명이 필요합니다.');
  if(new Set(players.map(p=>p.id)).size!==players.length)throw Error('플레이어 ID가 중복되었습니다.');
- const rounds=ALLOWED_ROUNDS.includes(Number(maxRounds))?Number(maxRounds):DEFAULT_ROUNDS;
- const s={version:3,players:players.map((p,i)=>({id:String(p.id),name:String(p.name||`플레이어 ${i+1}`).slice(0,16),ai:!!p.ai,cash:START_CASH,position:0,stuck:0,bankrupt:false,laps:0,angel:0,travelTicket:false,parityUses:PARITY_USES})),properties:{},olympics:{},turnIndex:0,turnCount:0,round:1,maxRounds:rounds,phase:'roll',pending:null,lastRoll:null,extraRoll:false,doubles:0,winner:null,reason:null,log:[],actionSeq:0,lastEvent:null,events:[],lastCard:null};
- log(s,`모여마블 개막! ${rounds}라운드 빠른 대결입니다.`);return s;
+ const rounds=(maxRounds===ENDLESS_ROUNDS||String(maxRounds)==='0')?ENDLESS_ROUNDS:ALLOWED_ROUNDS.includes(Number(maxRounds))?Number(maxRounds):DEFAULT_ROUNDS;
+ const s={version:4,players:players.map((p,i)=>({id:String(p.id),name:String(p.name||`플레이어 ${i+1}`).slice(0,16),ai:!!p.ai,cash:START_CASH,position:0,stuck:0,bankrupt:false,laps:0,angel:0,discountCards:0,bankDebt:0,loanUsed:false,travelTicket:false,parityUses:PARITY_USES})),properties:{},olympics:{},turnIndex:0,turnCount:0,round:1,maxRounds:rounds,phase:'roll',pending:null,lastRoll:null,extraRoll:false,doubles:0,winner:null,reason:null,log:[],actionSeq:0,lastEvent:null,events:[],lastCard:null};
+ log(s,rounds===ENDLESS_ROUNDS?'모여마블 무한모드 개막! 독점 승리는 없고 마지막 한 명이 남을 때 끝납니다.':`모여마블 개막! ${rounds}라운드 빠른 대결입니다.`);return s;
 }
 function summarizeAction(before,after,id,type,pending,origin,diceResult){
  const actor=after.players.find(x=>x.id===id),previous=before.players.find(x=>x.id===id);
@@ -199,7 +232,9 @@ function summarizeAction(before,after,id,type,pending,origin,diceResult){
  const moneyChanges=after.players.map(p=>({id:p.id,name:p.name,delta:p.cash-(before.players.find(x=>x.id===p.id)?.cash||0)})).filter(x=>x.delta!==0);
  const to=actor.position;
  let message='';
- if(type==='roll'||type==='islandRoll')message=diceResult?`${actor.name} · ${diceResult.a} + ${diceResult.b} = ${diceResult.total}칸! ${TILES[to].name}${diceResult.double?' · 더블!':''}`:`${actor.name} · 무인도에서 쉬었어요`;
+ if(type==='pickCard')message=`${actor.name} · 행운 편지 ${after.cardReveal?.emoji||'💌'} ${after.lastCard||'공개'}!`;
+ else if(type==='takeLoan')message=`${actor.name} · 은행에서 ${BANK_LOAN}M 대출! 상환액 ${BANK_REPAY}M`;
+ else if(type==='roll'||type==='islandRoll')message=diceResult?`${actor.name} · ${diceResult.a} + ${diceResult.b} = ${diceResult.total}칸! ${TILES[to].name}${diceResult.double?' · 더블!':''}`:`${actor.name} · 무인도에서 쉬었어요`;
  else if(type==='travel')message=`${actor.name} · 세계여행으로 ${TILES[to].name} 도착!`;
  else if(type==='buy')message=`${actor.name} · ${TILES[pending.index].name} 구매${propertyChanges[0]?.now?.level?' + 별장 건설':''}!`;
  else if(type==='upgrade'||type==='startBuild')message=`${actor.name} · ${TILES[pending.kind==='startBuild'?pending.index??-1:pending.index]?.name||TILES[after.lastBuilt]?.name||'도시'} ${LEVEL_NAMES[after.properties[after.lastBuilt]?.level||0]} 건설!`;
@@ -209,7 +244,7 @@ function summarizeAction(before,after,id,type,pending,origin,diceResult){
  else message=`${actor.name} · 이번 행동을 넘겼어요`;
  const special=messages.find(x=>x.includes('통행료')||x.includes('무인도')||x.includes('행운 편지')||x.includes('세금')||x.includes('세계여행'));
  if(special&&(type==='roll'||type==='islandRoll'))message+=` · ${special.replace(/^.*?님 /,'').slice(0,45)}`;
- return {seq:(before.actionSeq||0)+1,type,actor:id,actorName:actor.name,ai:!!previous?.ai,from:origin,to,travel:type==='travel'||messages.some(x=>x.includes('3연속 더블')),dice:diceResult||null,tileIndex:['roll','islandRoll','travel'].includes(type)?to:pending?.index??to,propertyChanges,moneyChanges,message:message.trim(),messages,phase:after.phase,turnIndexBefore:before.turnIndex,turnIndexAfter:after.turnIndex,winner:after.winner||null};
+ return {seq:(before.actionSeq||0)+1,type,actor:id,actorName:actor.name,ai:!!previous?.ai,card:type==='pickCard'?after.cardReveal:null,from:origin,to,travel:type==='travel'||messages.some(x=>x.includes('3연속 더블')),dice:diceResult||null,tileIndex:['roll','islandRoll','travel'].includes(type)?to:pending?.index??to,propertyChanges,moneyChanges,message:message.trim(),messages,phase:after.phase,turnIndexBefore:before.turnIndex,turnIndexAfter:after.turnIndex,winner:after.winner||null};
 }
 function rollDice(rng,parity){
  const a=randomIndex(rng,6)+1;
@@ -223,6 +258,21 @@ export function applyAction(input,id,type,payload={},rng=Math.random){
  const p=current(s),origin=p.position,pending=s.pending?{...s.pending}:null;
  let rolled=null;
  const commit=()=>{const event=summarizeAction(input,s,id,type,pending,origin,rolled);s.actionSeq=event.seq;s.lastEvent=event;s.events=[event,...(input.events||[])].slice(0,28);return s;};
+ if(type==='takeLoan'){
+  if(p.loanUsed)throw Error('은행 대출은 한 판에 한 번만 가능합니다.');
+  if(!['roll','choice','island','travel','chance'].includes(s.phase))throw Error('현재는 대출을 이용할 수 없습니다.');
+  p.cash+=BANK_LOAN;p.bankDebt=BANK_REPAY;p.loanUsed=true;
+  log(s,`${p.name}님 은행 대출 +${BANK_LOAN}M · 상환 예정 ${BANK_REPAY}M (출발지 보너스부터 자동 상환)`);
+  return commit();
+ }
+ if(type==='pickCard'){
+  if(s.phase!=='chance'||pending?.kind!=='fortune')throw Error('행운 편지를 뽑을 차례가 아닙니다.');
+  const index=Number(payload.index);
+  if(!Number.isInteger(index)||index<0||index>2)throw Error('편지는 1~3번에서 선택해주세요.');
+  s.pending=null;s.phase='roll';drawFortune(s,p,index,rng);
+  if(!checkVictory(s))nextTurn(s);
+  return commit();
+ }
  if(type==='roll'){
   if(s.phase!=='roll')throw Error('현재 주사위를 던질 차례가 아닙니다.');
   const parity=payload.parity;
@@ -293,6 +343,8 @@ export function applyAction(input,id,type,payload={},rng=Math.random){
 export function olympicCost(s,index){return 75+25*((s.olympics?.[index]||1)-1);}
 export function chooseCatAction(s){
  const p=current(s);if(!p?.ai||p.bankrupt||s.phase==='finished')return null;
+ if(!p.loanUsed&&p.cash<140)return {type:'takeLoan'};
+ if(s.phase==='chance')return {type:'pickCard',payload:{index:Math.floor(Math.random()*3)}};
  if(s.phase==='roll'){
   // Prefer an unbiased throw. Parity tokens are reserved for optional human strategy.
   return {type:'roll'};
