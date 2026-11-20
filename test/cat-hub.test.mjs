@@ -17,12 +17,12 @@ test('Cat Challenge is first in the home game grid and nav',()=>{
  assert.ok(html.indexOf('data-nav="cat"')<html.indexOf('data-nav="home"'));
 });
 
-test('Cat Challenge groups exactly the five currently available AI games',()=>{
- assert.deepEqual(CAT_CHALLENGE_GAMES,['omok','yut','rummikub','marble','wordchain']);
- const games=CAT_CHALLENGE_GAMES.map((id,i)=>({id,name:['오목','윷놀이','루미큐브','모여마블','끝말잇기'][i],emoji:'🐱',desc:'한 판'}));
+test('Cat Challenge groups the six currently available AI games',()=>{
+ assert.deepEqual(CAT_CHALLENGE_GAMES,['omok','yut','rummikub','marble','tetris','wordchain']);
+ const games=CAT_CHALLENGE_GAMES.map((id,i)=>({id,name:['오목','윷놀이','루미큐브','모여마블','테트리스','끝말잇기'][i],emoji:'🐱',desc:'한 판'}));
  const hub=renderCatHub(games);
  const matches=[...hub.matchAll(/data-action="catChoose"/g)];
- assert.equal(matches.length,5);
+ assert.equal(matches.length,6);
  for(const game of games)assert.match(hub,new RegExp('data-cat-game="'+game.id+'"'));
  assert.match(hub,/친구와 하려면 홈의 일반 게임 목록/);
 });
@@ -47,6 +47,7 @@ test('Multiplayer details do not include a Cat Challenge button',()=>{
 
 test('Marble isolates Cat mode from friend modes and returns to the Cat hub',()=>{
  assert.match(app,/\/marble\/index\.html\?cat=1/);
+ assert.match(app,/\/tetris\/index\.html\?cat=1/);
  assert.match(marble,/catChallenge\s*\?\s*\[\['ai'/);
  assert.match(marble,/mode=catChallenge\?'ai':'local'/);
  assert.match(marble,/mode=catChallenge\?'ai':'local';location\.hash/);
