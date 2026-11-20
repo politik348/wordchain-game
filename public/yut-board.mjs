@@ -44,7 +44,7 @@ export function renderYutRollTray({rolls=[],phase='throw',chosen=[0],action='yut
  }).join('');
  const total=chosen.length?chosen.reduce((sum,i)=>sum+(rolls[i]||0),0):0;
  const hint=phase==='throw'?'윷/모가 나오면 계속 던집니다. 던지기를 마친 뒤 이동하세요.':myTurn?'결과를 하나 또는 여러 개 선택하고 말을 누르세요.':'상대가 말을 움직이고 있습니다.';
- return `<div class="yut-roll-tray"><div class="yut-roll-head"><strong>🎯 나온 결과 · ${rolls.length}개</strong>${phase==='move'&&myTurn?`<span>선택: ${total===-1?'빽도':total+'칸'}</span>`:''}</div><div class="yut-roll-chips">${list||'<span class="yut-roll-empty">아직 나온 결과가 없습니다.</span>'}</div><p>${hint}</p></div>`;
+ return `<div class="yut-roll-tray"><div class="yut-roll-head"><strong>🎯 나온 결과 · ${rolls.length}개</strong>${phase==='move'&&myTurn?`<span>${chosen.length?'선택: '+(total===-1?'빽도':total+'칸'):'사용할 윷을 선택'}</span>`:''}</div><div class="yut-roll-chips">${list||'<span class="yut-roll-empty">아직 나온 결과가 없습니다.</span>'}</div><p>${hint}</p></div>`;
 }
 export function renderYutPieceStats(pieces={},labels={},me=''){
  return `<div class="yut-participant-grid">${Object.entries(pieces).map(([sid,tokens],i)=>{
