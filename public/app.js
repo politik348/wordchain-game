@@ -5,7 +5,7 @@ import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseC
 import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut5';
 import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut5';
 import {installYutPowerControl} from './yut-power.mjs?v=20261120yut5';
-import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261120catHub2';
+import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261120catHub3';
 import {createMembershipUI} from './auth-ui.mjs?v=20261120statusrefresh1';
 const GAMES=[
  {id:'gamehell',name:'모여게임지옥',genre:'아케이드 · 13종',players:'1명',emoji:'😼',color:'#e8dffd',badge:'기록·업적·상점',desc:'개인 최고기록에 도전하고, 별조각과 업적 보상으로 고양이 캐릭터 8종을 수집해요.',rules:[['13종 게임','낙하·점프·로켓·얼음 등 13가지 원터치 게임을 선택합니다.'],['기록 도전','최고 점수와 별조각은 현재 브라우저에 저장됩니다.'],['개인 기록 도전','다른 이용자와 대전하는 게임이 아니라 나의 최고기록을 갱신하는 아케이드입니다.']]},
