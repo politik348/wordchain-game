@@ -56,6 +56,7 @@ function modeIcon(kind){
  return '<svg viewBox="0 0 64 62" aria-hidden="true">'+star(32,30,22)+dot(25,27,3,'#866889')+dot(39,27,3,'#866889')+'</svg>';
 }
 export const PRE_GAME_THEMES=palette;
+export const renderPregameArt=scene;
 export function renderPregame({game,allowedModes=['online'],mode='online',settings=[],rules=[],rooms=[],startAction='lobbyStart',joinAction='openJoin',intro='',backAction='home',showJoin=true}={}){
  const id=game?.id||'wordchain',theme=palette[id]||palette.wordchain,title=E(game?.name||id);
  const safeModes=allowedModes.filter(m=>modeDescriptions[m]);const chosenMode=safeModes.includes(mode)?mode:safeModes[0];
