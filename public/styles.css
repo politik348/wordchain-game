@@ -407,8 +407,9 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
   z-index:1;
   top:auto;right:auto;left:auto;
   display:block;width:100%;max-width:100%;height:auto;
-  aspect-ratio:620 / 470;
+  aspect-ratio:630 / 480;
   object-fit:contain;
+  filter:drop-shadow(0 11px 13px #8c4b3b16);
   -webkit-mask-image:none;
   mask-image:none;
   transform:none;
