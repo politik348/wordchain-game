@@ -1,21 +1,25 @@
-import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,upgradeCost,maxBuildLevel,propertyValue,countMonopolies,tourismComplete,olympicCost,LEVEL_NAMES,BAIL_COST,BANK_LOAN,BANK_REPAY,winnerRanking} from './engine.mjs?v=20261120v4';
+import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,upgradeCost,maxBuildLevel,propertyValue,countMonopolies,tourismComplete,olympicCost,LEVEL_NAMES,BAIL_COST,BANK_LOAN,BANK_REPAY,winnerRanking} from './engine.mjs?v=20261120v5';
 const root=document.querySelector('#mmApp');
 const toastZone=document.querySelector('#mmToast');
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const icons=['🐰','🐱','🐻','🦊'];
+const avatarFiles=['rabbit.svg','cat.svg','bear.svg','fox.svg'];
+const characterArt=(index,extra='')=>`<img class="mm-avatar-art ${extra}" alt="" loading="eager" draggable="false" src="./assets/${avatarFiles[index]||avatarFiles[2]}">`;
+const ROUND_OPTIONS=[8,12,16,20];
 const paint=['#ff9ca9','#b9adf5','#8cd7c5','#f4c184'];
 const dice=['','⚀','⚁','⚂','⚃','⚄','⚅'];
 const formatM=n=>Math.round(n).toLocaleString('ko-KR')+'M';
 let SID=sessionStorage.getItem('moyeo-sid')||crypto.randomUUID();
 sessionStorage.setItem('moyeo-sid',SID);
 let nick=localStorage.getItem('moyeo-nick')||'말랑감자';
+// The main site isolates the Cat AI challenge from friends' local and online matches.
 const catChallenge=new URLSearchParams(location.search).get('cat')==='1';
 const backLink=document.getElementById('mmReturnLink');if(backLink)backLink.href=catChallenge?'/?cat=1':'/';
 async function ensureMember(){
  try{
-  const res=await fetch('/api/auth/me',{credentials:'same-origin'}),state=await res.json();
-  if(res.ok&&state.authenticated&&state.account){
-   SID=state.account.id;nick=state.account.dripNickname;
+  const response=await fetch('/api/auth/me',{credentials:'same-origin'}),data=await response.json();
+  if(response.ok&&data.authenticated&&data.account){
+   SID=data.account.id;nick=data.account.dripNickname;
    sessionStorage.setItem('moyeo-sid',SID);localStorage.setItem('moyeo-nick',nick);
    return true;
   }
@@ -24,7 +28,9 @@ async function ensureMember(){
  location.href='/?auth=login&next='+encodeURIComponent(next);
  return false;
 }
-let mode=catChallenge?'ai':'local',rounds=12,people=2,seconds=30;
+let mode=catChallenge?'ai':'local',gameMode='normal',rounds=12,people=2,seconds=30;
+let tutorialOn=localStorage.getItem('moyeo-marble-tutorial')!=='off';
+const roundsForGame=()=>gameMode==='endless'?0:rounds;
 let localGame=null,onlineRoom=null,stream=null,inFlight=false,aiTimer=null,showResult=false;
 let lastDice=null,turnHint='';
 let scene=null,sceneTimer=null,sceneQueue=[],seenActionSeq=0,inspectedCity=null;
@@ -32,7 +38,7 @@ let effectsOn=localStorage.getItem('moyeo-marble-effects')!=='off';
 const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches||false;
 const moveDelay=()=>reducedMotion?20:effectsOn?105:22;
 const colorName=i=>GROUPS[i]?.name||'';
-const ownerAvatar=(s,id)=>{const i=s.players.findIndex(p=>p.id===id);return icons[i]||'●';};
+const ownerAvatar=(s,id)=>{const i=s.players.findIndex(p=>p.id===id);return characterArt(i);};
 const ownerColor=(s,id)=>{const i=s.players.findIndex(p=>p.id===id);return paint[i]||'#92929a';};
 const fmtDelta=n=>`${n>0?'+':'−'}${formatM(Math.abs(n))}`;
 
@@ -42,18 +48,41 @@ const getState=()=>onlineRoom?.state||localGame;
 function toast(message){const n=document.createElement('div');n.className='mm-toast';n.textContent=message;toastZone.append(n);setTimeout(()=>n.remove(),3300);}
 function button(action,text,kind='mm-primary',disabled=false,attrs=''){return `<button class="mm-btn ${kind}" data-action="${action}" ${disabled?'disabled':''} ${attrs}>${text}</button>`;}
 function renderLobby(){
- const modes=catChallenge
-  ? [['ai','🐱','고양이를 이겨라','생각보다 영리한 고양이와 1:1 두뇌 대결']]
-  : [['online','🎮','친구와 온라인','다른 기기에서도 링크로 2~4인 접속'],['local','🎲','한 화면에서 함께','한 기기에서 돌아가며 2~4인 플레이']];
- root.innerHTML=`<section class="mm-lobby-hero"><span class="mm-eyebrow">MOYEO GAMES PRESENTS</span><h1>어서 와, <span>모여마블!</span></h1><p>세상을 돌며 도시를 사고, 랜드마크를 세우고,<br>친구의 통행료를 받아 보세요. 짧게 승부하거나 파산까지 끝장을 보세요!</p><div class="mm-hero-cards"><span>🗺️ 24칸 압축 맵</span><span>♾️ 무한모드 추가</span><span>💌 행운카드 & 은행 대출</span></div></section>
- <section class="mm-setup"><h2>어떤 대결을 할까요?</h2><p class="mm-setup-sub">고양이 대전은 자유롭게! 친구와 하는 대전은 드립대학 닉네임으로 가입·로그인해야 합니다.</p>
- <div class="mm-mode-grid">${modes.map(([id,icon,title,description])=>`<button class="mm-mode ${id===mode?'selected':''}" data-mode="${id}" aria-pressed="${id===mode}"><span class="mm-mode-emoji">${icon}</span><strong>${title}</strong><small>${description}</small>${id===mode?'<span class="mm-selected-check">✓</span>':''}</button>`).join('')}</div>
- <div class="mm-form-row"><div class="mm-field"><label for="mmNick">내 닉네임</label><input class="mm-input" id="mmNick" maxlength="14" value="${escapeHTML(nick)}" placeholder="닉네임을 입력하세요"></div><div class="mm-field"><label for="mmRounds">게임 길이</label><select class="mm-select" id="mmRounds"><option value="8" ${rounds===8?'selected':''}>⚡ 번개 모드 · 8라운드</option><option value="12" ${rounds===12?'selected':''}>✨ 기본 모드 · 12라운드</option><option value="16" ${rounds===16?'selected':''}>🏆 치열한 모드 · 16라운드</option><option value="0" ${rounds===0?'selected':''}>♾️ 무한모드 · 마지막 한 명이 남을 때까지</option></select></div></div>
- ${mode==='online'?`<div class="mm-field" style="margin-bottom:16px"><label for="mmSeconds">한 턴 제한시간</label><select class="mm-select" id="mmSeconds"><option value="15" ${seconds===15?'selected':''}>15초 · 초고속</option><option value="30" ${seconds===30?'selected':''}>30초 · 기본</option><option value="45" ${seconds===45?'selected':''}>45초 · 여유롭게</option></select></div>`:''}
- ${mode==='local'?`<div class="mm-field" style="margin-bottom:16px"><label for="mmPeople">함께 플레이할 인원</label><select class="mm-select" id="mmPeople"><option value="2" ${people===2?'selected':''}>2명</option><option value="3" ${people===3?'selected':''}>3명</option><option value="4" ${people===4?'selected':''}>4명</option></select></div>`:''}
- ${mode==='online'?`${button('createOnline','🎮 온라인 게임방 만들기','mm-primary mm-btn-full')}<div class="mm-online-join"><input class="mm-input" id="mmJoinCode" maxlength="6" placeholder="6자리 초대 코드" autocomplete="off">${button('joinOnline','코드로 입장','mm-neutral')}</div>`:`${button('startLocal',mode==='ai'?'🐱 고양이와 대결 시작!':'🎲 친구들과 대결 시작!','mm-primary mm-btn-full')}`}
- </section><section class="mm-guides"><article class="mm-guide"><span class="num">01 / OWN</span><h3>도시를 먼저 차지하세요</h3><p>빈 도시는 토지만 살 수도, 별장까지 건설할 수도 있어요. 컬러 독점 시 통행료 2배!</p></article><article class="mm-guide"><span class="num">02 / BUILD</span><h3>건설과 인수로 역전</h3><p>출발지 통과 횟수에 따라 빌딩과 호텔이 열려요. 랜드마크와 관광지는 인수 불가!</p></article><article class="mm-guide"><span class="num">03 / WIN</span><h3>승리 방식 선택</h3><p>빠른 모드는 독점 또는 자산으로 승리. 무한모드는 독점해도 끝나지 않고 최후의 1인만 승리.</p></article></section>`;
+ const battles=[
+  {id:'ai',title:'고양이를 이겨라',desc:'똑똑한 치즈냥과 짜릿한 1:1 승부!',art:characterArt(1,'mm-opponent-face'),meta:'혼자서도 신나게 · AI 대전'},
+  {id:'online',title:'친구와 온라인',desc:'각자 기기에서 링크로 모여 즐겨요.',art:`<span class="mm-duo">${characterArt(0)}${characterArt(1)}</span>`,meta:'초대 코드 · 2~4명'},
+  {id:'local',title:'한 화면에서 함께',desc:'옆에 있는 친구들과 번갈아 플레이!',art:`<span class="mm-duo">${characterArt(2)}${characterArt(3)}</span>`,meta:'같은 기기 · 2~4명'}
+ ];
+ const selectedBattles=catChallenge?battles.filter(b=>b.id==='ai'):battles.filter(b=>b.id!=='ai');
+ const roundItems=ROUND_OPTIONS.map(n=>`<button type="button" class="mm-round-chip ${rounds===n?'selected':''}" data-rounds="${n}" aria-pressed="${rounds===n}">${n}라운드${n===12?'<span>추천</span>':''}</button>`).join('');
+ const actionText=mode==='ai'?'고양이와 대결 시작!':mode==='online'?'온라인 게임방 만들기':'친구들과 대결 시작!';
+ root.innerHTML=`
+ <section class="mm-lobby-hero" aria-labelledby="mmLobbyTitle">
+   <div class="mm-hero-scene mm-hero-cat" aria-hidden="true">${characterArt(1)}</div>
+   <div class="mm-hero-center"><span class="mm-eyebrow">MOYEO GAMES · SWEET MARBLE</span><h1 id="mmLobbyTitle">모여<span>마블</span><span class="mm-hero-star" aria-hidden="true">✦</span></h1><p>도시를 사고, 건물을 세우고, 역전의 주사위를 굴려봐!<br>귀여운 고양이와 빠른 한판, 혹은 파산할 때까지!</p><div class="mm-hero-cards"><span>🎲 24칸 스피드 보드</span><span>🏰 랜드마크 & 인수</span><span>♾️ 무한모드</span></div></div>
+   <div class="mm-hero-scene mm-hero-rabbit" aria-hidden="true">${characterArt(0)}</div>
+   <span class="mm-hero-cloud cloud-left" aria-hidden="true"></span><span class="mm-hero-cloud cloud-right" aria-hidden="true"></span>
+ </section>
+ <section class="mm-setup-v5" aria-label="모여마블 시작 설정">
+  <div class="mm-setup-v5-heading"><div><span class="mm-setup-step">GAME SETUP</span><h2>어떤 모험을 시작할까?</h2><p>대전 상대와 규칙을 고르면 준비 끝! 선택한 설정으로 바로 시작해요.</p></div><span class="mm-setup-die" aria-hidden="true">🎲</span></div>
+  <div class="mm-start-layout">
+   <section class="mm-setup-column mm-opponents" aria-labelledby="mmOpponentsTitle"><div class="mm-column-title"><span class="mm-number-step">01</span><div><h3 id="mmOpponentsTitle">누구와 승부할까요?</h3><small>대전 상대를 선택해 주세요</small></div></div>
+    <div class="mm-opponent-options">${selectedBattles.map(b=>`<button type="button" class="mm-opponent-card ${mode===b.id?'selected':''}" data-mode="${b.id}" aria-pressed="${mode===b.id}"><span class="mm-opponent-image">${b.art}</span><span class="mm-opponent-copy"><strong>${b.title}</strong><small>${b.desc}</small><em>${b.meta}</em></span><span class="mm-opponent-choice" aria-hidden="true">${mode===b.id?'✓':''}</span></button>`).join('')}</div>
+    <div class="mm-mascot-quip">${characterArt(1)}<span>“도시는 내가 먼저 살 거다냥! 준비됐지?”</span><span class="mm-quip-stars" aria-hidden="true">✦ ✧</span></div>
+   </section>
+   <section class="mm-setup-column mm-rules" aria-labelledby="mmRulesTitle"><div class="mm-column-title"><span class="mm-number-step">02</span><div><h3 id="mmRulesTitle">어떤 규칙으로 할까요?</h3><small>모드와 세부 설정을 선택해 주세요</small></div></div>
+    <div class="mm-rule-choice-grid" aria-label="게임 모드 선택"><button type="button" class="mm-rule-choice ${gameMode==='normal'?'selected':''}" data-game-mode="normal" aria-pressed="${gameMode==='normal'}"><span class="mm-rule-symbol mm-regular-symbol">🎯</span><span><strong>일반 모드</strong><small>정해진 라운드 안에 승리!</small></span><span class="mm-rule-check">${gameMode==='normal'?'✓':''}</span></button><button type="button" class="mm-rule-choice ${gameMode==='endless'?'selected':''}" data-game-mode="endless" aria-pressed="${gameMode==='endless'}"><span class="mm-rule-symbol mm-endless-symbol">∞</span><span><strong>무한 모드</strong><small>파산할 때까지 끝장 승부!</small></span><span class="mm-rule-check">${gameMode==='endless'?'✓':''}</span></button></div>
+    ${gameMode==='normal'?`<div class="mm-round-section" data-round-panel><div class="mm-field-heading"><strong>🎲 라운드 설정</strong><small>일반 모드에서만 선택할 수 있어요</small></div><div class="mm-round-options" aria-label="일반 모드 라운드 선택">${roundItems}</div></div>`:`<div class="mm-endless-explainer" role="status"><strong>♾️ 끝날 때까지 계속!</strong><small>독점이나 라운드 수로 끝나지 않아요. 마지막 한 사람만 남으면 승리합니다.</small></div>`}
+    <div class="mm-preferences"><div class="mm-field"><label for="mmNick">내 닉네임</label><input class="mm-input" id="mmNick" maxlength="14" value="${escapeHTML(nick)}" placeholder="닉네임을 입력하세요" autocomplete="nickname" ${mode!=='ai'?'readonly aria-readonly="true" title="회원가입 때 등록한 드립대학 닉네임을 사용합니다"':''}></div>${mode==='online'?`<div class="mm-field"><label for="mmSeconds">턴 제한시간</label><select class="mm-select" id="mmSeconds"><option value="15" ${seconds===15?'selected':''}>15초 · 초고속</option><option value="30" ${seconds===30?'selected':''}>30초 · 기본</option><option value="45" ${seconds===45?'selected':''}>45초 · 여유롭게</option></select></div>`:''}${mode==='local'?`<div class="mm-field"><label for="mmPeople">참가 인원</label><select class="mm-select" id="mmPeople"><option value="2" ${people===2?'selected':''}>2명</option><option value="3" ${people===3?'selected':''}>3명</option><option value="4" ${people===4?'selected':''}>4명</option></select></div>`:''}</div>
+    <div class="mm-setting-toggles"><button type="button" data-action="toggleLobbyEffects" class="mm-setting-toggle" aria-pressed="${effectsOn}"><span>✨ 생동감 있는 연출</span><span class="mm-toggle-track ${effectsOn?'on':''}"><i></i></span></button><button type="button" data-action="toggleTutorial" class="mm-setting-toggle" aria-pressed="${tutorialOn}"><span>💡 초보자 도움말</span><span class="mm-toggle-track ${tutorialOn?'on':''}"><i></i></span></button></div>
+   </section>
+  </div>
+  <div class="mm-start-footer"><div class="mm-mode-summary"><strong>${gameMode==='endless'?'♾️ 무한모드':`✨ 일반모드 · ${rounds}라운드`}</strong><small>${gameMode==='endless'?'파산한 플레이어부터 탈락해요':'독점 달성 또는 라운드 종료 시 승패를 가려요'}</small></div>${button(mode==='online'?'createOnline':'startLocal',`<span aria-hidden="true">🎲</span> ${actionText} <span aria-hidden="true">›</span>`,'mm-primary mm-btn-full mm-start-cta')}</div>
+  ${mode==='online'?`<div class="mm-online-join mm-online-join-v5"><div><strong>이미 초대를 받았나요?</strong><small>친구가 보내준 초대 코드로 입장하세요</small></div><input class="mm-input" id="mmJoinCode" maxlength="6" placeholder="6자리 초대 코드" autocomplete="off" aria-label="초대 코드">${button('joinOnline','코드로 입장','mm-neutral')}</div>`:''}
+ </section>
+ <section class="mm-guides mm-guides-v5" aria-label="게임 기본 규칙"><article class="mm-guide"><span class="mm-guide-art" aria-hidden="true">🏡</span><div><span class="num">01 / OWN</span><h3>도시를 먼저 차지하세요</h3><p>빈 도시를 구매하고, 같은 색 도시를 모아 통행료를 올려봐요!</p></div></article><article class="mm-guide"><span class="mm-guide-art" aria-hidden="true">🏰</span><div><span class="num">02 / BUILD</span><h3>건설과 인수로 역전</h3><p>별장부터 랜드마크까지 건설하고 상대 도시에 도전해 보세요.</p></div></article><article class="mm-guide"><span class="mm-guide-art" aria-hidden="true">🏆</span><div><span class="num">03 / WIN</span><h3>원하는 방식으로 승리</h3><p>일반은 독점 또는 자산으로, 무한은 마지막 생존자로 승리해요!</p></div></article></section>`;
 }
+
 function renderWaiting(){
  const r=onlineRoom,isHost=r.host===SID;
  root.innerHTML=`<div class="mm-waiting"><div class="mm-waiting-icon">🎟️</div><span class="mm-eyebrow">FRIENDS ARE COMING</span><h2>친구를 초대해요!</h2><p>아래 코드를 복사해서 친구에게 보내주세요.<br>2~4명이 모이면 방장이 시작할 수 있어요.</p><div class="mm-room-code">${r.code}</div><div class="mm-member-list">${r.players.map(p=>`<span>${p.id===r.host?'👑 ':''}${escapeHTML(p.name)}</span>`).join('')}${r.players.length<4?'<span>＋ 대기 중</span>':''}</div><p>${r.players.length}/4명 · ${r.rounds===0?'♾️ 무한모드':r.rounds+'라운드'} · 턴당 ${r.turnSeconds}초 · 다른 기기에서 접속 가능</p><div class="mm-waiting-actions">${button('copyInvite','🔗 초대 링크 복사','mm-neutral')}${isHost?button('startOnline','🎲 게임 시작','mm-primary',r.players.length<2):''}${button('leave','나가기','mm-secondary')}</div></div>`;
@@ -64,7 +93,7 @@ function tilePos(i){
  if(i<=18)return [1,7-(i-12)];
  return [i-17,1];
 }
-function token(s,p,i){const idx=s.players.indexOf(p);return `<span class="mm-pawn" title="${escapeHTML(p.name)}" style="--pawn-color:${paint[idx]}">${icons[idx]}</span>`;}
+function token(s,p,i){const idx=s.players.indexOf(p);return `<span class="mm-pawn" title="${escapeHTML(p.name)}" style="--pawn-color:${paint[idx]}">${characterArt(idx)}</span>`;}
 function renderTile(s,t,i){
  const [row,col]=tilePos(i),held=s.properties[i],ownerIndex=held?s.players.findIndex(p=>p.id===held.owner):-1;
  const owner=ownerIndex<0?null:s.players[ownerIndex],buyable=['city','tourist'].includes(t.kind);
@@ -75,7 +104,7 @@ function renderTile(s,t,i){
  const label=t.kind==='tourist'?'관광지':t.kind==='city'?GROUPS[t.group].name+' 지역':'';
  const title=buyable?`${t.name} · ${held?`${owner?.name||'플레이어'} 소유 · ${LEVEL_NAMES[held.level]} · 통행료 ${formatM(fee)}`:`구매가 ${formatM(t.price)}`}`:t.name;
  const building=held&&t.kind==='city'?`<div class="mm-building-row" aria-label="${LEVEL_NAMES[held.level]}">${held.level===4?'<span class="mm-building-landmark">🏰</span>':held.level===0?'<span class="mm-empty-lot">🏳</span>':Array.from({length:held.level},(_,n)=>`<i class="mm-building-block" style="--height:${12+n*4}px"></i>`).join('')}</div>`:held&&t.kind==='tourist'?'<span class="mm-tourist-badge">🛟 관광지</span>':'';
- const ownerBadge=held?`<span class="mm-owner-badge" title="${escapeHTML(owner?.name)} 소유"><span class="mm-owner-icon">${icons[ownerIndex]||'●'}</span><b>${escapeHTML(owner?.name||'플레이어')}</b></span>`:'';
+ const ownerBadge=held?`<span class="mm-owner-badge" title="${escapeHTML(owner?.name)} 소유"><span class="mm-owner-icon">${characterArt(ownerIndex)}</span><b>${escapeHTML(owner?.name||'플레이어')}</b></span>`:'';
  const monopoly=held&&(t.kind==='city'?TILES.every((v,j)=>v.kind!=='city'||v.group!==t.group||s.properties[j]?.owner===held.owner):tourismComplete(s,held.owner));
  return `<div class="mm-tile ${buyable?'mm-city':'mm-special'} ${t.kind==='tourist'?'mm-tourist':''} ${held?'mm-own':''} ${canTravel?'mm-landable':''} ${pawns.some(p=>p.id===current(s).id)?'mm-highlight':''} ${scene?.event.tileIndex===i?'mm-scene-target':''} ${inspectedCity===i?'mm-inspected':''}" data-kind="${t.kind}" data-tile-index="${i}" ${canTravel?`data-land="${i}" tabindex="0" role="button" aria-label="${escapeHTML(t.name)}(으)로 여행하기"`:canInspect?`data-inspect="${i}" tabindex="0" role="button" aria-label="${escapeHTML(t.name)} 정보 보기"`:''} title="${escapeHTML(title)}" style="grid-row:${row};grid-column:${col};${buyable?`--tile-color:${t.kind==='tourist'?'#70b9df':GROUPS[t.group].color};`:''}${held?`--owner-color:${paint[ownerIndex]||'#a3a3a3'};`:''}">
  ${building}<span class="mm-tile-emoji">${t.emoji}</span><span class="mm-tile-name">${escapeHTML(t.name)}</span>${buyable?`<span class="mm-tile-price">${held?`통행 ${formatM(fee)}`:formatM(t.price)}</span>`:''}${monopoly?'<span class="mm-monopoly-flag">2× 독점</span>':''}${s.olympics?.[i]?`<span class="mm-olympic-flag">🏅 ${s.olympics[i]}×</span>`:''}${ownerBadge}${pawns.length?`<span class="mm-tile-tokens">${pawns.map(p=>token(s,p,i)).join('')}</span>`:''}</div>`;
@@ -175,20 +204,21 @@ function actionPanel(s){
 function sidePanel(s){
  const p=current(s),endless=s.maxRounds===0,turns=endless?0:s.maxRounds*s.players.length;
  const showTimers=onlineRoom && s.phase!=='finished';
- return `<aside class="mm-sidebar"><section class="mm-card"><h2 class="mm-card-title">참가자 <small>${s.players.length}명</small></h2>${s.players.map((x,i)=>`<div class="mm-player ${p.id===x.id&&s.phase!=='finished'?'current':''} ${x.bankrupt?'bankrupt':''}"><span class="mm-avatar" style="--pcolor:${paint[i]}">${icons[i]}</span><div class="mm-player-info"><strong>${escapeHTML(x.name)}${x.ai?' · AI':''}</strong><small>부동산 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개 · 컬러 ${countMonopolies(s,x.id)}세트 · 🪽${x.angel||0} 🎟️${x.discountCards||0}${x.bankDebt?` · 빚 ${formatM(x.bankDebt)}`:''}</small></div><span class="mm-money">${formatM(x.cash)}<small><br>자산 ${formatM(netWorth(s,x.id))}</small></span></div>`).join('')}${endless?`<div class="mm-endless-progress">♾️ 파산까지 계속 · ${s.round}라운드 진행 · 생존 ${s.players.filter(x=>!x.bankrupt).length}명</div>`:`<div class="mm-progress"><div class="mm-progress-fill" style="width:${Math.min(100,Math.round(s.turnCount/turns*100))}%"></div></div><div class="mm-progress-label"><span>${s.round} / ${s.maxRounds}라운드</span><span>${Math.min(turns,s.turnCount)}/${turns}턴</span></div>`}${showTimers?`<p style="text-align:center;margin:10px 0 0"><span class="mm-clock" data-clock>⏳ 30초</span></p>`:''}</section>
+ return `<aside class="mm-sidebar"><section class="mm-card"><h2 class="mm-card-title">참가자 <small>${s.players.length}명</small></h2>${s.players.map((x,i)=>`<div class="mm-player ${p.id===x.id&&s.phase!=='finished'?'current':''} ${x.bankrupt?'bankrupt':''}"><span class="mm-avatar" style="--pcolor:${paint[i]}">${characterArt(i)}</span><div class="mm-player-info"><strong>${escapeHTML(x.name)}${x.ai?' · AI':''}</strong><small>부동산 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개 · 컬러 ${countMonopolies(s,x.id)}세트 · 🪽${x.angel||0} 🎟️${x.discountCards||0}${x.bankDebt?` · 빚 ${formatM(x.bankDebt)}`:''}</small></div><span class="mm-money">${formatM(x.cash)}<small><br>자산 ${formatM(netWorth(s,x.id))}</small></span></div>`).join('')}${endless?`<div class="mm-endless-progress">♾️ 파산까지 계속 · ${s.round}라운드 진행 · 생존 ${s.players.filter(x=>!x.bankrupt).length}명</div>`:`<div class="mm-progress"><div class="mm-progress-fill" style="width:${Math.min(100,Math.round(s.turnCount/turns*100))}%"></div></div><div class="mm-progress-label"><span>${s.round} / ${s.maxRounds}라운드</span><span>${Math.min(turns,s.turnCount)}/${turns}턴</span></div>`}${showTimers?`<p style="text-align:center;margin:10px 0 0"><span class="mm-clock" data-clock>⏳ 30초</span></p>`:''}</section>
  ${cityInspector(s)}<section class="mm-card mm-events-card"><h2 class="mm-card-title">📣 행동 기록 <small>고양이가 뭘 했는지 확인!</small></h2><div class="mm-event-list">${(s.events||[]).slice(0,7).map((ev,j)=>`<div class="mm-event ${ev.ai?'is-cat':''} ${j===0?'new':''}" style="--event-color:${ownerColor(s,ev.actor)}"><span class="mm-event-icon">${ownerAvatar(s,ev.actor)}</span><div><strong>${escapeHTML(ev.message)}</strong>${ev.moneyChanges.length?`<small>${ev.moneyChanges.map(m=>`${escapeHTML(m.name)} ${fmtDelta(m.delta)}`).join(' · ')}</small>`:''}${ev.thought?`<small class="mm-event-thought">💭 ${escapeHTML(ev.thought)}</small>`:''}</div></div>`).join('')||'<p class="mm-helper">첫 행동을 기다리고 있어요.</p>'}</div><details class="mm-raw-history"><summary>전체 세부 기록 보기</summary><div class="mm-log-list">${s.log.slice(0,24).map(e=>`<div class="mm-log">${escapeHTML(e.text)}</div>`).join('')}</div></details></section>
- <section class="mm-card"><h2 class="mm-card-title">✨ 승리 팁</h2><div class="mm-helper">${s.maxRounds===0?'♾️ 무한모드는 독점해도 승리하지 않아요. 마지막 한 명만 남으면 끝!':'컬러 독점 2배 · 관광지 둘 다 소유하면 즉시 승리!<br>컬러 3세트 또는 한 면의 도시를 모두 소유해도 승리합니다.'}<br>랜드마크와 관광지는 인수 불가. 무인도는 더블/보석금으로 탈출!</div>${onlineRoom?`<div style="margin-top:12px">${button('copyInvite','🔗 방 링크 복사','mm-neutral')}</div>`:''}</section></aside>`;
+ ${tutorialOn?`<section class="mm-card mm-tutorial-game"><h2 class="mm-card-title">💡 초보자 도움말</h2><p>① 주사위를 굴려 도시를 찾아가요.</p><p>② 도시는 현금이 부족해지지 않게 구매·건설하세요.</p><p>③ 다른 플레이어의 도시에 도착하면 통행료를 지불해요.</p><p>④ 시작 화면에서 도움말을 끌 수 있어요.</p></section>`:''}<section class="mm-card"><h2 class="mm-card-title">✨ 승리 팁</h2><div class="mm-helper">${s.maxRounds===0?'♾️ 무한모드는 독점해도 승리하지 않아요. 마지막 한 명만 남으면 끝!':'컬러 독점 2배 · 관광지 둘 다 소유하면 즉시 승리!<br>컬러 3세트 또는 한 면의 도시를 모두 소유해도 승리합니다.'}<br>랜드마크와 관광지는 인수 불가. 무인도는 더블/보석금으로 탈출!</div>${onlineRoom?`<div style="margin-top:12px">${button('copyInvite','🔗 방 링크 복사','mm-neutral')}</div>`:''}</section></aside>`;
 }
 function renderGame(s){
  const p=current(s);
  const rolls=s.lastRoll||lastDice;
  const [a,b]=rolls?[rolls.a,rolls.b]:[1,6];
  root.innerHTML=`<div class="mm-topgame"><div><span class="mm-eyebrow">MOYEO MARBLE · ${onlineRoom?'ONLINE MATCH':mode==='ai'?'CAT CHALLENGE':'LOCAL MATCH'}</span><h1>모여마블 <span style="font-size:14px;color:#a99dab">${s.maxRounds===0?`♾️ 무한 · ${s.round}라운드`:`${s.round}/${s.maxRounds} 라운드`}</span></h1><p>${onlineRoom?`방 코드 ${onlineRoom.code} · 모든 주사위는 서버에서 판정`:mode==='ai'?'고양이 AI와 1:1 대결 중':'한 화면에서 돌아가며 플레이 중'}</p></div><div style="display:flex;gap:7px;align-items:center"><span class="mm-indicator">● ${onlineRoom?'온라인 연결':'플레이 중'}</span>${button('toggleEffects',effectsOn?'✨ 연출 켜짐':'✨ 연출 꺼짐','mm-neutral')}${button('leave','↩ 나가기','mm-neutral')}</div></div>
- <div class="mm-owner-legend" aria-label="플레이어별 소유 건물 색상">${s.players.map((x,i)=>`<div class="mm-owner-key" style="--key-color:${paint[i]}"><span>${icons[i]}</span><strong>${escapeHTML(x.name)}</strong><small>소유 도시 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개</small></div>`).join('')}</div>
+ <div class="mm-owner-legend" aria-label="플레이어별 소유 건물 색상">${s.players.map((x,i)=>`<div class="mm-owner-key" style="--key-color:${paint[i]}"><span>${characterArt(i)}</span><strong>${escapeHTML(x.name)}</strong><small>소유 도시 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개</small></div>`).join('')}</div>
  <section class="mm-action-ribbon" aria-label="최근 행동 현황">${recentAction(s)}</section><div class="mm-gamewrap"><div class="mm-main-panel"><section class="mm-board-frame"><div class="mm-board">${TILES.map((t,i)=>renderTile(s,t,i)).join('')}${scenePawnMarkup(s)}<section class="mm-board-center"><span class="mm-center-kicker">🎲 DREAM · OWN · WIN</span><h2 class="mm-center-title">모여<span>마블</span></h2><p class="mm-center-sub">도시를 모아 세상을 정복해봐!</p>${s.phase==='finished'?'':`<div class="mm-dice-row"><span class="mm-die ${scene?.stage==='dice'?'mm-die-rolling':''}">${dice[scene?.event.dice?.a||a]}</span><span class="mm-die ${scene?.stage==='dice'?'mm-die-rolling':''}">${dice[scene?.event.dice?.b||b]}</span></div>`}${sceneMarkup(s)}${actionPanel(s)}${!p.loanUsed&&s.phase!=='finished'&&!p.ai&&(!onlineRoom||p.id===SID)?`<div class="mm-bank-loan">${button('takeLoan',`🏦 은행 대출 +${formatM(BANK_LOAN)} (향후 ${formatM(BANK_REPAY)} 상환)`,'mm-neutral',inFlight||!!scene)}</div>`:''}<span class="mm-center-tip">🌷 행운은 짧게, 전략은 길게!</span></section></div></section>
  ${s.phase==='travel'&&!p.ai&&(!onlineRoom||p.id===SID)?`<section class="mm-option-panel"><h3 class="mm-option-title">✈️ 여행할 도시를 선택해주세요</h3><div class="mm-travel-grid">${TILES.map((t,i)=>({t,i})).filter(z=>['city','tourist','start','olympic'].includes(z.t.kind)).map(({t,i})=>`<button data-land="${i}">${t.emoji} ${escapeHTML(t.name)}</button>`).join('')}</div></section>`:''}</div>${sidePanel(s)}</div>`;
 }
 function render(){
+ root.dataset.effects=effectsOn?'on':'off';
  const s=getState();if(s)consumeEvents(s);
  if(onlineRoom){if(!onlineRoom.state)renderWaiting();else renderGame(onlineRoom.state);}else if(localGame)renderGame(localGame);else renderLobby();
  updateClock();
@@ -231,10 +261,10 @@ function finishScene(){
 function resetScenes(){clearTimeout(sceneTimer);scene=null;sceneQueue=[];seenActionSeq=0;}
 
 function persistNick(){const input=document.querySelector('#mmNick');if(input){nick=(input.value||'말랑감자').trim().slice(0,14)||'말랑감자';localStorage.setItem('moyeo-nick',nick);}}
-async function startLocal(){if(mode==='local'&&!(await ensureMember()))return;persistNick();const players=[{id:SID,name:nick}];
+async function startLocal(){if(mode==='local'&&!(await ensureMember()))return;if(mode==='ai')persistNick();const players=[{id:SID,name:nick}];
  if(mode==='ai')players.push({id:'moyeo-cat',name:'고양이',ai:true});
  else for(let i=1;i<people;i++)players.push({id:`local-${i}`,name:`플레이어 ${i+1}`});
- resetScenes();inspectedCity=null;localGame=createGame({players,maxRounds:rounds});onlineRoom=null;lastDice=null;render();queueCat();}
+ resetScenes();inspectedCity=null;localGame=createGame({players,maxRounds:roundsForGame()});onlineRoom=null;lastDice=null;render();queueCat();}
 function queueCat(){clearTimeout(aiTimer);if(onlineRoom||!localGame||localGame.phase==='finished')return;
  const p=current(localGame);if(!p.ai||scene||sceneQueue.length)return;
  aiTimer=setTimeout(()=>{if(!localGame||!current(localGame).ai)return;const action=chooseCatAction(localGame);if(action)executeAction(action.type,action.payload||{},catThought(localGame,action));},effectsOn&&!reducedMotion?520:120);
@@ -254,7 +284,7 @@ function connectSSE(roomCode){stream?.close();stream=new EventSource(`/api/marbl
  stream.addEventListener('state',e=>{try{const data=JSON.parse(e.data);if(data.code!==onlineRoom?.code)return;updateOnlineRoom(data);}catch(error){console.error('온라인 상태 수신 오류',error);}});
  stream.addEventListener('error',()=>{/* EventSource automatically reconnects. */});
 }
-async function createOnline(){if(!(await ensureMember()))return;inFlight=true;try{const r=await post('/api/marble/rooms',{sid:SID,name:nick,rounds,turnSeconds:seconds});resetScenes();localGame=null;lastDice=null;updateOnlineRoom(r);location.hash=`room=${r.code}`;connectSSE(r.code);}catch(error){toast(`온라인 방 생성 실패: ${error.message} · 서버 통합 설정을 확인해주세요.`);}finally{inFlight=false;}}
+async function createOnline(){if(!(await ensureMember()))return;inFlight=true;try{const r=await post('/api/marble/rooms',{sid:SID,name:nick,rounds:roundsForGame(),turnSeconds:seconds});resetScenes();localGame=null;lastDice=null;updateOnlineRoom(r);location.hash=`room=${r.code}`;connectSSE(r.code);}catch(error){toast(`온라인 방 생성 실패: ${error.message} · 서버 통합 설정을 확인해주세요.`);}finally{inFlight=false;}}
 async function joinOnline(code){if(!(await ensureMember()))return;const id=(code||'').trim().toUpperCase();if(!/^[0-9A-F]{6}$/.test(id))return toast('6자리 초대 코드를 확인해주세요.');
  inFlight=true;try{let r=await post(`/api/marble/rooms/${id}/join`,{sid:SID,name:nick});resetScenes();localGame=null;lastDice=null;mode='online';updateOnlineRoom(r);location.hash=`room=${r.code}`;connectSSE(r.code);}catch(error){toast(error.message);if(!onlineRoom){location.hash='';render();}}finally{inFlight=false;}}
 async function startOnline(){if(!onlineRoom||inFlight)return;if(!(await ensureMember()))return;inFlight=true;try{const data=await post(`/api/marble/rooms/${onlineRoom.code}/start`,{sid:SID});resetScenes();lastDice=null;updateOnlineRoom(data);}catch(error){toast(error.message);}finally{inFlight=false;}}
@@ -274,7 +304,9 @@ function updateClock(){const el=document.querySelector('[data-clock]');if(!el||!
 }
 setInterval(updateClock,1000);
 root.addEventListener('click',async e=>{
- const modeBtn=e.target.closest('[data-mode]');if(modeBtn){if((catChallenge&&modeBtn.dataset.mode!=='ai')||(!catChallenge&&modeBtn.dataset.mode==='ai'))return;persistNick();mode=modeBtn.dataset.mode;render();return;}
+ const modeBtn=e.target.closest('[data-mode]');if(modeBtn){if((catChallenge&&modeBtn.dataset.mode!=='ai')||(!catChallenge&&modeBtn.dataset.mode==='ai'))return;if(mode==='ai')persistNick();mode=modeBtn.dataset.mode;render();return;}
+ const gameModeBtn=e.target.closest('[data-game-mode]');if(gameModeBtn){if(mode==='ai')persistNick();gameMode=gameModeBtn.dataset.gameMode==='endless'?'endless':'normal';render();return;}
+ const roundBtn=e.target.closest('[data-rounds]');if(roundBtn){if(mode==='ai')persistNick();const choice=Number(roundBtn.dataset.rounds);if(ROUND_OPTIONS.includes(choice)){rounds=choice;render();}return;}
  const land=e.target.closest('[data-land]');if(land){executeAction('travel',{index:Number(land.dataset.land)});return;}
  const inspect=e.target.closest('[data-inspect]');if(inspect){inspectedCity=Number(inspect.dataset.inspect);render();return;}
  const action=e.target.closest('[data-action]')?.dataset.action;if(!action)return;
@@ -296,15 +328,16 @@ root.addEventListener('click',async e=>{
  case 'rematch':startLocal();break;
  case 'skipScene':finishScene();break;
  case 'toggleEffects':effectsOn=!effectsOn;localStorage.setItem('moyeo-marble-effects',effectsOn?'on':'off');if(scene)finishScene();else render();break;
+ case 'toggleLobbyEffects':if(mode==='ai')persistNick();effectsOn=!effectsOn;localStorage.setItem('moyeo-marble-effects',effectsOn?'on':'off');render();break;
+ case 'toggleTutorial':if(mode==='ai')persistNick();tutorialOn=!tutorialOn;localStorage.setItem('moyeo-marble-tutorial',tutorialOn?'on':'off');render();break;
  case 'closeInspector':inspectedCity=null;render();break;
  }
 });
 root.addEventListener('change',e=>{
- if(e.target.id==='mmRounds'){const choice=Number(e.target.value);rounds=[0,8,12,16].includes(choice)?choice:12;}
  if(e.target.id==='mmSeconds')seconds=Number(e.target.value)||30;
  if(e.target.id==='mmPeople')people=Math.min(4,Math.max(2,Number(e.target.value)||2));
- if(e.target.id==='mmNick')persistNick();
+ if(e.target.id==='mmNick'&&mode==='ai')persistNick();
 });
 root.addEventListener('keydown',e=>{if(e.key==='Enter' && e.target.matches('[data-inspect]')){inspectedCity=Number(e.target.dataset.inspect);render();}if(e.key==='Enter' && e.target.matches('[data-land]')){e.preventDefault();executeAction('travel',{index:Number(e.target.dataset.land)});}if(e.key==='Enter' && e.target.id==='mmJoinCode'){e.preventDefault();joinOnline(e.target.value);}});
 render();
-const invite=location.hash.match(/room=([0-9a-f]{6})/i);if(invite){mode='online';joinOnline(invite[1]);}
+const invite=location.hash.match(/room=([0-9a-f]{6})/i);if(invite&&!catChallenge){mode='online';joinOnline(invite[1]);}

@@ -24,7 +24,7 @@ test('Cat Challenge groups the six currently available AI games',()=>{
  const matches=[...hub.matchAll(/data-action="catChoose"/g)];
  assert.equal(matches.length,6);
  for(const game of games)assert.match(hub,new RegExp('data-cat-game="'+game.id+'"'));
- assert.match(hub,/친구와 하려면 홈의 일반 게임 목록/);
+ assert.match(hub,/홈에서 일반 게임을 선택하세요/);
 });
 
 test('Cat setup supports existing room-independent game preferences',()=>{
@@ -48,7 +48,7 @@ test('Multiplayer details do not include a Cat Challenge button',()=>{
 test('Marble isolates Cat mode from friend modes and returns to the Cat hub',()=>{
  assert.match(app,/\/marble\/index\.html\?cat=1/);
  assert.match(app,/\/tetris\/index\.html\?cat=1/);
- assert.match(marble,/catChallenge\s*\?\s*\[\['ai'/);
+ assert.match(marble,/const selectedBattles=catChallenge\?battles\.filter/);
  assert.match(marble,/mode=catChallenge\?'ai':'local'/);
  assert.match(marble,/mode=catChallenge\?'ai':'local';location\.hash/);
  assert.match(marbleHtml,/id="mmReturnLink"/);
