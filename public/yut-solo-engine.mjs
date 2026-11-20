@@ -24,7 +24,7 @@ function pickRoute(piece,shortcut){
  return {route:piece.route,at:piece.index};
 }
 export function legalYutMoves(mine,steps){
- if(!Number.isInteger(steps)||![-1,1,2,3,4,5].includes(steps))return [];
+ if(!Number.isInteger(steps)||(steps!==-1&&(steps<1||steps>100)))return [];
  const moves=[];
  mine.forEach((p,index)=>{
   if(p.done||(steps===-1&&p.node===0))return;
@@ -42,6 +42,40 @@ export function yutDestination(piece,steps,shortcut=true){
  if(nextIndex<0)throw new Error('Invalid backward move');
  const complete=nextIndex>=YUT_ROUTES[route].length;
  return {node:complete?20:YUT_ROUTES[route][nextIndex],route,index:nextIndex,done:complete};
+}
+// Turns a selection of stored tosses into a single legal displacement.
+// Positive tosses may be combined; back-do is always played separately.
+export function yutSelectedSteps(rolls,indices){
+ if(!Array.isArray(rolls)||!Array.isArray(indices)||!indices.length)throw new Error('Select a Yut toss');
+ const seen=new Set();
+ let total=0,hasBackdo=false;
+ for(const index of indices){
+  if(!Number.isInteger(index)||index<0||index>=rolls.length||seen.has(index))throw new Error('Invalid Yut toss selection');
+  seen.add(index);
+  const value=rolls[index];
+  if(![-1,1,2,3,4,5].includes(value))throw new Error('Invalid Yut toss');
+  if(value===-1)hasBackdo=true;
+  total+=value;
+ }
+ if(hasBackdo&&indices.length!==1)throw new Error('Back-do must be used alone');
+ return total;
+}
+export function yutTravelNodes(piece,steps,shortcut=true){
+ const {route,at}=pickRoute(piece,shortcut);
+ const track=YUT_ROUTES[route];
+ if(steps===-1){
+  if(at<1)throw new Error('Invalid backward move');
+  return [piece.node,track[at-1]];
+ }
+ if(steps<1||!Number.isInteger(steps))throw new Error('Invalid move');
+ const reached=Math.min(track.length,at+steps+1);
+ const nodes=track.slice(at,reached);
+ if(nodes[0]!==piece.node)nodes.unshift(piece.node);
+ if(at+steps>=track.length)nodes.push(20);
+ return nodes;
+}
+export function usableYutRolls(mine,rolls){
+ return rolls.filter(value=>legalYutMoves(mine,value).length>0);
 }
 export function moveOwnYutPieces(ours,index,steps,shortcut=true){
  if(!legalYutMoves(ours,steps).some(m=>m.index===index&&m.shortcut===shortcut))
