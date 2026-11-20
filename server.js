@@ -440,7 +440,7 @@ function gameTick(){
 }
 const ticker=setInterval(gameTick,300);ticker.unref();
 
-const MIME={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json; charset=utf-8'};
+const MIME={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.png':'image/png','.json':'application/json; charset=utf-8'};
 const handler=async(req,res)=>{
   const u=new URL(req.url,'http://localhost');const pathname=decodeURIComponent(u.pathname);
   try {
