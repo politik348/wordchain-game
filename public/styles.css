@@ -17,3 +17,23 @@
 @media(max-width:1050px){.game-grid{grid-template-columns:repeat(3,1fr)}.server-status,.online-dot{display:none}.hero-content{padding:56px 0 55px 46px}.hero-art{min-width:280px}.hero-blob{transform:scale(.87) rotate(7deg)}}
 @media(max-width:790px){.header-inner{height:67px;padding:0 18px}.desktop-nav{display:none}.brand{font-size:20px}.hero{min-height:initial;margin-top:18px}.hero-content{padding:42px 24px;max-width:none;flex:1}.hero h1{font-size:35px;letter-spacing:-1.6px}.hero-art{display:none}.stat-strip{gap:9px}.stat-item{padding:14px 7px;gap:5px}.stat-icon{font-size:18px}.stat-item strong{font-size:11px}.stat-item small{font-size:10px}.section-heading{margin-top:42px}.game-grid{grid-template-columns:repeat(2,1fr);gap:12px}.game-illust{height:145px}.game-emoji{font-size:65px}.intro-panel{padding:22px}.intro-emoji{display:none}.detail-layout,.room-layout{grid-template-columns:1fr}.room-sidebar{display:grid;grid-template-columns:1fr 1fr;gap:12px}.detail-banner{padding:27px}.detail-banner .detail-emoji{font-size:90px}.detail-banner h1{font-size:33px}.room-head{padding:15px 17px}.footer-inner{gap:15px;flex-direction:column}.game-panel{padding:18px}}
 @media(max-width:480px){.home-wrap,.page-wrap{padding:0 13px}.account-button{padding:8px 10px}.account-button #headerNickname{max-width:65px;overflow:hidden;text-overflow:ellipsis}.hero{border-radius:23px}.hero-content{padding:35px 20px}.hero h1{font-size:31px}.hero-subtitle{font-size:12px}.hero-buttons .button{padding:11px 13px}.game-grid{gap:9px}.game-card{padding:7px;border-radius:17px}.game-illust{height:119px;border-radius:12px}.game-emoji{font-size:54px}.game-card-body{padding:13px 5px 8px}.game-title-row h3{font-size:16px}.game-desc{font-size:11px;min-height:52px}.game-meta{font-size:9px}.stat-item small{display:none}.section-heading h2{font-size:24px}.intro-panel{align-items:flex-start;flex-direction:column}.detail-banner .detail-emoji{font-size:64px}.detail-banner h1{font-size:27px}.detail-banner p{font-size:12px}.panel{padding:19px}.room-head{align-items:flex-start;flex-direction:column}.room-sidebar{display:block}.wordchain-word .last-word{font-size:37px}.wordchain-word{padding:24px 12px}.action-form{flex-wrap:wrap}.action-form .button{padding:12px}.bell-card{min-height:105px}.bell-card span{font-size:37px}.bell-cards{grid-template-columns:repeat(2,1fr)}.hero-kicker{font-size:9px}}
+
+/* Existing stones are display items. Disabled placement buttons must not fade them. */
+.omok-cell:disabled { opacity: 1; cursor: default; }
+.omok-cell .stone { opacity: 1; pointer-events: none; }
+.omok-cell:focus-visible { outline: 2px solid #ff627a; outline-offset: -2px; }
+/* Drawing prompts: make it obvious who draws and what they should draw. */
+.doodle-word-card { margin: 0 0 17px; padding: 20px 22px; border-radius: 16px; text-align: center; border: 2px solid #e9e4ef; }
+.doodle-word-card.artist-card { background: #fff0dd; border-color: #f2c48b; }
+.doodle-word-card.guesser-card { background: #f3f5ff; border-color: #e0e5fa; }
+.doodle-role { font-weight: 900; font-size: 14px; color: #7c6275; margin-bottom: 8px; }
+.doodle-word { color: #25263c; font-size: clamp(28px, 4vw, 42px); line-height: 1.4; font-weight: 900; letter-spacing: 2px; overflow-wrap: anywhere; }
+.doodle-masked-word { color: #59578f; font-size: clamp(26px, 4vw, 40px); font-weight: 900; letter-spacing: .24em; line-height: 1.6; }
+.doodle-word-card p { margin: 10px 0 0; font-size: 13px; color: #746e82; }
+
+/* High-contrast full-opacity stones, including disabled/occupied intersections. */
+button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:1!important;filter:none!important;}
+.omok-cell .stone,.omok-cell:disabled .stone{opacity:1!important;filter:none!important;}
+.omok-cell .stone.black,.omok-cell:disabled .stone.black{background:radial-gradient(circle at 29% 24%,#454a56 0%,#191d26 44%,#07090e 92%)!important;border:1px solid #05070d;box-shadow:inset -2px -3px 6px #02030899,0 3px 4px #24180d59;}
+.omok-cell .stone.white,.omok-cell:disabled .stone.white{background:radial-gradient(circle at 30% 23%,#fff 0%,#fafafa 63%,#c4c8d0 100%)!important;border:1px solid #b9bdc5;box-shadow:inset -1px -2px 3px #c4c8d099,0 3px 4px #24180d4b;}
+.omok-cell[disabled]:not(:has(.stone)){cursor:default;}

@@ -1,9 +1,24 @@
 import http from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, randomInt } from 'node:crypto';
-import { words, lexicon, startingWords, drawingWords, liarWords } from './data/words.js';
+import { words as starterWords, startingWords, drawingWords, liarWords } from './data/words.js';
+// An imported full dictionary overrides the starter lexicon for multiplayer.
+let words = starterWords;
+try {
+  const imported = JSON.parse(readFileSync(new URL('./data/dictionary.json', import.meta.url), 'utf8'));
+  if (Array.isArray(imported) && imported.length && imported.every(w => typeof w === 'string' && /^[가-힣]{2,24}$/.test(w))) {
+    words = imported;
+    console.log(`Dictionary loaded: ${words.length.toLocaleString('ko-KR')} words`);
+  } else {
+    console.warn('Invalid imported dictionary, retaining starter words.');
+  }
+} catch (e) {
+  if (e.code !== 'ENOENT') console.warn('Dictionary load failed, retaining starter words:', e.message);
+}
+const lexicon = new Set(words);
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
