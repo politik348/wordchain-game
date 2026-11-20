@@ -1,7 +1,7 @@
 import {TURN_SECONDS, dictionaryIndex, replies as chainReplies, validReply, turnsLabel} from './chain-utils.mjs';
 import {configureRummikubUI, renderRummikubGame} from './rummikub/ui.mjs?v=20261120rk3';
 import {createSoloRummikub, soloRoom, soloPlayRummikub, soloTickRummikub, catPlayRummikub} from './rummikub/solo.mjs';
-import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove, yutSelectedSteps, usableYutRolls} from './yut-solo-engine.mjs?v=20261120yut4';
+import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove, yutSelectedSteps, usableYutRolls} from './yut-solo-engine.mjs?v=20261120catlevels1';
 import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut5';
 import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut5';
 import {installYutPowerControl} from './yut-power.mjs?v=20261120yut5';
@@ -745,10 +745,13 @@ function soloYutAiTurn(delay=750){
   let best=null,bestScore=-Infinity;
   for(const indices of candidates){
    const steps=yutSelectedSteps(rolls,indices);
-   const move=chooseCatYutMove(mine,enemy,steps);
+   const move=chooseCatYutMove(mine,enemy,steps,Math.random,{difficulty:current.aiDifficulty||'beginner'});
    if(!move)continue;
    const projected=applyYutMove(mine,enemy,move.index,steps,move.shortcut);
-   const score=projected.caught*150+(projected.won?10000:0)+(projected.done?80:0)+steps*3+Math.random()*2;
+   const tier=current.aiDifficulty||'beginner';
+   const score=projected.caught*(tier==='advanced'?300:tier==='intermediate'?225:150)+
+    (projected.won?10000:0)+(projected.done?(tier==='advanced'?180:80):0)+
+    steps*(tier==='advanced'?7:3)+(tier==='advanced'?Math.random()*.2:Math.random()*2);
    if(score>bestScore){bestScore=score;best={indices,move};}
   }
   if(best){
