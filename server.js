@@ -5,6 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, randomInt } from 'node:crypto';
 import {acceptWebSocket} from './websocket-lite.mjs';
+import {startRummikub, sanitizeRummikub, actRummikub, tickRummikub, labelRummikub} from './rummikub/multiplayer.mjs';
+import {handleMarbleRequest} from './marble-server.mjs';
 import {TURN_SECONDS, dictionaryIndex, replies, validReply} from './public/chain-utils.mjs';
 import { words as starterWords, startingWords, drawingWords, liarWords } from './data/words.js';
 // An imported full dictionary overrides the starter lexicon for multiplayer.
@@ -38,8 +40,8 @@ function openingWord(mode){
  const fallback=pool.find(w=>w!==lastStartingWord[mode]&&replies(wordIndex,w,new Set([w]),mode,null,1).length) || '사과';
  lastStartingWord[mode]=fallback;return fallback;
 }
-const configGames=new Set(['wordchain','omok','yut','doodle']);
-const defaults={wordchain:30,omok:30,yut:45,doodle:90};
+const configGames=new Set(['wordchain','omok','yut','doodle','rummikub']);
+const defaults={wordchain:30,omok:30,yut:45,doodle:90,rummikub:60};
 function makeOptions(game,value={}){
  const opts={turnSeconds:configGames.has(game)?defaults[game]:null,wordMode:'wordchain',stoneStyle:'normal'};
  if(configGames.has(game)&&TURN_SECONDS.includes(Number(value.turnSeconds)))opts.turnSeconds=Number(value.turnSeconds);
@@ -60,6 +62,7 @@ function sendDoodle(r,packet){
 }
 const MAX_BODY = 120_000;
 const GAME_INFO = {
+  rummikub: { name:'루미큐브', min:2, max:4 },
   mafia: { name:'가면단', min:4, max:12 },
   omok: { name:'오목', min:2, max:2 },
   yut: { name:'윷놀이', min:2, max:4 },
@@ -94,7 +97,8 @@ function sanitize(r,sid) {
     notices:r.notices.slice(-8),me:sid,now:Date.now(),updatedAt:r.updatedAt,version:r.version||0 };
   if(!r.state) return pub;
   const s=r.state;
-  if(r.game==='mafia') {
+  if(r.game==='rummikub') {pub.state=sanitizeRummikub(r,sid);
+  } else if(r.game==='mafia') {
     pub.state={...s,roles:undefined,nightActions:undefined,investigations:undefined,
       role:s.roles[sid],investigation:s.investigations[sid]||null,
       votes:Object.keys(s.votes).map(v=>v),nightSubmitted:Object.keys(s.nightActions).map(v=>v)};
@@ -148,6 +152,7 @@ function start(r) {
   r.status='playing';
   const ids=r.players.map(p=>p.id);
   switch(r.game){
+    case 'rummikub':startRummikub(r);break;
     case 'omok':r.state={board:Array(225).fill(null),turn:ids[0],winner:null,last:null,moves:0,deadline:Date.now()+r.options.turnSeconds*1000};break;
     case 'wordchain':r.state={turn:ids[0],turnIndex:0,history:[openingWord(r.options.wordMode)],used:[],usedEndings:Object.fromEntries(ids.map(x=>[x,[]])),hearts:Object.fromEntries(ids.map(x=>[x,2])),scores:Object.fromEntries(ids.map(x=>[x,0])),deadline:Date.now()+r.options.turnSeconds*1000,round:1,mission:pick(['사','가','구','나','리','자','이','도','수']),timer:r.options.turnSeconds,reason:null,hints:null,oneShot:false};break;
     case 'doodle':r.state={artist:ids[0],artistIndex:0,round:1,maxRounds:Math.min(12,ids.length*3),word:pick(drawingWords),strokes:[],strokeSeq:0,chat:[],scores:Object.fromEntries(ids.map(x=>[x,0])),deadline:Date.now()+r.options.turnSeconds*1000,revealed:false};break;
@@ -321,6 +326,11 @@ function act(r,sid,type,data={},transport='http') {
     touch(r);return;
   }
   if(st!=='playing')throw err(400,'게임이 진행 중이 아닙니다.');
+  if(r.game==='rummikub') {
+    actRummikub(r,sid,type,data);
+    if(s.result)finish(r,labelRummikub(r,s.result));else touch(r,labelRummikub(r,s.lastMove));
+    return;
+  }
   if(r.game==='omok') {
     if(type!=='place')throw err(400,'이 게임에서 지원하지 않는 행동입니다.');
     if(s.turn!==sid)throw err(400,'상대방 차례입니다.');
@@ -471,6 +481,8 @@ function gameTick(){
       s.hints={for:loser,words:replies(wordIndex,s.history.at(-1),new Set(s.history),r.options.wordMode,new Set(s.usedEndings[loser]),3)};
       s.hearts[loser]--;s.reason=`${player(r,loser)?.nick}님 시간 초과! 목숨 -1`;
       nextChainTurn(r);touch(r,s.reason);
+    } else if(r.game==='rummikub'&&tickRummikub(r)){
+      if(s.result)finish(r,labelRummikub(r,s.result));else touch(r,labelRummikub(r,s.lastMove));
     } else if(r.game==='omok'&&now>s.deadline){
       const winner=r.players.find(p=>p.id!==s.turn);finish(r,`${player(r,s.turn).nick}님 시간 초과! ${winner?.nick}님 승리!`);
     } else if(r.game==='yut'&&now>s.deadline){
@@ -523,6 +535,7 @@ const MIME={'.webp':'image/webp','.png':'image/png','.html':'text/html; charset=
 const handler=async(req,res)=>{
   const u=new URL(req.url,'http://localhost');const pathname=decodeURIComponent(u.pathname);
   try {
+    if(await handleMarbleRequest(req,res,pathname))return;
     if(pathname==='/api/health')return simpleReply(res,200,{ok:true,rooms:rooms.size,dictionaryWords:DICT_COUNT,dictionarySource:'표준국어대사전 + 우리말샘'});
     if(pathname==='/api/dictionary'&&req.method==='GET'){res.setHeader('Cache-Control','public, max-age=86400');return simpleReply(res,200,words);}
     if(pathname==='/api/rooms'&&req.method==='GET'){
