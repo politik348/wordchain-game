@@ -167,34 +167,85 @@ export function createGame({players,maxRounds=DEFAULT_ROUNDS}={}){
  if(!Array.isArray(players)||players.length<2||players.length>MAX_PLAYERS)throw Error('2~4명이 필요합니다.');
  if(new Set(players.map(p=>p.id)).size!==players.length)throw Error('플레이어 ID가 중복되었습니다.');
  const rounds=ALLOWED_ROUNDS.includes(Number(maxRounds))?Number(maxRounds):DEFAULT_ROUNDS;
- const s={version:1,players:players.map((p,i)=>({id:String(p.id),name:String(p.name||`플레이어 ${i+1}`).slice(0,16),ai:!!p.ai,cash:START_CASH,position:0,stuck:0,bankrupt:false,laps:0})),properties:{},turnIndex:0,turnCount:0,round:1,maxRounds:rounds,phase:'roll',pending:null,lastRoll:null,extraRoll:false,doubles:0,festival:null,winner:null,reason:null,log:[]};
+ const s={version:1,players:players.map((p,i)=>({id:String(p.id),name:String(p.name||`플레이어 ${i+1}`).slice(0,16),ai:!!p.ai,cash:START_CASH,position:0,stuck:0,bankrupt:false,laps:0})),properties:{},turnIndex:0,turnCount:0,round:1,maxRounds:rounds,phase:'roll',pending:null,lastRoll:null,extraRoll:false,doubles:0,festival:null,winner:null,reason:null,log:[],actionSeq:0,lastEvent:null,events:[]};
  log(s,`모여마블 개막! ${rounds}라운드 초고속 대결을 시작합니다.`);
  return s;
 }
+/** Public presentation data, computed from the authoritative state transition.
+ * Used by local, AI, and online play; no game rules depend on these effects.
+ */
+function summarizeAction(before,after,actor,type,from,positionBefore,diceResult){
+ const beforePlayer=before.players.find(p=>p.id===actor);
+ const afterPlayer=after.players.find(p=>p.id===actor);
+ const prevLog=new Set((before.log||[]).map(e=>e.text+':'+e.at));
+ const newMessages=(after.log||[]).filter(e=>!prevLog.has(e.text+':'+e.at)).map(e=>e.text).reverse().slice(0,7);
+ const changedProperties=[];
+ for(const key of new Set([...Object.keys(before.properties),...Object.keys(after.properties)])){
+  const old=before.properties[key]||null,now=after.properties[key]||null;
+  if(old?.owner!==now?.owner || old?.level!==now?.level){
+   changedProperties.push({index:Number(key),previous:old,now,kind:!old&&now?'purchase':old&&now&&old.owner!==now.owner?'takeover':old&&now?'build':'sale'});
+  }
+ }
+ const moneyChanges=after.players.map(p=>({id:p.id,name:p.name,delta:p.cash-(before.players.find(b=>b.id===p.id)?.cash||0)})).filter(x=>x.delta!==0);
+ const at=afterPlayer?.position??positionBefore;
+ let message='';
+ if(type==='roll'){
+  if(beforePlayer.stuck)message=`${afterPlayer.name} · 무인도 휴식`;
+  else if(diceResult){
+   const forcedIsland=newMessages.some(x=>x.includes('3연속 더블'));
+   if(forcedIsland){message=`${afterPlayer.name} · 3연속 더블! 무인도로 강제 이동`;}
+   const tollLine=newMessages.find(x=>x.includes('통행료')&&x.includes('지불'));
+   const specialLine=newMessages.find(x=>x.includes('보너스!')||x.includes('세금 납부')||x.includes('무인도에 갇')||x.includes('축제 개최')||x.includes('세계여행')||x.includes('대박!'));
+   if(!forcedIsland)message=`${afterPlayer.name} · ${diceResult.a} + ${diceResult.b} = ${diceResult.total}칸! ${TILES[at].name} 도착${tollLine?' · 통행료 지불!':specialLine?' · 특별 이벤트!':''}`;
+  }
+  else message=`${afterPlayer.name} · 무인도로 이동`;
+ }else if(type==='travel')message=`${afterPlayer.name} · 세계여행으로 ${TILES[at].name} 도착!`;
+ else if(type==='buy')message=`${afterPlayer.name} · ${TILES[from.index].name} 매입 성공!`;
+ else if(type==='upgrade')message=`${afterPlayer.name} · ${TILES[from.index].name} ${after.properties[from.index]?.level===4?'랜드마크 완성!':'건물 건설!'} `;
+ else if(type==='takeover')message=`${afterPlayer.name} · ${TILES[from.index].name} 인수 성공!`;
+ else message=`${afterPlayer.name} · 투자하지 않고 통과`;
+ const event={
+  seq:(before.actionSeq||0)+1,type,actor,actorName:afterPlayer?.name||'플레이어',ai:!!beforePlayer?.ai,
+  from:positionBefore,to:at,travel:type==='travel'||newMessages.some(x=>x.includes('3연속 더블')),dice:diceResult||null,
+  tileIndex:type==='roll'||type==='travel'?at:from?.index??at,
+  propertyChanges:changedProperties,moneyChanges,message:message.trim(),messages:newMessages,
+  phase:after.phase,turnIndexBefore:before.turnIndex,turnIndexAfter:after.turnIndex,
+  winner:after.winner||null
+ };
+ return event;
+}
+
 export function applyAction(input,actor,type,payload={},rng=Math.random){
  const s=structuredClone(input);
  if(s.phase==='finished')throw Error('이미 종료된 게임입니다.');
  if(current(s).id!==actor)throw Error('지금은 다른 플레이어 차례입니다.');
  const p=current(s);
+ const positionBefore=p.position, pendingBefore=s.pending?{...s.pending}:null;
+ let diceResult=null;
+ const commit=()=>{
+  const event=summarizeAction(input,s,actor,type,pendingBefore,positionBefore,diceResult);
+  s.actionSeq=event.seq;s.lastEvent=event;s.events=[event,...(input.events||[])].slice(0,24);
+  return s;
+ };
  if(type==='roll'){
   if(s.phase!=='roll')throw Error('아직 결정을 끝내지 않았습니다.');
-  if(p.stuck){p.stuck--;log(s,`${p.name}님은 무인도에서 휴식! 다음 차례로 넘어갑니다.`);s.extraRoll=false;nextTurn(s);return s;}
+  if(p.stuck){p.stuck--;log(s,`${p.name}님은 무인도에서 휴식! 다음 차례로 넘어갑니다.`);s.extraRoll=false;nextTurn(s);return commit();}
   const a=randInt(rng,6)+1,b=randInt(rng,6)+1;
-  s.lastRoll={a,b,total:a+b,double:a===b};
+  s.lastRoll={a,b,total:a+b,double:a===b};diceResult={...s.lastRoll};
   if(a===b){s.doubles++;s.extraRoll=true;}else{s.doubles=0;s.extraRoll=false;}
-  if(s.doubles>=3){p.position=12;p.stuck=1;s.extraRoll=false;s.doubles=0;log(s,`${p.name}님, 3연속 더블! 무인도로 이동합니다.`);nextTurn(s);return s;}
+  if(s.doubles>=3){p.position=12;p.stuck=1;s.extraRoll=false;s.doubles=0;log(s,`${p.name}님, 3연속 더블! 무인도로 이동합니다.`);nextTurn(s);return commit();}
   log(s,`${p.name}님 주사위 ${a} + ${b} = ${a+b}${a===b?' · 더블!':''}`);
-  movePlayer(s,p.position+a+b,rng);return s;
+  movePlayer(s,p.position+a+b,rng);return commit();
  }
  if(type==='travel'){
   if(s.phase!=='travel')throw Error('세계여행 중이 아닙니다.');
   const idx=Number(payload.index);
   if(!Number.isInteger(idx)||idx<0||idx>=24||idx===18)throw Error('이동할 칸을 다시 선택해주세요.');
-  s.phase='roll';s.pending=null;movePlayer(s,idx,rng,true);return s;
+  s.phase='roll';s.pending=null;movePlayer(s,idx,rng,true);return commit();
  }
  if(s.phase!=='choice')throw Error('선택할 구매 또는 건설 행동이 없습니다.');
  const {kind,index}=s.pending;
- if(type==='pass'){log(s,`${p.name}님은 이번 투자를 건너뜁니다.`);nextTurn(s);return s;}
+ if(type==='pass'){log(s,`${p.name}님은 이번 투자를 건너뜁니다.`);nextTurn(s);return commit();}
  if(kind==='purchase' && type==='buy'){
   if(s.properties[index])throw Error('이미 소유한 도시입니다.');
   if(p.cash<TILES[index].price)throw Error('구매 자금이 부족합니다.');
@@ -214,7 +265,7 @@ export function applyAction(input,actor,type,payload={},rng=Math.random){
   log(s,`${p.name}님이 ${TILES[index].name}을(를) ${price}M에 인수했어요!`);
  }else throw Error('이 상황에서 사용할 수 없는 행동입니다.');
  if(!evaluateWinner(s))nextTurn(s);
- return s;
+ return commit();
 }
 export function chooseCatAction(s){
  const p=current(s);
