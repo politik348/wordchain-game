@@ -755,5 +755,5 @@ $('closeJoin').addEventListener('click',()=>$('joinDialog').close());
 document.addEventListener('change',e=>{if(e.target.id==='drawWidth')drawWidth=Number(e.target.value);});
 document.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',async()=>{if(room&&!(confirm('게임방을 나가고 이동할까요?')))return;if(room)await leave();if(b.dataset.nav==='home'){routeHome();}else if(b.dataset.nav==='cat'){view='catHub';solo=null;render();}else if(b.dataset.nav==='rooms'){view='rooms';await refreshRooms();render();}else{view='guide';render();}scrollTo(0,0);}));
 setInterval(updateTick,200);
-async function init(){await refreshRooms();const url=new URLSearchParams(location.search),code=url.get('room')||sessionStorage.getItem('moyeo-last-room');if(url.get('cat')==='1'&&!code){view='catHub';}if(code&&/^[A-Za-z0-9]{6}$/.test(code)&&apiLive){try{await joinRoom(code);return;}catch(e){sessionStorage.removeItem('moyeo-last-room');}}render();}
+async function init(){await refreshRooms();const url=new URLSearchParams(location.search),catReturn=url.get('cat')==='1'&&!url.get('room'),code=catReturn?null:url.get('room')||sessionStorage.getItem('moyeo-last-room');if(catReturn){view='catHub';}if(code&&/^[A-Za-z0-9]{6}$/.test(code)&&apiLive){try{await joinRoom(code);return;}catch(e){sessionStorage.removeItem('moyeo-last-room');}}render();}
 init();
