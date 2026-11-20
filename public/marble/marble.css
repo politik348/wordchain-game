@@ -181,7 +181,21 @@
 .mm-opponent-card{width:100%;min-height:91px;display:flex;align-items:center;gap:12px;text-align:left;padding:9px 15px 9px 9px;border:2px solid #eee7ed;border-radius:17px;background:#fff;transition:transform .18s,border-color .18s,box-shadow .18s,background .18s;position:relative;color:#4b3d57}
 .mm-opponent-card:hover{transform:translateY(-3px);border-color:#ffd2d9;box-shadow:0 7px 13px #fd779820}.mm-opponent-card.selected{background:linear-gradient(104deg,#fff1f3,#fff9f7);border-color:#ff859d;box-shadow:0 8px 18px #ff90a22b}
 .mm-opponent-image{flex:none;width:68px;height:68px;border-radius:16px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#fff1e8,#ffe3ea)}.mm-opponent-card:nth-child(2) .mm-opponent-image{background:linear-gradient(145deg,#f7ebff,#eee8ff)}.mm-opponent-card:nth-child(3) .mm-opponent-image{background:linear-gradient(145deg,#fff4e1,#e6f7eb)}
-.mm-opponent-image .mm-avatar-art{height:70px;width:70px}.mm-opponent-card.selected .mm-opponent-image .mm-avatar-art{animation:mmMascotNod 1.5s ease-in-out infinite}
+.mm-opponent-image .mm-avatar-art{height:70px;width:70px}
+/* The AI opponent card uses the same crowned cat artwork as other game lobbies.
+   Do not alter characters on the board, in the hero, or in multiplayer cards. */
+.mm-opponent-image .mm-opponent-cat-selected-art{
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+  border-radius:50%;
+  pointer-events:none;
+  user-select:none;
+}
+.mm-opponent-card.selected .mm-opponent-image .mm-avatar-art{animation:mmMascotNod 1.5s ease-in-out infinite}
 .mm-duo{display:flex;align-items:flex-end;justify-content:center;width:100%;height:100%;padding:0 2px}.mm-duo>.mm-avatar-art{height:56px;width:41px;flex:none}.mm-duo>.mm-avatar-art:last-child{margin-left:-18px;transform:translateY(2px)}
 .mm-opponent-copy{display:grid;gap:3px;min-width:0;flex:1}.mm-opponent-copy strong{font-size:15px;letter-spacing:-.35px}.mm-opponent-copy small{font-size:11px;color:#928394;line-height:1.45;font-weight:740}.mm-opponent-copy em{font-style:normal;color:#f2768c;font-size:10px;font-weight:880}.mm-opponent-choice{flex:none;width:22px;height:22px;display:grid;place-items:center;align-self:flex-start;margin-top:4px;border:1.5px solid #dfd5df;border-radius:50%;font-size:13px;font-weight:1000;color:white}.mm-opponent-card.selected .mm-opponent-choice{background:#f77d91;border-color:#f77d91}
 .mm-mascot-quip{display:flex;align-items:center;gap:11px;border:1px dashed #e7cfe3;border-radius:14px;background:linear-gradient(105deg,#fff9fa,#fdf7ff);padding:8px 12px;margin-top:14px;color:#9b6e88;font-size:11px;font-weight:820;min-height:53px}.mm-mascot-quip>.mm-avatar-art{height:37px;width:37px;flex:none}.mm-quip-stars{margin-left:auto;color:#efaa58;white-space:nowrap}
