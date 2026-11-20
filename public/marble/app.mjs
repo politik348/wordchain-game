@@ -49,7 +49,7 @@ function toast(message){const n=document.createElement('div');n.className='mm-to
 function button(action,text,kind='mm-primary',disabled=false,attrs=''){return `<button class="mm-btn ${kind}" data-action="${action}" ${disabled?'disabled':''} ${attrs}>${text}</button>`;}
 function renderLobby(){
  const battles=[
-  {id:'ai',title:'고양이를 이겨라',desc:'똑똑한 치즈냥과 짜릿한 1:1 승부!',art:characterArt(1,'mm-opponent-face'),meta:'혼자서도 신나게 · AI 대전'},
+  {id:'ai',title:'고양이를 이겨라',desc:'똑똑한 치즈냥과 짜릿한 1:1 승부!',art:'<img class="mm-opponent-cat-selected-art" alt="" src="/assets/cat-hub-challenge-user.webp" width="780" height="780" loading="eager" decoding="async">',meta:'혼자서도 신나게 · AI 대전'},
   {id:'online',title:'친구와 온라인',desc:'각자 기기에서 링크로 모여 즐겨요.',art:`<span class="mm-duo">${characterArt(0)}${characterArt(1)}</span>`,meta:'초대 코드 · 2~4명'},
   {id:'local',title:'한 화면에서 함께',desc:'옆에 있는 친구들과 번갈아 플레이!',art:`<span class="mm-duo">${characterArt(2)}${characterArt(3)}</span>`,meta:'같은 기기 · 2~4명'}
  ];
