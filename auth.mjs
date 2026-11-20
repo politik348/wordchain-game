@@ -208,7 +208,7 @@ async function createSession(accountId){
  const token=randomBytes(32).toString('hex');
  await readOrWrite(state=>{
   const now=Date.now();
-  state.sessions=state.sessions.filter(x=>x.expiresAt>now&&x.accountId!==accountId);
+  state.sessions=state.sessions.filter(x=>x.expiresAt>now);
   state.sessions.push({tokenHash:hash(token),accountId,createdAt:now,expiresAt:now+sessionAge});
  },true);
  return token;
