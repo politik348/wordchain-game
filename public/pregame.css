@@ -40,6 +40,20 @@
 .pg-mode-card.is-active{border-color:#ee96a9;background:#fff0f2;box-shadow:0 0 0 3px #fce3e8}
 .pg-mode-art{width:75px;height:69px;flex:none;border-radius:15px;background:linear-gradient(145deg,#fff6d9,#ffe9ef);display:grid;place-items:center;overflow:hidden}
 .pg-mode-art svg{width:59px;height:59px}
+/* Cat-vs-AI option: show the user's exact crowned-cat illustration instead
+   of the old simplified line icon, at the same responsive icon dimensions. */
+.pg-mode-art.pg-mode-art-cat{
+  background:linear-gradient(145deg,#fff0e6,#ffe4d6);
+  padding:2px;
+  overflow:hidden;
+}
+.pg-mode-art-cat .pg-mode-cat-img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  border-radius:13px;
+}
 .pg-mode-copy{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
 .pg-mode-copy strong{font-size:14px;font-weight:950}
 .pg-mode-copy small{color:#887a87;font-size:11px;font-weight:650;line-height:1.45}
