@@ -6,7 +6,7 @@ import vm from 'node:vm';
 
 const source=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
 const helpers=readFileSync(new URL('../public/chain-utils.mjs',import.meta.url),'utf8').replace(/^export /gm,'');
-const cleanSource=source.replace(/^import .*\n/,'');
+const cleanSource=source.replace(/^import .*\n/gm,'');
 const pureSource=helpers+'\n'+cleanSource.slice(0,cleanSource.indexOf("document.addEventListener('click'"));
 const CSS=readFileSync(new URL('../public/styles.css',import.meta.url),'utf8');
 function sandbox(){

@@ -1,0 +1,18 @@
+name: Test games
+on:
+  push:
+    branches: [main, feature/cat-ai-yut-omok-styles-20261120]
+  pull_request:
+    branches: [main]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - run: node --check public/app.js
+      - run: node --check public/yut-solo-engine.mjs
+      - run: node --check public/yut-solo-ui.mjs
