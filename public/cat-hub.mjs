@@ -30,7 +30,7 @@ export function renderCatHub(games) {
         '<a href="#cat-game-choices" class="cat-hub-jump">게임 선택하기 <span aria-hidden="true">↓</span></a>'+
       '</div>'+
       '<div class="cat-hub-character" aria-hidden="true">'+
-        '<img src="/assets/cat-hub-mascot.webp" alt="" width="630" height="480" loading="eager" decoding="async">'+
+        '<img src="/assets/cat-hub-challenge-user.webp" alt="" width="780" height="780" loading="eager" decoding="async">'+
       '</div>'+
     '</section>'+
     '<div class="cat-hub-heading" id="cat-game-choices"><h2>어떤 게임으로 도전할까요?</h2><span>6가지 고양이 대전</span></div>'+
