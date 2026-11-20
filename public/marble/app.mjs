@@ -296,7 +296,7 @@ async function startLocal(){if(mode==='local'&&!(await ensureMember()))return;if
  resetScenes();inspectedCity=null;localGame=createGame({players,maxRounds:roundsForGame()});onlineRoom=null;lastDice=null;render();queueCat();}
 function queueCat(){clearTimeout(aiTimer);if(onlineRoom||!localGame||localGame.phase==='finished')return;
  const p=current(localGame);if(!p.ai||scene||sceneQueue.length)return;
- aiTimer=setTimeout(()=>{if(!localGame||!current(localGame).ai)return;const action=chooseCatAction(localGame);if(action)executeAction(action.type,action.payload||{},catThought(localGame,action));},effectsOn&&!reducedMotion?520:120);
+ aiTimer=setTimeout(()=>{if(!localGame||!current(localGame).ai)return;const action=chooseCatAction(localGame,aiDifficulty);if(action)executeAction(action.type,action.payload||{},catThought(localGame,action));},effectsOn&&!reducedMotion?520:120);
 }
 function executeAction(type,payload={},thought=''){
  if(inFlight||scene)return;
@@ -333,6 +333,31 @@ function updateClock(){const el=document.querySelector('[data-clock]');if(!el||!
 }
 setInterval(updateClock,1000);
 root.addEventListener('click',async e=>{
+ const pgModeBtn=e.target.closest('[data-pg-mode]');
+ if(pgModeBtn){
+  const value=pgModeBtn.dataset.pgMode;
+  if(catChallenge?value!=='cat':!['online','local'].includes(value))return;
+  if(mode==='ai')persistNick();
+  mode=value==='cat'?'ai':value;render();return;
+ }
+ const pgDifficultyBtn=e.target.closest('[data-pg-difficulty]');
+ if(pgDifficultyBtn){
+  const value=pgDifficultyBtn.dataset.pgDifficulty;
+  if(!catChallenge||mode!=='ai'||!['beginner','intermediate','advanced'].includes(value))return;
+  persistNick();aiDifficulty=value;
+  localStorage.setItem('moyeo-marble-ai-difficulty',value);render();return;
+ }
+ const pgSettingBtn=e.target.closest('[data-pg-setting]');
+ if(pgSettingBtn){
+  if(mode==='ai')persistNick();
+  const key=pgSettingBtn.dataset.pgSetting,value=pgSettingBtn.dataset.pgValue;
+  if(key==='gameMode'&&['normal','endless'].includes(value))gameMode=value;
+  else if(key==='rounds'&&gameMode==='normal'&&ROUND_OPTIONS.includes(Number(value)))rounds=Number(value);
+  else if(key==='seconds'&&mode==='online'&&[15,30,45].includes(Number(value)))seconds=Number(value);
+  else if(key==='people'&&mode==='local'&&[2,3,4].includes(Number(value)))people=Number(value);
+  else return;
+  render();return;
+ }
  const modeBtn=e.target.closest('[data-mode]');if(modeBtn){if((catChallenge&&modeBtn.dataset.mode!=='ai')||(!catChallenge&&modeBtn.dataset.mode==='ai'))return;if(mode==='ai')persistNick();mode=modeBtn.dataset.mode;render();return;}
  const gameModeBtn=e.target.closest('[data-game-mode]');if(gameModeBtn){if(mode==='ai')persistNick();gameMode=gameModeBtn.dataset.gameMode==='endless'?'endless':'normal';render();return;}
  const roundBtn=e.target.closest('[data-rounds]');if(roundBtn){if(mode==='ai')persistNick();const choice=Number(roundBtn.dataset.rounds);if(ROUND_OPTIONS.includes(choice)){rounds=choice;render();}return;}
@@ -340,6 +365,7 @@ root.addEventListener('click',async e=>{
  const inspect=e.target.closest('[data-inspect]');if(inspect){inspectedCity=Number(inspect.dataset.inspect);render();return;}
  const action=e.target.closest('[data-action]')?.dataset.action;if(!action)return;
  switch(action){
+ case 'marbleBack':location.href=catChallenge?'/?cat=1':'/';break;
  case 'startLocal':startLocal();break;
  case 'createOnline':await createOnline();break;
  case 'joinOnline':await joinOnline(document.querySelector('#mmJoinCode')?.value);break;
