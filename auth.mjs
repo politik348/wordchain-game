@@ -140,8 +140,11 @@ export async function handleAccountRequest(req,res,pathname){
     const now=Date.now();
     state.invites=state.invites.filter(x=>x.nickKey!==key&&x.expiresAt>now&&!x.usedAt);
     const active=new Set(state.invites.map(x=>x.codeHash));
-    let candidate;
-    do{candidate=String(randomInt(0,10000)).padStart(4,'0');}while(active.has(secretHash(candidate)));
+    const requested=String(input.code||'').trim();
+    if(requested&&!/^\\d{4}$/.test(requested))throw error(400,'인증번호는 숫자 4자리여야 합니다.');
+    let candidate=requested;
+    if(candidate&&active.has(secretHash(candidate)))throw error(409,'이미 다른 회원에게 발급한 번호입니다.');
+    if(!candidate)do{candidate=String(randomInt(0,10000)).padStart(4,'0');}while(active.has(secretHash(candidate)));
     state.invites.push({id:randomBytes(16).toString('hex'),dripNickname:name,nickKey:key,codeHash:secretHash(candidate),createdAt:now,expiresAt:now+inviteAge,usedAt:null});
     return candidate;
    },true);
