@@ -36,24 +36,26 @@ let deferredRoomRender=false, activeDoodleStroke=null, composingForm=false, pend
 let previousSoloStarter=null, activeGomokuWorker=null;
 let yutRolling=null, yutRouteChoice=null, yutRollSelection=null;
 const gamePrefs={
- wordchain:{turnSeconds:30,wordMode:'wordchain',stoneStyle:'normal'},
- omok:{turnSeconds:30,stoneStyle:'normal'},
- yut:{turnSeconds:45},
- rummikub:{turnSeconds:60},
+ wordchain:{turnSeconds:30,wordMode:'wordchain',stoneStyle:'normal',aiDifficulty:'beginner'},
+ omok:{turnSeconds:30,stoneStyle:'normal',aiDifficulty:'beginner'},
+ yut:{turnSeconds:45,aiDifficulty:'beginner'},
+ rummikub:{turnSeconds:60,aiDifficulty:'beginner'},
  doodle:{turnSeconds:90}
 };
+const catGamesSupported=new Set(['omok','yut','wordchain','rummikub']);
 const pregameModes={};
 try{
  const previous=JSON.parse(localStorage.getItem('moyeo-pregame-settings-v1')||'{}');
  for(const [game,options] of Object.entries(previous)){
   if(!gamePrefs[game]||!options||typeof options!=='object')continue;
   if(TURN_SECONDS.includes(Number(options.turnSeconds)))gamePrefs[game].turnSeconds=Number(options.turnSeconds);
+  if(catGamesSupported.has(game)&&['beginner','intermediate','advanced'].includes(options.aiDifficulty))gamePrefs[game].aiDifficulty=options.aiDifficulty;
   if(game==='omok'&&['normal','crazy'].includes(options.stoneStyle))gamePrefs[game].stoneStyle=options.stoneStyle;
   if(game==='wordchain'&&['wordchain','kungkungtta'].includes(options.wordMode))gamePrefs[game].wordMode=options.wordMode;
  }
 }catch{}
 function persistPregamePrefs(){try{localStorage.setItem('moyeo-pregame-settings-v1',JSON.stringify(gamePrefs));}catch{}}
-const catGames=new Set(['omok','yut','wordchain','rummikub']);
+const catGames=catGamesSupported;
 function pregameModesFor(game,catOnly=false){return catOnly?['cat']:catGames.has(game)?['online','cat']:['online'];}
 function pregameSettingGroups(game){
  const prefs=gamePrefs[game];if(!prefs)return [];
@@ -72,7 +74,7 @@ function pregameSettingGroups(game){
 function pregameFor(game,catOnly=false){
  const g=GAME[game],allowedModes=pregameModesFor(game,catOnly);
  const mode=catOnly?'cat':allowedModes.includes(pregameModes[game])?pregameModes[game]:allowedModes[0];
- return renderPregame({game:g,allowedModes,mode,settings:pregameSettingGroups(game),rules:g.rules,rooms:catOnly?[]:roomList.filter(x=>x.game===game),showJoin:!catOnly,backAction:catOnly?'openCatHub':'home'});
+ return renderPregame({game:g,allowedModes,mode,settings:pregameSettingGroups(game),aiDifficulty:gamePrefs[game]?.aiDifficulty||'beginner',rules:g.rules,rooms:catOnly?[]:roomList.filter(x=>x.game===game),showJoin:!catOnly,backAction:catOnly?'openCatHub':'home'});
 }
 const dictionaryLabel='국립국어원 우리말샘 + 표준국어대사전 (확장 명사 437,875개)';
 function optionsFor(game){return {...(gamePrefs[game]||{})};}
@@ -428,17 +430,18 @@ function soloStart(game){
  if(game==='rummikub'){
   if(activeGomokuWorker){activeGomokuWorker.terminate();activeGomokuWorker=null;}
   const seconds=optionsFor(game).turnSeconds||60;
-  view='solo';selection=game;room=null;solo=createSoloRummikub(seconds);render();return;
+  view='solo';selection=game;room=null;solo=createSoloRummikub(seconds,optionsFor(game).aiDifficulty||'beginner');render();return;
  }
  if(activeGomokuWorker){activeGomokuWorker.terminate();activeGomokuWorker=null;}
  yutRouteChoice=null;yutRollSelection=null;yutRolling=null;
  const opts=optionsFor(game);const seconds=opts.turnSeconds||30;
+ const aiDifficulty=['beginner','intermediate','advanced'].includes(opts.aiDifficulty)?opts.aiDifficulty:'beginner';
  view='solo';selection=game;room=null;
  solo=game==='wordchain'
-  ?{game,mode:opts.wordMode||'wordchain',history:[soloOpeningWord(opts.wordMode)],usedEndings:{player:[],ai:[]},playerLives:2,aiLives:2,turn:'player',round:1,deadline:Date.now()+seconds*1000,timeSeconds:seconds,score:0,finished:false,msg:'당신 차례입니다.',helpWords:null,oneShot:false}
+  ?{game,aiDifficulty,mode:opts.wordMode||'wordchain',history:[soloOpeningWord(opts.wordMode)],usedEndings:{player:[],ai:[]},playerLives:2,aiLives:2,turn:'player',round:1,deadline:Date.now()+seconds*1000,timeSeconds:seconds,score:0,finished:false,msg:'당신 차례입니다.',helpWords:null,oneShot:false}
   :game==='yut'
-  ?{game,pieces:{player:freshYutPieces(),ai:freshYutPieces()},turn:'player',pending:null,rolls:[],phase:'throw',throwsRemaining:1,rollName:null,history:[],timeSeconds:seconds,deadline:Date.now()+seconds*1000,finished:false,msg:'윷을 던져 고양이와 한판 승부하세요!'}
-  :{game,stoneStyle:opts.stoneStyle||'normal',timeSeconds:seconds,deadline:Date.now()+seconds*1000,board:Array(225).fill(null),turn:'player',moves:0,finished:false,msg:'흑돌을 먼저 놓으세요.'};
+  ?{game,aiDifficulty,pieces:{player:freshYutPieces(),ai:freshYutPieces()},turn:'player',pending:null,rolls:[],phase:'throw',throwsRemaining:1,rollName:null,history:[],timeSeconds:seconds,deadline:Date.now()+seconds*1000,finished:false,msg:'윷을 던져 고양이와 한판 승부하세요!'}
+   :{game,aiDifficulty,stoneStyle:opts.stoneStyle||'normal',timeSeconds:seconds,deadline:Date.now()+seconds*1000,board:Array(225).fill(null),turn:'player',moves:0,finished:false,msg:'흑돌을 먼저 놓으세요.'};
  render();
 }
 function soloGame(){
@@ -850,6 +853,16 @@ document.addEventListener('click',async e=>{
  if(modeButton&&(view==='detail'||view==='catSetup')){
   const modes=pregameModesFor(selection,view==='catSetup'),next=modeButton.dataset.pgMode;
   if(modes.includes(next)){pregameModes[selection]=next;render();}
+  return;
+ }
+ const aiButton=e.target.closest?.('[data-pg-difficulty]');
+ if(aiButton&&(view==='detail'||view==='catSetup')&&pregameModesFor(selection,view==='catSetup').includes('cat')&&
+    (view==='catSetup'||pregameModes[selection]==='cat')){
+  const difficulty=aiButton.dataset.pgDifficulty;
+  if(['beginner','intermediate','advanced'].includes(difficulty)&&gamePrefs[selection]){
+   gamePrefs[selection].aiDifficulty=difficulty;
+   persistPregamePrefs();render();
+  }
   return;
  }
  const settingButton=e.target.closest?.('[data-pg-setting]');
