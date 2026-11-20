@@ -460,6 +460,29 @@ function soloGame(){
  }
  return `<div class="page-wrap"><div class="breadcrumb"><button data-action="home">홈</button><span>›</span><button data-action="backCatHub">고양이 게임 목록</button><span>›</span>고양이를 이겨라</div><div class="room-head"><h1>🐱 고양이를 이겨라</h1><div class="button-row">${btn('soloReset','↻ 처음부터','button-quiet')}${btn('backDetail','게임 선택','button-secondary')}</div></div><div style="max-width:760px;margin:17px auto" class="game-panel">${content}${solo.finished?`<div class="end-banner"><div class="trophy">${solo.msg.includes('당신 승리')?'🏆':'🏁'}</div><h2>${esc(solo.msg)}</h2>${btn('soloReset','↻ 다시하기','button-primary')}</div>`:''}</div></div>`;
 }
+function chooseCatWord(possible,difficulty='beginner'){
+ const rank=[...possible].sort((a,b)=>(startCounts.get(a.at(-1))||0)-(startCounts.get(b.at(-1))||0));
+ if(difficulty==='beginner')return rank[Math.min(4,rank.length-1)];
+ const limit=difficulty==='advanced'?rank.length:Math.min(rank.length,95);
+ const candidates=rank.slice(0,limit),played=new Set(solo.history);
+ let best=candidates[0],bestScore=-Infinity;
+ for(const word of candidates){
+  const after=new Set(played);after.add(word);
+  const responses=chainReplies(allWordsByFirst,word,after,solo.mode,new Set(solo.usedEndings.player),difficulty==='advanced'?14:6);
+  if(!responses.length)return word;
+  let dangerous=0;
+  if(difficulty==='advanced'){
+   for(const reply of responses.slice(0,9)){
+    const next=new Set(after);next.add(reply);
+    if(!chainReplies(allWordsByFirst,reply,next,solo.mode,null,1).length){dangerous=1;break;}
+   }
+  }
+  const rarity=Math.log1p(startCounts.get(word.at(-1))||0);
+  const score=-responses.length*(difficulty==='advanced'?130:55)-rarity*6-dangerous*600;
+  if(score>bestScore){bestScore=score;best=word;}
+ }
+ return best;
+}
 function soloPlayWord(w){
  if(!solo||solo.turn!=='player'||solo.finished)return false;
  w=w.trim();
@@ -479,9 +502,8 @@ function soloPlayWord(w){
   if(solo!==current||solo.game!=='wordchain'||solo.turn!=='ai'||solo.finished)return;
   const possible=soloChoices('ai',250);
   if(!possible.length){solo.finished=true;solo.msg='고양이가 이을 단어가 없습니다. 당신 승리!';render();return;}
-  // Strong but transparent: prefer rare endings, then check whether the response is forced.
-  const sorted=possible.sort((a,b)=>(startCounts.get(a.at(-1))||0)-(startCounts.get(b.at(-1))||0));
-  const answer=sorted[Math.min(4,sorted.length-1)];
+  // Strength differs in candidate breadth and tactical counter-play rather than dictionary rules.
+  const answer=chooseCatWord(possible,solo.aiDifficulty);
   solo.history.push(answer);solo.usedEndings.ai.push(answer.at(-1));
   if(!chainReplies(allWordsByFirst,answer,new Set(solo.history),solo.mode,null,1).length){
    solo.oneShot=true;solo.finished=true;solo.msg=`한방단어 '${answer}'! 고양이 승리!`;render();return;
@@ -595,7 +617,7 @@ function soloPlace(x,y){
  }
  if(typeof Worker!=='undefined'){
   try{
-   const worker=new Worker('./gomoku-ai.worker.js?v=20261120f',{type:'module'});
+   const worker=new Worker('./gomoku-ai.worker.js?v=20261120catlevels1',{type:'module'});
    activeGomokuWorker=worker;
    worker.onmessage=e=>{
     if(activeGomokuWorker!==worker)return;
@@ -609,7 +631,7 @@ function soloPlace(x,y){
     worker.terminate();activeGomokuWorker=null;
     finishAi(chooseOmokMove(solo.board),'보조 AI');
    };
-   worker.postMessage({id:solo.moves,board:solo.board,timeMs:1750});
+   worker.postMessage({id:solo.moves,board:solo.board,difficulty:solo.aiDifficulty||'beginner'});
   }catch(error){console.warn(error);setTimeout(()=>finishAi(chooseOmokMove(solo.board),'보조 AI'),150);}
  }else setTimeout(()=>finishAi(chooseOmokMove(solo.board),'보조 AI'),150);
 }
