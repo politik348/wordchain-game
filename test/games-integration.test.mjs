@@ -45,7 +45,7 @@ test('Rummikub joins through existing rooms and never reveals opponent racks',as
  const drawn=await post('/api/rooms/'+code+'/action',{sid:onTurn,type:'rkDraw'});
  assert.equal(drawn.room.state.counts[onTurn],15);
  assert.notEqual(drawn.room.state.turn,onTurn);
- await post('/api/rooms/'+code+'/action',{sid:onTurn,type:'rkDraw'},403);
+ await post('/api/rooms/'+code+'/action',{sid:onTurn,type:'rkDraw'},400);
 });
 test('Rummikub Cat AI responds to a legal solo draw',()=>{
  const solo=createSoloRummikub(60);
