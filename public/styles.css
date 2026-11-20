@@ -178,3 +178,173 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
 @media(max-width:790px){
   .game-card.cat-feature-card.cat-feature-image-card{aspect-ratio:775 / 470}
 }
+
+/* Cat challenge hub and setup redesign — November 2026. */
+.cat-hub-hero.cat-hub-hero-refresh{
+  position:relative;
+  isolation:isolate;
+  display:grid;
+  grid-template-columns:minmax(0,.83fr) minmax(0,1.17fr);
+  align-items:center;
+  gap:28px;
+  padding:28px 32px 28px 42px;
+  min-height:360px;
+  border:2px solid #f6bcaa;
+  border-radius:30px;
+  background:radial-gradient(circle at 80% 15%,#fffaf2 0,#fffaf200 36%),linear-gradient(115deg,#fff0e7 0%,#ffe0c9 100%);
+  box-shadow:0 12px 30px #ba6c4713;
+}
+.cat-hub-intro{position:relative;z-index:1;min-width:0}
+.cat-hub-eyebrow,.cat-setup-eyebrow{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:9px 13px;border-radius:50px;background:#fff8f2;
+  color:#b85137;font-size:11px;letter-spacing:1.05px;font-weight:900
+}
+.cat-hub-hero-refresh h1{
+  margin:17px 0 13px;
+  font-size:clamp(30px,3.7vw,47px);
+  line-height:1.14;letter-spacing:-2px;color:#6a3025;font-weight:950
+}
+.cat-hub-hero-refresh p{
+  max-width:370px;margin:0 0 22px;font-size:14px;
+  color:#855f53;line-height:1.8;word-break:keep-all
+}
+.cat-hub-jump{
+  display:inline-flex;align-items:center;gap:15px;padding:13px 20px;
+  color:#fff;text-decoration:none;font-size:14px;font-weight:900;
+  border-radius:15px;background:linear-gradient(180deg,#ee604e,#cc3b28);
+  box-shadow:0 5px 0 #a83122;transition:transform .18s,box-shadow .18s
+}
+.cat-hub-jump:hover{transform:translateY(-2px);box-shadow:0 7px 0 #a83122}
+.cat-hub-jump:focus-visible,.cat-hub-art:focus-visible{
+  outline:3px solid #b53625;outline-offset:4px
+}
+.cat-hub-art{
+  position:relative;z-index:1;display:block;
+  width:100%;max-width:620px;min-width:0;
+  border-radius:22px;overflow:hidden;
+  border:2px solid #e9684d;
+  background:#ffe3ce;
+  box-shadow:0 12px 24px #ad482a25;
+  transition:transform .18s,box-shadow .18s
+}
+.cat-hub-art:hover{transform:translateY(-3px);box-shadow:0 16px 29px #ad482a28}
+.cat-hub-art img{display:block;width:100%;height:auto;aspect-ratio:775/470;object-fit:contain}
+.cat-hub-page .cat-hub-heading{margin:32px 0 16px;scroll-margin-top:90px}
+.cat-hub-page .cat-hub-heading h2{font-size:clamp(21px,2.4vw,27px)}
+.cat-hub-page .cat-hub-heading span{
+  color:#b94d36;background:#ffede4;border-radius:30px;padding:8px 12px
+}
+.cat-hub-page .cat-choice-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}
+.cat-hub-page .cat-choice-card{
+  position:relative;display:flex;flex-direction:column;align-items:flex-start;
+  gap:15px;min-height:206px;padding:22px 20px;
+  border:1.5px solid #efdcd3;border-radius:24px;
+  background:linear-gradient(160deg,#fff 55%,#fff8f3);
+  box-shadow:0 7px 19px #7c3e2210;
+  transition:transform .18s,border-color .18s,box-shadow .18s
+}
+.cat-hub-page .cat-choice-card:hover{
+  transform:translateY(-5px);border-color:#e68a73;box-shadow:0 17px 32px #b1533620
+}
+.cat-hub-page .cat-choice-icon{
+  width:67px;height:67px;font-size:38px;border-radius:21px;
+  background:linear-gradient(140deg,#fff2e7,#ffe4d9);
+  box-shadow:inset 0 2px 0 #ffffffba,0 5px 12px #6b3d2310;
+  transition:transform .2s
+}
+.cat-hub-page .cat-choice-card:hover .cat-choice-icon{transform:rotate(-6deg) scale(1.08)}
+.cat-choice-omok .cat-choice-icon{background:linear-gradient(135deg,#edf0fc,#d8e3ff)}
+.cat-choice-yut .cat-choice-icon{background:linear-gradient(135deg,#fff0de,#ffe0b5)}
+.cat-choice-rummikub .cat-choice-icon{background:linear-gradient(135deg,#e9f7ef,#cff3de)}
+.cat-choice-marble .cat-choice-icon{background:linear-gradient(135deg,#ffedf3,#ffd8e7)}
+.cat-choice-tetris .cat-choice-icon{background:linear-gradient(135deg,#eaeaff,#dcdcfb)}
+.cat-choice-wordchain .cat-choice-icon{background:linear-gradient(135deg,#e6f8fa,#cff0f5)}
+.cat-hub-page .cat-choice-copy{display:flex;flex-direction:column;gap:7px;padding-right:16px}
+.cat-hub-page .cat-choice-copy strong{font-size:20px;color:#4c3029}
+.cat-hub-page .cat-choice-copy small{font-size:12px;color:#93756b;line-height:1.6;word-break:keep-all}
+.cat-choice-number{font-size:10px;font-weight:900;letter-spacing:1.1px;color:#c7765b}
+.cat-hub-page .cat-choice-arrow{
+  position:absolute;right:19px;top:22px;
+  display:grid;place-items:center;width:28px;height:28px;
+  border-radius:50%;font-size:20px;background:#ffebea;color:#d45040
+}
+.cat-hub-page .cat-hub-note{margin:18px 0 0;padding:12px 15px;border-radius:13px;background:#fff5ed;color:#886e61}
+
+/* The game settings screen uses the same coral, cream, and sticker styling. */
+.cat-setup-banner.cat-setup-hero{
+  position:relative;justify-content:space-between;gap:18px;
+  min-height:238px;padding:31px 43px;
+  border:2px solid #f3bba9;border-radius:28px;
+  background:radial-gradient(circle at 83% 8%,#fff9e9 0%,#fff9e900 35%),linear-gradient(120deg,#fff0e6,#ffe0ca);
+  box-shadow:0 10px 24px #ab633c12
+}
+.cat-setup-copy{position:relative;z-index:1;min-width:0}
+.cat-setup-hero h1{font-size:clamp(28px,3.6vw,42px);color:#633024;margin:16px 0 12px;line-height:1.2}
+.cat-setup-hero h1 span{color:#dc5346}
+.cat-setup-hero p{font-size:14px;line-height:1.9;color:#87665a;word-break:keep-all}
+.cat-setup-illustration{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;min-width:265px;gap:7px;padding:10px 3px
+}
+.cat-setup-graphic-cat,.cat-setup-graphic-game{
+  display:grid;place-items:center;width:105px;height:105px;border-radius:29px;
+  background:#fff9ef;border:3px solid #fff;box-shadow:0 9px 18px #b566471c;
+  font-size:67px;transform:rotate(-8deg)
+}
+.cat-setup-graphic-game{background:#fff2ce;transform:rotate(8deg)}
+.cat-setup-graphic-vs{color:#c65138;font-size:17px;font-weight:950;transform:rotate(-7deg)}
+.cat-setup-spark{position:absolute;right:18px;top:-9px;font-size:35px;color:#ffc750}
+.cat-setup-panel.cat-setup-panel-refresh{
+  max-width:860px;margin:24px auto 0;padding:29px;
+  border:1.5px solid #f0ded3;border-radius:25px;
+  background:#fff;box-shadow:0 13px 29px #a7623a10
+}
+.cat-setup-panel-header{display:flex;align-items:center;gap:13px;margin-bottom:20px}
+.cat-setup-panel-header>span{
+  display:grid;place-items:center;width:48px;height:48px;border-radius:15px;
+  background:#ffebdf;font-size:25px
+}
+.cat-setup-panel-header strong{color:#593d33;font-size:20px;font-weight:900}
+.cat-setup-panel-header p{margin:5px 0 0;color:#978177;font-size:12px}
+.cat-setup-panel-refresh .game-settings{
+  padding:20px;margin:0 0 22px;border:1px solid #f3e6db;
+  border-radius:17px;background:#fffbf8
+}
+.cat-setup-panel-refresh .game-settings>strong{display:none}
+.cat-setup-panel-refresh .cat-setup-actions{display:flex;gap:12px;margin:16px 0 0}
+.cat-setup-panel-refresh .cat-setup-actions .button{
+  border-radius:15px;min-height:47px;font-size:13px
+}
+.cat-setup-panel-refresh .cat-setup-actions .button-primary{
+  flex:1;background:linear-gradient(180deg,#ed5b49,#c94430);
+  box-shadow:0 5px 0 #a63b2b;color:#fff
+}
+.cat-setup-panel-refresh .cat-setup-actions .button-secondary{background:#fff3ea;border:1px solid #f1dbd0;color:#955b48}
+@media(max-width:960px){
+  .cat-hub-hero.cat-hub-hero-refresh{grid-template-columns:minmax(0,1fr);padding:26px;gap:24px}
+  .cat-hub-art{max-width:640px;margin:0 auto}
+  .cat-hub-page .cat-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cat-hub-hero-refresh h1 br{display:none}
+}
+@media(max-width:620px){
+  .cat-hub-hero.cat-hub-hero-refresh{padding:18px;border-radius:23px;min-height:0}
+  .cat-hub-hero-refresh h1{font-size:32px;letter-spacing:-1.2px}
+  .cat-hub-hero-refresh p{font-size:12px;margin-bottom:18px}
+  .cat-hub-art{border-radius:16px}
+  .cat-hub-page .cat-hub-heading{align-items:flex-start;flex-direction:column;gap:10px}
+  .cat-hub-page .cat-choice-grid{grid-template-columns:1fr;gap:11px}
+  .cat-hub-page .cat-choice-card{min-height:110px;flex-direction:row;align-items:center;gap:14px;padding:14px 15px;border-radius:19px}
+  .cat-hub-page .cat-choice-icon{flex-shrink:0;width:61px;height:61px;font-size:34px;border-radius:18px}
+  .cat-hub-page .cat-choice-copy{padding-right:22px;gap:4px}
+  .cat-hub-page .cat-choice-copy strong{font-size:17px}
+  .cat-hub-page .cat-choice-arrow{right:10px;top:calc(50% - 14px)}
+  .cat-setup-banner.cat-setup-hero{padding:21px;min-height:0;align-items:flex-start;flex-direction:column;gap:15px}
+  .cat-setup-hero h1{font-size:30px}
+  .cat-setup-illustration{align-self:center;min-width:0}
+  .cat-setup-graphic-cat,.cat-setup-graphic-game{width:80px;height:80px;font-size:50px;border-radius:24px}
+  .cat-setup-panel.cat-setup-panel-refresh{padding:16px;margin-top:16px}
+  .cat-setup-panel-refresh .game-settings{padding:14px}
+  .cat-setup-panel-refresh .cat-setup-actions{flex-direction:column}
+  .cat-setup-panel-refresh .cat-setup-actions .button{width:100%}
+}
