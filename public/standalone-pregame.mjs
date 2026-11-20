@@ -35,8 +35,8 @@ function main(){
  const game=location.pathname.startsWith('/tetris/')?'tetris':location.pathname.startsWith('/logic/')?'logic':location.pathname.startsWith('/gamehell/')?'gamehell':null;
  if(!game)return;
  const cat=game==='tetris'&&new URLSearchParams(location.search).get('cat')==='1';
- const defaults=game==='tetris'?{difficulty:'normal'}:game==='logic'?{size:'5'}:{minigame:'drill',duration:'45'};
- const valid=game==='tetris'?{difficulty:['easy','normal','hard']}:game==='logic'?{size:['5','10','15']}:{minigame:arcadeModes.map(x=>x[0]),duration:['45','90','0']};
+ const defaults=game==='tetris'?{difficulty:'normal',aiDifficulty:'beginner'}:game==='logic'?{size:'5'}:{minigame:'drill',duration:'45'};
+ const valid=game==='tetris'?{difficulty:['easy','normal','hard'],aiDifficulty:['beginner','intermediate','advanced']}:game==='logic'?{size:['5','10','15']}:{minigame:arcadeModes.map(x=>x[0]),duration:['45','90','0']};
  const values=restore(game,defaults,valid);
  const allowedModes=game==='tetris'?[cat?'cat':'solo']:['solo'];
  const config=defs[game];
@@ -66,13 +66,13 @@ function main(){
  }
  function render(){
   shell.innerHTML='<div class="pg-standalone-topbar"><a href="'+(cat?'/?cat=1':'/')+'">✳ 모여게임즈로 돌아가기</a><span>YOUR NEXT ADVENTURE · GAME SETUP</span></div>'+
-    renderPregame({game:config,allowedModes,mode,settings:groups(),rules:config.rules,startAction:'pgStart',showJoin:false,backAction:'home'});
+    renderPregame({game:config,allowedModes,mode,aiDifficulty:values.aiDifficulty||'beginner',settings:groups(),rules:config.rules,startAction:'pgStart',showJoin:false,backAction:'home'});
  }
  function activate(){
   if(started)return;
   if(game==='tetris'){
    if(typeof window.MOYEO_TETRIS_START!=='function')return;
-   window.MOYEO_TETRIS_START({mode:cat?'versus':'solo',difficulty:values.difficulty});
+   window.MOYEO_TETRIS_START({mode:cat?'versus':'solo',difficulty:values.difficulty,aiDifficulty:values.aiDifficulty||'beginner'});
   }else if(game==='logic'){
    const size=document.getElementById('size');
    if(!size)return;
@@ -94,7 +94,11 @@ function main(){
  }
  shell.addEventListener('click',event=>{
   const b=event.target.closest('button');if(!b)return;
-  if(b.dataset.pgSetting){
+  if(b.dataset.pgDifficulty&&cat&&valid.aiDifficulty?.includes(b.dataset.pgDifficulty)){
+   values.aiDifficulty=b.dataset.pgDifficulty;
+   try{localStorage.setItem('moyeo-pregame-'+game,JSON.stringify(values));}catch{}
+   render();
+  }else if(b.dataset.pgSetting){
    const key=b.dataset.pgSetting,value=b.dataset.pgValue;
    if(!valid[key]?.includes(value))return;
    values[key]=value;
