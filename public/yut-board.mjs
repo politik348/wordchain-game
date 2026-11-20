@@ -30,11 +30,16 @@ export function throwFaces(value){
  if(value===-1)return [1,0,0,0];
  return [0,1,2,3].map(i=>i<Number(value)?1:0);
 }
-export function renderYutThrow({roll=null,rolling=false,actor='윷을 던져보세요',showAction=false,action='roll',disabled=false}={}){
+export function renderYutThrow({roll=null,rolling=false,actor='윷을 던져보세요',showAction=false,action='roll',disabled=false,power=0}={}){
  const face=throwFaces(roll);
  const sticks=face.map((flat,i)=>`<span class="yut-wood ${flat?'flat':'round'} ${roll===-1&&i===0?'backdo':''}" style="--tilt:${STICK_ROTATION[i]}deg;--order:${i}"><i>${roll===-1&&i===0?'↶':flat?'×':'✦'}</i></span>`).join('');
  const name=roll===null?'윷 던지기':YUT_NAMES[roll]||'윷 던지기';
- return `<div class="yut-throwbox ${rolling?'is-rolling':''}" aria-live="polite"><div class="yut-throw-title"><span>🎋 윷 던지기</span><strong>${escapeHtml(actor)}</strong></div><div class="yut-throw-stage"><div class="yut-stick-pack" aria-label="네 개의 윷가락">${sticks}</div><span class="yut-throw-result">${rolling?'던지는 중…':escapeHtml(name)}${!rolling&&roll!==null?` <small>${roll===-1?'1칸 뒤로':roll+'칸 전진'}</small>`:''}</span></div>${showAction?`<button type="button" class="button button-primary yut-main-roll" data-action="${escapeHtml(action)}" ${disabled||rolling?'disabled':''}>${rolling?'윷을 던지고 있어요…':'🎲 윷 던지기'}</button>`:''}</div>`;
+ const safePower=Math.max(0,Math.min(100,Math.round(Number(power)||0)));
+ const lift=36+safePower*.6;
+ const duration=800+safePower*4;
+ const style=`--yut-power:${safePower}%;--yut-lift:${lift}px;--yut-duration:${duration}ms;`;
+ const powerButton=showAction?`<button type="button" class="button button-primary yut-main-roll yut-charge-button" data-action="${escapeHtml(action)}" data-yut-hold="1" ${disabled||rolling?'disabled':''} aria-label="윷 던지기: 누르고 있는 동안 힘을 모으고 떼면 던집니다"><span class="yut-charge-label">${rolling?'🎲 윷이 날아가고 있어요':'🎲 꾹 눌렀다 놓기'}</span><span class="yut-power-meter" aria-hidden="true"><span class="yut-power-fill"></span></span><span class="yut-power-caption" aria-hidden="true">${rolling?'파워 '+safePower+'%':'POWER 0%'}</span></button>`:'';
+ return `<div class="yut-throwbox ${rolling?'is-rolling':''}" style="${style}" aria-live="polite"><div class="yut-throw-title"><span>🎋 윷 던지기</span><strong>${escapeHtml(actor)}</strong></div><div class="yut-throw-stage"><div class="yut-stick-pack" aria-label="네 개의 윷가락">${sticks}</div><span class="yut-throw-result">${rolling?'던지는 중…':escapeHtml(name)}${!rolling&&roll!==null?` <small>${roll===-1?'1칸 뒤로':roll+'칸 전진'}</small>`:''}</span></div>${powerButton}${showAction?'<p class="yut-power-help">길게 눌러 파워를 조절하고 손을 떼세요. 파워는 연출용이며 윷 결과의 확률은 동일해요.</p>':''}</div>`;
 }
 export function renderYutRollTray({rolls=[],phase='throw',chosen=[0],action='yutRollChoice',myTurn=false}={}){
  const list=rolls.map((value,index)=>{
