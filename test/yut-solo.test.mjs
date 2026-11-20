@@ -55,10 +55,13 @@ test('AI selects an immediate capture instead of an empty forward step',()=>{
 
 test('A piece completes once it crosses the route end; four finishes win',()=>{
   const mine=freshYutPieces();
-  mine.forEach((p,i)=>mine[i]={node:19,route:'outer',index:19,done:false});
+  mine[0]={node:19,route:'outer',index:19,done:false};
   const result=applyYutMove(mine,freshYutPieces(),0,2);
   assert.equal(result.mine[0].done,true);
   assert.equal(result.won,false);
+  const stacked=freshYutPieces().map(()=>({node:19,route:'outer',index:19,done:false}));
+  const teamFinish=applyYutMove(stacked,freshYutPieces(),0,2);
+  assert.equal(teamFinish.won,true);
 });
 
 test('Solo Yut UI renders the board, the throw button and both players',()=>{
