@@ -1,9 +1,9 @@
 import {TURN_SECONDS, dictionaryIndex, replies as chainReplies, validReply, turnsLabel} from './chain-utils.mjs';
 import {configureRummikubUI, renderRummikubGame} from './rummikub/ui.mjs?v=20261120rk3';
 import {createSoloRummikub, soloRoom, soloPlayRummikub, soloTickRummikub, catPlayRummikub} from './rummikub/solo.mjs';
-import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove, yutSelectedSteps, usableYutRolls} from './yut-solo-engine.mjs?v=20261120yut3';
-import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut3';
-import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut3';
+import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove, yutSelectedSteps, usableYutRolls} from './yut-solo-engine.mjs?v=20261120yut4';
+import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut4';
+import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut4';
 import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261120banner1';
 import {createMembershipUI} from './auth-ui.mjs?v=20261120statusrefresh1';
 const GAMES=[
