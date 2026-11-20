@@ -238,10 +238,10 @@ function yutGame(){
  const canThrow=mineTurn&&s.pending===null;
  const selected=canMove&&yutRouteChoice?.scope==='room'&&yutRouteChoice.roomId===room.id?yutRouteChoice.index:null;
  const names=Object.fromEntries(room.players.map(p=>[p.id,p.nick]));
- const status=\`<div class="game-topline"><span class="stage-badge">🎲 \${esc(nick(s.turn))}님 차례</span>\${room.status==='playing'?timeBar(s.deadline,room.options?.turnSeconds):''}<span class="time-badge">\${esc(s.rollName||'윷놀이')}</span></div>\`;
- const progress=\`<div class="cat-yut-players">\${room.players.map((p,i)=>\`<span>\${['🔴','🔵','🟢','🟣'][i]} \${esc(p.nick)} \${s.pieces[p.id].filter(t=>t.done).length}/4 완주</span>\`).join('')}</div>\`;
- const guide=\`<div class="game-prompt"><strong>\${room.status==='finished'?'대국 종료':canThrow?'윷을 던져보세요!':canMove?'움직일 말을 말판에서 직접 눌러 주세요.':esc(nick(s.turn))+'님이 플레이 중입니다.'}</strong> · 중앙에서 오른쪽 아래 HOME으로 향하는 지름길도 이용할 수 있어요.</div>\`;
- const throwUi=renderYutThrow({roll:s.pending??s.lastRoll??null,rolling:yutRolling?.scope==='room'&&yutRolling?.roomId===room.id,actor:canThrow?'당신 차례입니다':canMove?'말을 선택하세요':\`현재: \${nick(s.turn)}\`,showAction:canThrow,action:'roll'});
+ const status=`<div class="game-topline"><span class="stage-badge">🎲 ${esc(nick(s.turn))}님 차례</span>${room.status==='playing'?timeBar(s.deadline,room.options?.turnSeconds):''}<span class="time-badge">${esc(s.rollName||'윷놀이')}</span></div>`;
+ const progress=`<div class="cat-yut-players">${room.players.map((p,i)=>`<span>${['🔴','🔵','🟢','🟣'][i]} ${esc(p.nick)} ${s.pieces[p.id].filter(t=>t.done).length}/4 완주</span>`).join('')}</div>`;
+ const guide=`<div class="game-prompt"><strong>${room.status==='finished'?'대국 종료':canThrow?'윷을 던져보세요!':canMove?'움직일 말을 말판에서 직접 눌러 주세요.':esc(nick(s.turn))+'님이 플레이 중입니다.'}</strong> · 중앙에서 오른쪽 아래 HOME으로 향하는 지름길도 이용할 수 있어요.</div>`;
+ const throwUi=renderYutThrow({roll:s.pending??s.lastRoll??null,rolling:yutRolling?.scope==='room'&&yutRolling?.roomId===room.id,actor:canThrow?'당신 차례입니다':canMove?'말을 선택하세요':`현재: ${nick(s.turn)}`,showAction:canThrow,action:'roll'});
  const board=renderYutBoard({pieces:s.pieces,me:user.sid,turn:s.turn,pending:s.pending,active:room.status==='playing',action:'yutPick',routeAction:'yutRoute',selected,lastMove:s.lastMove,labels:names});
  const picker=canMove?renderYutRouteChooser(s.pieces[user.sid],s.pending,selected,'yutRoute'):'';
  return status+progress+guide+throwUi+board+picker+'<p class="game-note">윷을 던진 뒤, 말판 위 내 말을 누르면 바로 이동합니다. 출발 전 말은 아래의 내 말 4개에서 누르세요.</p>'+endBanner();
