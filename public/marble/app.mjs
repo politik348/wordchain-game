@@ -1,3 +1,4 @@
+import {renderPregame} from '../pregame-lobbies.mjs?v=20261120marbleSetup1';
 import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,upgradeCost,maxBuildLevel,propertyValue,countMonopolies,tourismComplete,olympicCost,LEVEL_NAMES,BAIL_COST,BANK_LOAN,BANK_REPAY,winnerRanking} from './engine.mjs?v=20261120v5';
 const root=document.querySelector('#mmApp');
 const toastZone=document.querySelector('#mmToast');
@@ -29,6 +30,7 @@ async function ensureMember(){
  return false;
 }
 let mode=catChallenge?'ai':'local',gameMode='normal',rounds=12,people=2,seconds=30;
+let aiDifficulty=['beginner','intermediate','advanced'].includes(localStorage.getItem('moyeo-marble-ai-difficulty'))?localStorage.getItem('moyeo-marble-ai-difficulty'):'beginner';
 let tutorialOn=localStorage.getItem('moyeo-marble-tutorial')!=='off';
 const roundsForGame=()=>gameMode==='endless'?0:rounds;
 let localGame=null,onlineRoom=null,stream=null,inFlight=false,aiTimer=null,showResult=false;
@@ -48,41 +50,68 @@ const getState=()=>onlineRoom?.state||localGame;
 function toast(message){const n=document.createElement('div');n.className='mm-toast';n.textContent=message;toastZone.append(n);setTimeout(()=>n.remove(),3300);}
 function button(action,text,kind='mm-primary',disabled=false,attrs=''){return `<button class="mm-btn ${kind}" data-action="${action}" ${disabled?'disabled':''} ${attrs}>${text}</button>`;}
 function renderLobby(){
- const battles=[
-  {id:'ai',title:'고양이를 이겨라',desc:'똑똑한 치즈냥과 짜릿한 1:1 승부!',art:'<img class="mm-opponent-cat-selected-art" alt="" src="/assets/cat-hub-challenge-user.webp" width="780" height="780" loading="eager" decoding="async">',meta:'혼자서도 신나게 · AI 대전'},
-  {id:'online',title:'친구와 온라인',desc:'각자 기기에서 링크로 모여 즐겨요.',art:`<span class="mm-duo">${characterArt(0)}${characterArt(1)}</span>`,meta:'초대 코드 · 2~4명'},
-  {id:'local',title:'한 화면에서 함께',desc:'옆에 있는 친구들과 번갈아 플레이!',art:`<span class="mm-duo">${characterArt(2)}${characterArt(3)}</span>`,meta:'같은 기기 · 2~4명'}
- ];
- const selectedBattles=catChallenge?battles.filter(b=>b.id==='ai'):battles.filter(b=>b.id!=='ai');
- const roundItems=ROUND_OPTIONS.map(n=>`<button type="button" class="mm-round-chip ${rounds===n?'selected':''}" data-rounds="${n}" aria-pressed="${rounds===n}">${n}라운드${n===12?'<span>추천</span>':''}</button>`).join('');
- const actionText=mode==='ai'?'고양이와 대결 시작!':mode==='online'?'온라인 게임방 만들기':'친구들과 대결 시작!';
- root.innerHTML=`
- <section class="mm-lobby-hero" aria-labelledby="mmLobbyTitle">
-   <div class="mm-hero-scene mm-hero-cat" aria-hidden="true">${characterArt(1)}</div>
-   <div class="mm-hero-center"><span class="mm-eyebrow">MOYEO GAMES · SWEET MARBLE</span><h1 id="mmLobbyTitle">모여<span>마블</span><span class="mm-hero-star" aria-hidden="true">✦</span></h1><p>도시를 사고, 건물을 세우고, 역전의 주사위를 굴려봐!<br>귀여운 고양이와 빠른 한판, 혹은 파산할 때까지!</p><div class="mm-hero-cards"><span>🎲 24칸 스피드 보드</span><span>🏰 랜드마크 & 인수</span><span>♾️ 무한모드</span></div></div>
-   <div class="mm-hero-scene mm-hero-rabbit" aria-hidden="true">${characterArt(0)}</div>
-   <span class="mm-hero-cloud cloud-left" aria-hidden="true"></span><span class="mm-hero-cloud cloud-right" aria-hidden="true"></span>
- </section>
- <section class="mm-setup-v5" aria-label="모여마블 시작 설정">
-  <div class="mm-setup-v5-heading"><div><span class="mm-setup-step">GAME SETUP</span><h2>어떤 모험을 시작할까?</h2><p>대전 상대와 규칙을 고르면 준비 끝! 선택한 설정으로 바로 시작해요.</p></div><span class="mm-setup-die" aria-hidden="true">🎲</span></div>
-  <div class="mm-start-layout">
-   <section class="mm-setup-column mm-opponents" aria-labelledby="mmOpponentsTitle"><div class="mm-column-title"><span class="mm-number-step">01</span><div><h3 id="mmOpponentsTitle">누구와 승부할까요?</h3><small>대전 상대를 선택해 주세요</small></div></div>
-    <div class="mm-opponent-options">${selectedBattles.map(b=>`<button type="button" class="mm-opponent-card ${mode===b.id?'selected':''}" data-mode="${b.id}" aria-pressed="${mode===b.id}"><span class="mm-opponent-image">${b.art}</span><span class="mm-opponent-copy"><strong>${b.title}</strong><small>${b.desc}</small><em>${b.meta}</em></span><span class="mm-opponent-choice" aria-hidden="true">${mode===b.id?'✓':''}</span></button>`).join('')}</div>
-    <div class="mm-mascot-quip">${characterArt(1)}<span>“도시는 내가 먼저 살 거다냥! 준비됐지?”</span><span class="mm-quip-stars" aria-hidden="true">✦ ✧</span></div>
-   </section>
-   <section class="mm-setup-column mm-rules" aria-labelledby="mmRulesTitle"><div class="mm-column-title"><span class="mm-number-step">02</span><div><h3 id="mmRulesTitle">어떤 규칙으로 할까요?</h3><small>모드와 세부 설정을 선택해 주세요</small></div></div>
-    <div class="mm-rule-choice-grid" aria-label="게임 모드 선택"><button type="button" class="mm-rule-choice ${gameMode==='normal'?'selected':''}" data-game-mode="normal" aria-pressed="${gameMode==='normal'}"><span class="mm-rule-symbol mm-regular-symbol">🎯</span><span><strong>일반 모드</strong><small>정해진 라운드 안에 승리!</small></span><span class="mm-rule-check">${gameMode==='normal'?'✓':''}</span></button><button type="button" class="mm-rule-choice ${gameMode==='endless'?'selected':''}" data-game-mode="endless" aria-pressed="${gameMode==='endless'}"><span class="mm-rule-symbol mm-endless-symbol">∞</span><span><strong>무한 모드</strong><small>파산할 때까지 끝장 승부!</small></span><span class="mm-rule-check">${gameMode==='endless'?'✓':''}</span></button></div>
-    ${gameMode==='normal'?`<div class="mm-round-section" data-round-panel><div class="mm-field-heading"><strong>🎲 라운드 설정</strong><small>일반 모드에서만 선택할 수 있어요</small></div><div class="mm-round-options" aria-label="일반 모드 라운드 선택">${roundItems}</div></div>`:`<div class="mm-endless-explainer" role="status"><strong>♾️ 끝날 때까지 계속!</strong><small>독점이나 라운드 수로 끝나지 않아요. 마지막 한 사람만 남으면 승리합니다.</small></div>`}
-    <div class="mm-preferences"><div class="mm-field"><label for="mmNick">내 닉네임</label><input class="mm-input" id="mmNick" maxlength="14" value="${escapeHTML(nick)}" placeholder="닉네임을 입력하세요" autocomplete="nickname" ${mode!=='ai'?'readonly aria-readonly="true" title="회원가입 때 등록한 드립대학 닉네임을 사용합니다"':''}></div>${mode==='online'?`<div class="mm-field"><label for="mmSeconds">턴 제한시간</label><select class="mm-select" id="mmSeconds"><option value="15" ${seconds===15?'selected':''}>15초 · 초고속</option><option value="30" ${seconds===30?'selected':''}>30초 · 기본</option><option value="45" ${seconds===45?'selected':''}>45초 · 여유롭게</option></select></div>`:''}${mode==='local'?`<div class="mm-field"><label for="mmPeople">참가 인원</label><select class="mm-select" id="mmPeople"><option value="2" ${people===2?'selected':''}>2명</option><option value="3" ${people===3?'selected':''}>3명</option><option value="4" ${people===4?'selected':''}>4명</option></select></div>`:''}</div>
-    <div class="mm-setting-toggles"><button type="button" data-action="toggleLobbyEffects" class="mm-setting-toggle" aria-pressed="${effectsOn}"><span>✨ 생동감 있는 연출</span><span class="mm-toggle-track ${effectsOn?'on':''}"><i></i></span></button><button type="button" data-action="toggleTutorial" class="mm-setting-toggle" aria-pressed="${tutorialOn}"><span>💡 초보자 도움말</span><span class="mm-toggle-track ${tutorialOn?'on':''}"><i></i></span></button></div>
-   </section>
-  </div>
-  <div class="mm-start-footer"><div class="mm-mode-summary"><strong>${gameMode==='endless'?'♾️ 무한모드':`✨ 일반모드 · ${rounds}라운드`}</strong><small>${gameMode==='endless'?'파산한 플레이어부터 탈락해요':'독점 달성 또는 라운드 종료 시 승패를 가려요'}</small></div>${button(mode==='online'?'createOnline':'startLocal',`<span aria-hidden="true">🎲</span> ${actionText} <span aria-hidden="true">›</span>`,'mm-primary mm-btn-full mm-start-cta')}</div>
-  ${mode==='online'?`<div class="mm-online-join mm-online-join-v5"><div><strong>이미 초대를 받았나요?</strong><small>친구가 보내준 초대 코드로 입장하세요</small></div><input class="mm-input" id="mmJoinCode" maxlength="6" placeholder="6자리 초대 코드" autocomplete="off" aria-label="초대 코드">${button('joinOnline','코드로 입장','mm-neutral')}</div>`:''}
- </section>
- <section class="mm-guides mm-guides-v5" aria-label="게임 기본 규칙"><article class="mm-guide"><span class="mm-guide-art" aria-hidden="true">🏡</span><div><span class="num">01 / OWN</span><h3>도시를 먼저 차지하세요</h3><p>빈 도시를 구매하고, 같은 색 도시를 모아 통행료를 올려봐요!</p></div></article><article class="mm-guide"><span class="mm-guide-art" aria-hidden="true">🏰</span><div><span class="num">02 / BUILD</span><h3>건설과 인수로 역전</h3><p>별장부터 랜드마크까지 건설하고 상대 도시에 도전해 보세요.</p></div></article><article class="mm-guide"><span class="mm-guide-art" aria-hidden="true">🏆</span><div><span class="num">03 / WIN</span><h3>원하는 방식으로 승리</h3><p>일반은 독점 또는 자산으로, 무한은 마지막 생존자로 승리해요!</p></div></article></section>`;
+  const selectedMode=mode==='ai'?'cat':mode;
+  const settings=[
+    {
+      key:'gameMode',label:'게임 모드',hint:'일반·무한 모드를 선택하세요',
+      value:gameMode,large:true,choices:[
+        {value:'normal',label:'✨ 일반 모드',description:'8~20라운드 중 선택해 승부'},
+        {value:'endless',label:'♾️ 무한 모드',description:'마지막 생존자까지 계속'}
+      ]
+    }
+  ];
+  if(gameMode==='normal')settings.push({
+    key:'rounds',label:'라운드 설정',hint:'일반 모드에서만 적용됩니다',
+    value:String(rounds),choices:ROUND_OPTIONS.map(n=>({
+      value:String(n),label:`${n}라운드`,description:n===12?'추천':''
+    }))
+  });
+  if(mode==='online')settings.push({
+    key:'seconds',label:'턴 제한시간',hint:'온라인 대전에서 적용됩니다',
+    value:String(seconds),choices:[15,30,45].map(n=>({
+      value:String(n),label:`${n}초`,description:n===30?'기본':''
+    }))
+  });
+  if(mode==='local')settings.push({
+    key:'people',label:'참가 인원',hint:'같은 화면에서 번갈아 진행',
+    value:String(people),choices:[2,3,4].map(n=>({
+      value:String(n),label:`${n}명`
+    }))
+  });
+  const nicknameHtml=`<div class="pg-marble-extras">
+    <label class="pg-marble-nicklabel" for="mmNick">내 닉네임 <small>${mode==='ai'?'자유롭게 설정할 수 있어요':'가입할 때 등록한 닉네임을 사용해요'}</small></label>
+    <input class="mm-input pg-marble-nickname" id="mmNick" maxlength="14" value="${escapeHTML(nick)}" placeholder="닉네임을 입력하세요" autocomplete="nickname" ${mode!=='ai'?'readonly aria-readonly="true" title="회원가입 때 등록한 닉네임을 사용합니다"':''}>
+    <div class="pg-marble-toggles">
+      <button type="button" data-action="toggleLobbyEffects" class="mm-setting-toggle" aria-pressed="${effectsOn}"><span>✨ 생동감 있는 연출</span><span class="mm-toggle-track ${effectsOn?'on':''}"><i></i></span></button>
+      <button type="button" data-action="toggleTutorial" class="mm-setting-toggle" aria-pressed="${tutorialOn}"><span>💡 초보자 도움말</span><span class="mm-toggle-track ${tutorialOn?'on':''}"><i></i></span></button>
+    </div>
+  </div>`;
+  const joinHtml=mode==='online'?`<div class="pg-marble-join">
+    <div><strong>이미 초대를 받았나요?</strong><small>6자리 초대 코드로 친구의 게임방에 입장하세요</small></div>
+    <input class="mm-input" id="mmJoinCode" maxlength="6" placeholder="6자리 초대 코드" autocomplete="off" aria-label="초대 코드">
+    <button type="button" data-action="joinOnline">코드로 입장 ↗</button>
+  </div>`:'';
+  root.innerHTML=renderPregame({
+    game:{
+      id:'marble',name:'모여마블',
+      desc:'도시를 사고 건물을 세우며 역전하는 24칸 부동산 게임! 일반 모드와 무한 모드를 선택해 즐겨요.',
+      badge:'24칸 부동산 대전',
+      rules:[
+        ['도시를 차지해요','주사위를 굴려 도시를 구매하고 같은 색의 도시를 모아보세요.'],
+        ['건설과 인수','랜드마크로 발전시키거나 상대 도시를 인수해 역전하세요.'],
+        ['승리 조건','일반 모드는 독점 또는 라운드 종료 시 자산으로, 무한 모드는 마지막 생존자로 승리합니다.']
+      ]
+    },
+    allowedModes:catChallenge?['cat']:['online','local'],
+    mode:selectedMode,aiDifficulty,
+    settings,startAction:mode==='online'?'createOnline':'startLocal',
+    backAction:'marbleBack',showJoin:false,
+    extraSettingsHtml:nicknameHtml,extraAfterLaunchHtml:joinHtml,
+    launchSummary:gameMode==='endless'
+      ?'♾️ 무한 모드 · 마지막 한 사람이 남을 때까지'
+      :`✨ 일반 모드 · ${rounds}라운드`
+  });
 }
-
 function renderWaiting(){
  const r=onlineRoom,isHost=r.host===SID;
  root.innerHTML=`<div class="mm-waiting"><div class="mm-waiting-icon">🎟️</div><span class="mm-eyebrow">FRIENDS ARE COMING</span><h2>친구를 초대해요!</h2><p>아래 코드를 복사해서 친구에게 보내주세요.<br>2~4명이 모이면 방장이 시작할 수 있어요.</p><div class="mm-room-code">${r.code}</div><div class="mm-member-list">${r.players.map(p=>`<span>${p.id===r.host?'👑 ':''}${escapeHTML(p.name)}</span>`).join('')}${r.players.length<4?'<span>＋ 대기 중</span>':''}</div><p>${r.players.length}/4명 · ${r.rounds===0?'♾️ 무한모드':r.rounds+'라운드'} · 턴당 ${r.turnSeconds}초 · 다른 기기에서 접속 가능</p><div class="mm-waiting-actions">${button('copyInvite','🔗 초대 링크 복사','mm-neutral')}${isHost?button('startOnline','🎲 게임 시작','mm-primary',r.players.length<2):''}${button('leave','나가기','mm-secondary')}</div></div>`;
