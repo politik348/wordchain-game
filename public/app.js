@@ -1,5 +1,5 @@
 import {TURN_SECONDS, dictionaryIndex, replies as chainReplies, validReply, turnsLabel} from './chain-utils.mjs';
-import {configureRummikubUI, renderRummikubGame} from './rummikub/ui.mjs?v=20261120rk2';
+import {configureRummikubUI, renderRummikubGame} from './rummikub/ui.mjs?v=20261120rk3';
 import {createSoloRummikub, soloRoom, soloPlayRummikub, soloTickRummikub, catPlayRummikub} from './rummikub/solo.mjs';
 import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove} from './yut-solo-engine.mjs?v=20261120yut2';
 import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut2';
@@ -7,11 +7,11 @@ import {renderYutBoard,renderYutThrow,renderYutRouteChooser} from './yut-board.m
 import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261120hell2tetrislogic1';
 import {createMembershipUI} from './auth-ui.mjs';
 const GAMES=[
- {id:'gamehell',name:'모여게임지옥',genre:'아케이드 · 13종',players:'1명',emoji:'😼',color:'#e8dffd',badge:'캐릭터 상점',desc:'13가지 원터치 아케이드! 별조각을 모아 고양이 캐릭터를 사고 장착해 보세요.',rules:[['13종 게임','낙하·점프·로켓·얼음 등 13가지 원터치 게임을 선택합니다.'],['기록 도전','최고 점수와 별조각은 현재 브라우저에 저장됩니다.'],['고양이 목표','고정 목표 점수에 도전하는 모드이며 실시간 고양이 AI 대전은 아닙니다.']]},
+ {id:'gamehell',name:'모여게임지옥',genre:'아케이드 · 13종',players:'1명',emoji:'😼',color:'#e8dffd',badge:'기록·업적·상점',desc:'개인 최고기록에 도전하고, 별조각과 업적 보상으로 고양이 캐릭터 8종을 수집해요.',rules:[['13종 게임','낙하·점프·로켓·얼음 등 13가지 원터치 게임을 선택합니다.'],['기록 도전','최고 점수와 별조각은 현재 브라우저에 저장됩니다.'],['개인 기록 도전','다른 이용자와 대전하는 게임이 아니라 나의 최고기록을 갱신하는 아케이드입니다.']]},
  {id:'tetris',name:'모여 테트리스',genre:'퍼즐 · 블록',players:'1명',emoji:'🧩',color:'#f3e1c4',badge:'고전 퍼즐',desc:'클래식 테트리스! 블록을 회전·이동해 줄을 지우고 최고 점수에 도전해요.',rules:[['조작','방향키로 이동, 위쪽 방향키로 회전, 스페이스로 하드 드롭합니다.'],['점수','가로줄을 채우면 지워지며, 연속으로 지울수록 높은 점수를 얻습니다.'],['기록','최고 점수는 이 브라우저에 저장됩니다.']]},
  {id:'logic',name:'모여로직',genre:'두뇌 · 노노그램',players:'1명',emoji:'🧠',color:'#e5efff',badge:'그림 퍼즐',desc:'가로·세로 숫자를 따라 칸을 색칠하면 귀여운 그림이 나타나는 노노그램!',rules:[['힌트 숫자','숫자는 이어서 색칠할 칸 수를 나타냅니다.'],['표시','색칠·X 표시·지우기를 선택해 퍼즐을 풉니다.'],['그림 도감','퍼즐을 완성하면 그림과 진행 기록이 브라우저에 저장됩니다.']]},
  {id:'rummikub',name:'루미큐브',genre:'두뇌 · 숫자타일',players:'2~4명',emoji:'🀄',color:'#e4f5e9',badge:'친구 대전',desc:'숫자 타일을 조합하고 재배열하는 전략 게임. 친구들과 대결!',rules:[['최초 등록','내 타일만으로 30점 이상의 유효한 조합을 만듭니다.'],['묶음과 연속','같은 숫자 다른 색 3~4개, 같은 색 연속 숫자 3개 이상을 만듭니다.'],['재배열','최초 등록 이후 테이블의 모든 타일을 합법적으로 재배열할 수 있습니다.']]},
- {id:'marble',name:'모여마블',genre:'보드 · 부동산',players:'2~4명',emoji:'🌍',color:'#ffe7ef',badge:'친구 대전',desc:'24칸 도시 투자 보드게임! 친구들과 온라인 또는 한 화면에서 대전.',rules:[['주사위','두 주사위를 굴려 도시를 이동합니다.'],['건설','도시를 구매하고 건물을 지어 통행료를 얻습니다.']]},
+ {id:'marble',name:'모여마블',genre:'보드 · 부동산',players:'2~4명',emoji:'🌍',color:'#ffe7ef',badge:'친구 대전',desc:'무한 파산전·행운카드·은행 대출이 추가된 24칸 모여마블! 온라인/로컬 친구 대전.',rules:[['주사위','두 주사위를 굴려 도시를 이동합니다.'],['건설','도시를 구매하고 건물을 지어 통행료를 얻습니다.']]},
 
  {id:'mafia',name:'가면단',genre:'마피아 · 심리전',players:'4~12명',emoji:'🎭',color:'#e8e0f7',badge:'인기 게임',desc:'낮에는 토론, 밤에는 비밀 임무! 가면 뒤의 마피아를 찾아내세요.',rules:[['낮과 밤','밤에는 직업별 능력을 사용하고, 낮에는 토론과 투표를 진행해요.'],['비밀 직업','마피아·의사·경찰·시민 역할을 비밀리에 배정받아요.'],['승리 조건','마피아를 모두 찾아내면 시민 승리, 마피아 수가 시민 이상이면 마피아 승리.']]},
  {id:'omok',name:'오목',genre:'두뇌 · 보드',players:'2명',emoji:'⚫',color:'#f4dfb8',badge:'1:1 대결',desc:'15×15 바둑판 위에서 펼쳐지는 흑과 백의 전략 대결!',rules:[['돌 놓기','흑돌이 먼저 시작하고 번갈아 빈 교차점에 돌을 둡니다.'],['승리 조건','가로·세로·대각선으로 같은 색 돌 다섯 개를 이으면 승리합니다.'],['금수','흑돌의 직선 열린 쌍삼 금수를 간소화하여 검사합니다.']]},
