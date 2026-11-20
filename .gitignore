@@ -1,4 +1,7 @@
 node_modules/
+.local-moyeo-accounts.json
+*.sqlite
+*.db
 *.log
 .DS_Store
 .env
