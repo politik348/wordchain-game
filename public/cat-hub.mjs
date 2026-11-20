@@ -1,10 +1,11 @@
-// The Cat Challenge is a mode hub, not a tenth multiplayer game.
-export const CAT_CHALLENGE_GAMES = ['omok', 'yut', 'rummikub', 'marble', 'wordchain'];
+// The Cat Challenge is a mode hub, not a multiplayer game.
+export const CAT_CHALLENGE_GAMES = ['omok', 'yut', 'rummikub', 'marble', 'tetris', 'wordchain'];
 const catDetails = {
   omok: '흑백돌로 고양이와 오목 한 판',
   yut: '윷 운과 포석으로 겨루는 대결',
   rummikub: '타일을 조합하는 전략 대결',
   marble: '도시를 차지하는 부동산 승부',
+  tetris: '강한 고양이와 블록 퍼즐 대결',
   wordchain: '끝말잇기와 쿵쿵따 한 판'
 };
 const escapeHtml = text => String(text ?? '').replace(/[&<>"']/g, char => ({
@@ -14,9 +15,9 @@ const escapeHtml = text => String(text ?? '').replace(/[&<>"']/g, char => ({
 export function renderCatFeatured() {
   return '<button type="button" class="game-card cat-feature-card" data-action="openCatHub" aria-label="고양이를 이겨라 모드로 이동">'+
     '<span class="cat-feature-graphic" aria-hidden="true">🐱</span>'+
-    '<span class="cat-feature-text"><span class="cat-feature-kicker">SOLO CHALLENGE · 5 GAMES</span>'+
+    '<span class="cat-feature-text"><span class="cat-feature-kicker">SOLO CHALLENGE · 6 GAMES</span>'+
     '<strong>고양이를 이겨라!</strong>'+
-    '<span>오목 · 윷놀이 · 루미큐브 · 모여마블 · 끝말잇기</span>'+
+    '<span>오목 · 윷놀이 · 루미큐브 · 모여마블 · 테트리스 · 끝말잇기</span>'+
     '<span class="cat-feature-go">고양이와 승부하기 →</span></span></button>';
 }
 
@@ -27,7 +28,7 @@ export function renderCatHub(games) {
     '<div><span class="cat-feature-kicker">BEAT THE CAT</span>'+
     '<h1>고양이를 이겨라!</h1>'+
     '<p>이번엔 고양이가 상대입니다. 마음에 드는 게임을 골라 한 판 승부해 보세요.</p></div></section>'+
-    '<div class="cat-hub-heading"><h2>어떤 게임으로 도전할까요?</h2><span>5가지 고양이 대전</span></div>'+
+    '<div class="cat-hub-heading"><h2>어떤 게임으로 도전할까요?</h2><span>6가지 고양이 대전</span></div>'+
     '<div class="cat-choice-grid">'+games.map(g=>{
       const id=escapeHtml(g.id),name=escapeHtml(g.name),icon=escapeHtml(g.emoji);
       return '<button type="button" class="cat-choice-card" data-action="catChoose" data-cat-game="'+id+'">'+
