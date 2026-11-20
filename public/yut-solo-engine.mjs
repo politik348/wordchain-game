@@ -42,7 +42,7 @@ export function applyYutMove(ours,theirs,index,steps,shortcut=true) {
   const destination=at+steps;
   const done=destination>=YUT_ROUTES[route].length;
   const to=done?20:YUT_ROUTES[route][destination];
-  const moving=mine.map((q,j)=>j).filter(j=>j===index||(!q.done&&p.node!==0&&q.node===p.node));
+  const moving=mine.map((_,j)=>j).filter(j=>j===index||(!mine[j].done&&p.node!==0&&mine[j].node===p.node));
   for(const j of moving)mine[j]={node:to,route,index:destination,done};
   let caught=0;
   if(!done&&to!==0)for(let j=0;j<enemy.length;j++){
