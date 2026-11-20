@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, randomInt } from 'node:crypto';
+import {acceptWebSocket} from './websocket-lite.mjs';
 import { words as starterWords, startingWords, drawingWords, liarWords } from './data/words.js';
 // An imported full dictionary overrides the starter lexicon for multiplayer.
 let words = starterWords;
@@ -25,6 +26,10 @@ const PUBLIC = path.join(ROOT, 'public');
 const PORT = Number(process.env.PORT || 3000);
 const rooms = new Map();
 const connections = new Map();
+const doodleSockets=new Map();
+function sendDoodle(r,packet){
+ for(const ws of doodleSockets.get(r.id)||[])ws.send(packet);
+}
 const MAX_BODY = 120_000;
 const GAME_INFO = {
   mafia: { name:'가면단', min:4, max:12 },
@@ -115,7 +120,7 @@ function start(r) {
   switch(r.game){
     case 'omok':r.state={board:Array(225).fill(null),turn:ids[0],winner:null,last:null,moves:0};break;
     case 'wordchain':r.state={turn:ids[0],turnIndex:0,history:[pick(startingWords)],used:[],hearts:Object.fromEntries(ids.map(x=>[x,2])),scores:Object.fromEntries(ids.map(x=>[x,0])),deadline:Date.now()+20000,round:1,mission:pick(['사','가','구','나','리','자','이','도','수']),timer:20,reason:null};break;
-    case 'doodle':r.state={artist:ids[0],artistIndex:0,round:1,maxRounds:Math.min(12,ids.length*3),word:pick(drawingWords),strokes:[],chat:[],scores:Object.fromEntries(ids.map(x=>[x,0])),deadline:Date.now()+80000,revealed:false};break;
+    case 'doodle':r.state={artist:ids[0],artistIndex:0,round:1,maxRounds:Math.min(12,ids.length*3),word:pick(drawingWords),strokes:[],strokeSeq:0,chat:[],scores:Object.fromEntries(ids.map(x=>[x,0])),deadline:Date.now()+80000,revealed:false};break;
     case 'liar': {
       const [topic,word]=pick(liarWords);
       r.state={topic,word,liar:pick(ids),phase:'clue',speaker:ids[0],speakerIndex:0,clues:[],votes:{},guess:'',result:null};break;
@@ -197,7 +202,7 @@ function nextDoodle(r) {
   s.artistIndex=(s.artistIndex+1)%r.players.length;
   s.artist=r.players[s.artistIndex].id;
   let next=pick(drawingWords);if(next===prev)next=pick(drawingWords);
-  s.word=next;s.strokes=[];s.deadline=Date.now()+80000;s.revealed=false;
+  s.word=next;s.strokes=[];s.strokeSeq=0;s.deadline=Date.now()+80000;s.revealed=false;
   touch(r,`${s.round}라운드: 새로운 화가가 그림을 그립니다.`);
 }
 function nextChainTurn(r) {
@@ -257,7 +262,7 @@ function moveYut(r,sid,pieceIndex,shortcut=true) {
   if(!bonus){s.turnIndex=(s.turnIndex+1)%r.players.length;s.turn=r.players[s.turnIndex].id;}
   touch(r,bonus?'한 번 더 던지세요!':'다음 차례입니다.');
 }
-function act(r,sid,type,data={}) {
+function act(r,sid,type,data={},transport='http') {
   requireMember(r,sid);
   const host=r.host===sid,st=r.status,s=r.state;
   if(type==='rename'){player(r,sid).nick=cleanNick(data.nick);touch(r);return;}
@@ -313,12 +318,19 @@ function act(r,sid,type,data={}) {
     if(type==='stroke'){
       if(sid!==s.artist)throw err(403,'화가만 그릴 수 있습니다.');
       const points=data.points;
-      if(!Array.isArray(points)||points.length<1||points.length>160||s.strokes.length>1500)throw err(400,'그림 데이터가 너무 큽니다.');
+      if(transport!=='ws')throw err(426,'낙서왕 그리기는 WebSocket으로 전송해야 합니다.');
+      if(!Array.isArray(points)||points.length<1||points.length>160||s.strokes.length>=5000)throw err(400,'그림 데이터가 너무 큽니다.');
       if(!points.every(p=>Array.isArray(p)&&p.length===2&&p.every(n=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=1)))throw err(400,'잘못된 좌표입니다.');
-      s.strokes.push({points,color:['#29283f','#ff627a','#2777c5','#30a77a','#e5b23a'].includes(data.color)?data.color:'#29283f',width:[2,5,9,16].includes(data.width)?data.width:5});
-      touch(r);return;
+      const stroke={points,color:['#29283f','#ff627a','#2777c5','#30a77a','#e5b23a'].includes(data.color)?data.color:'#29283f',width:[2,5,9,16].includes(data.width)?data.width:5};
+      s.strokes.push(stroke);s.strokeSeq=(s.strokeSeq||0)+1;
+      r.updatedAt=Date.now();sendDoodle(r,{type:'stroke',round:s.round,seq:s.strokeSeq,stroke});return;
     }
-    if(type==='clear'){if(sid!==s.artist)throw err(403,'화가만 지울 수 있습니다.');s.strokes=[];touch(r);return;}
+    if(type==='clear'){
+      if(transport!=='ws')throw err(426,'낙서왕 지우기는 WebSocket으로 전송해야 합니다.');
+      if(sid!==s.artist)throw err(403,'화가만 지울 수 있습니다.');
+      s.strokes=[];s.strokeSeq=(s.strokeSeq||0)+1;
+      r.updatedAt=Date.now();sendDoodle(r,{type:'clear',round:s.round,seq:s.strokeSeq});return;
+    }
     if(type==='skip'){if(sid!==s.artist&&!host)throw err(403,'화가만 건너뛸 수 있습니다.');nextDoodle(r);return;}
   }
   if(r.game==='liar'){
@@ -428,7 +440,7 @@ function gameTick(){
 }
 const ticker=setInterval(gameTick,300);ticker.unref();
 
-const MIME={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json; charset=utf-8'};
+const MIME={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json; charset=utf-8'};
 const handler=async(req,res)=>{
   const u=new URL(req.url,'http://localhost');const pathname=decodeURIComponent(u.pathname);
   try {
@@ -498,4 +510,33 @@ const handler=async(req,res)=>{
   } catch(e) {simpleReply(res,e.status||500,{error:e.message||'서버 오류'});}
 };
 export const server=http.createServer(handler);
+// Drawing, erasing, guessing and skipping are persistent bidirectional WebSocket messages.
+server.on('upgrade',(req,socket,head)=>{
+ try{
+  const u=new URL(req.url,'http://localhost');
+  if(u.pathname!=='/ws/doodle')throw err(404,'WebSocket 경로가 아닙니다.');
+  // Browser clients must be same-origin; sid identifies an existing room member.
+  if(req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host)throw err(403,'출처가 올바르지 않습니다.');
+  const sid=cleanSid(u.searchParams.get('sid')),r=getRoom(u.searchParams.get('code'));
+  requireMember(r,sid);
+  if(r.game!=='doodle')throw err(403,'낙서왕 전용 연결입니다.');
+  const clients=doodleSockets.get(r.id)||new Set();
+  if(clients.size>=24)throw err(429,'그림판 연결이 너무 많습니다.');
+  doodleSockets.set(r.id,clients);
+  const transport=acceptWebSocket(req,socket,head,{
+   message(packet,client){
+    try{
+     requireMember(r,sid);
+     if(packet.type==='sync'){client.send({type:'sync',round:r.state?.round||0,seq:r.state?.strokeSeq||0,strokes:r.state?.strokes||[]});return;}
+     if(packet.round!==r.state?.round)throw err(409,'이미 끝난 라운드의 그림입니다.');
+     if(!['stroke','clear','chat','skip'].includes(packet.type))throw err(400,'잘못된 동작입니다.');
+     // Validate all gameplay actions through the same rule engine.
+     act(r,sid,packet.type,packet.payload||{},'ws');
+    }catch(e){client.send({type:'error',message:e.message||'그림 입력에 실패했습니다.'});}
+   },
+   close(client){clients.delete(client);if(!clients.size)doodleSockets.delete(r.id);}
+  });
+  if(transport){clients.add(transport);transport.send({type:'sync',round:r.state?.round||0,seq:r.state?.strokeSeq||0,strokes:r.state?.strokes||[]});}
+ }catch(e){socket.end(`HTTP/1.1 ${e.status||400} Error\r\nConnection: close\r\n\r\n`);}
+});
 if(process.env.NODE_ENV!=='test')server.listen(PORT,'0.0.0.0',()=>console.log(`모여게임즈: http://localhost:${PORT}`));

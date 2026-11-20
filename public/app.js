@@ -14,7 +14,9 @@ const user={nick:localStorage.getItem('moyeo-nick')||`게스트${Math.floor(Math
 sessionStorage.setItem('moyeo-sid',user.sid);
 let view='home',selection='wordchain',room=null,eventSource=null,apiLive=true,solo=null,allWords=[],allWordSet=new Set(),allWordsByFirst=new Map(),startCounts=new Map(),soloTimer=null,roomList=[],lastRoomUrl='';
 // Keep live typing and canvas strokes intact when asynchronous room updates arrive.
-let deferredRoomRender=false, activeDoodleStroke=null, composingForm=false, compositionJustEndedAt=0;
+let deferredRoomRender=false, activeDoodleStroke=null, composingForm=false, pendingCompositionSubmit=null;
+let previousSoloStarter=null, activeGomokuWorker=null;
+let doodleSocket=null, doodleReconnect=null, doodleQueue=[], doodleSocketRoom=null;
 const chars=['🐶','🐱','🐻','🐼','🦊','🐰','🐸','🐨','🐧','🐵','🦁','🐯'];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const gname=game=>GAME[game]?.name||game;
@@ -25,7 +27,7 @@ const formatTime=n=>String(Math.max(0,Math.ceil(n))).padStart(2,'0');
 const scoreMap=()=>room?.state?.scores||{};
 const btn=(action,label,style='button-secondary',disabled=false,more='')=>`<button type="button" class="button ${style}" data-action="${action}" ${disabled?'disabled':''} ${more}>${label}</button>`;
 function toast(message){const zone=$('toastZone');const el=document.createElement('div');el.className='toast';el.textContent=message;zone.append(el);setTimeout(()=>el.remove(),3300);}
-function routeHome(){view='home';selection='wordchain';room=null;solo=null;eventSource?.close();eventSource=null;sessionStorage.removeItem('moyeo-last-room');history.replaceState(null,'',location.pathname);render();}
+function routeHome(){closeDoodleSocket();view='home';selection='wordchain';room=null;solo=null;eventSource?.close();eventSource=null;sessionStorage.removeItem('moyeo-last-room');history.replaceState(null,'',location.pathname);render();}
 function setNav(which){document.querySelectorAll('[data-nav]').forEach(x=>x.classList.toggle('is-current',x.dataset.nav===which));}
 function revealNickname(){const dialog=$('nickDialog');$('nicknameInput').value=user.nick;dialog.showModal();setTimeout(()=>$('nicknameInput').focus(),50);}
 async function api(uri,options){
@@ -40,7 +42,59 @@ async function createRoom(game){if(!apiLive)return toast('실시간 방은 Node.
 async function joinRoom(code){if(!apiLive)return toast('실시간 서버 연결이 필요합니다.');try{const data=await api(`/api/rooms/${code.toUpperCase()}/join`,{method:'POST',body:JSON.stringify({sid:user.sid,nick:user.nick})});enterRoom(data.room);$('joinDialog').close();}catch(e){handleErr(e);}}
 async function act(type,payload={}){if(!room)return false;try{const data=await api(`/api/rooms/${room.id}/action`,{method:'POST',body:JSON.stringify({sid:user.sid,type,payload})});if(data.room)updateRoom(data.room);return true;}catch(e){handleErr(e);return false;}}
 async function leave(){if(room){try{await api(`/api/rooms/${room.id}/leave`,{method:'POST',body:JSON.stringify({sid:user.sid})});}catch{}}routeHome();}
-function enterRoom(newRoom){room=newRoom;view='room';solo=null;selection=room.game;sessionStorage.setItem('moyeo-last-room',room.id);history.replaceState(null,'',`/?room=${room.id}`);eventSource?.close();eventSource=new EventSource(`/api/events?sid=${encodeURIComponent(user.sid)}&code=${room.id}`);eventSource.addEventListener('state',e=>{try{updateRoom(JSON.parse(e.data));}catch{}});eventSource.onerror=()=>{$('serverStatus').textContent='재연결 중';};render();}
+function closeDoodleSocket(){
+ clearTimeout(doodleReconnect);doodleReconnect=null;doodleSocketRoom=null;doodleQueue=[];
+ const ws=doodleSocket;doodleSocket=null;
+ if(ws){ws.onclose=null;ws.onerror=null;ws.onmessage=null;ws.close();}
+}
+function connectDoodleSocket(){
+ if(view!=='room'||room?.game!=='doodle')return;
+ if(doodleSocket && (doodleSocket.readyState===WebSocket.OPEN||doodleSocket.readyState===WebSocket.CONNECTING))return;
+ const code=room.id;
+ const url=`${location.protocol==='https:'?'wss':'ws'}://${location.host}/ws/doodle?code=${encodeURIComponent(code)}&sid=${encodeURIComponent(user.sid)}`;
+ const ws=new WebSocket(url);doodleSocket=ws;doodleSocketRoom=code;
+ ws.onopen=()=>{
+  if(doodleSocket!==ws||room?.id!==code)return;
+  ws.send(JSON.stringify({type:'sync'}));
+  while(doodleQueue.length&&ws.readyState===WebSocket.OPEN){
+   const packet=doodleQueue.shift();ws.send(JSON.stringify(packet));
+  }
+ };
+ ws.onmessage=e=>{
+  if(doodleSocket!==ws||view!=='room'||room?.id!==code||room?.game!=='doodle')return;
+  let msg;try{msg=JSON.parse(e.data);}catch{return;}
+  if(msg.type==='error'){toast(msg.message||'그림 전송 오류');return;}
+  const state=room.state;if(!state)return;
+  if(msg.type==='sync'){
+   if(msg.round!==state.round||!Array.isArray(msg.strokes))return;
+   // Never replace newer WebSocket events with an older delayed snapshot.
+   if(Number(msg.seq||0)<Number(state.strokeSeq||0))return;
+   state.strokes=msg.strokes;state.strokeSeq=msg.seq;paintDoodleCanvas();return;
+  }
+  if(msg.round!==state.round||msg.seq<=Number(state.strokeSeq||0))return;
+  if(msg.seq>Number(state.strokeSeq||0)+1){ws.send(JSON.stringify({type:'sync'}));return;}
+  state.strokeSeq=msg.seq;
+  if(msg.type==='clear'){state.strokes=[];paintDoodleCanvas();}
+  if(msg.type==='stroke'&&msg.stroke){state.strokes.push(msg.stroke);if(state.artist!==user.sid)drawDoodleSegment(msg.stroke);}
+ };
+ ws.onerror=()=>{ /* close event handles reconnect */ };
+ ws.onclose=()=>{
+  if(doodleSocket!==ws)return;
+  doodleSocket=null;
+  if(view==='room'&&room?.id===code&&room.game==='doodle'){
+   doodleReconnect=setTimeout(connectDoodleSocket,1200);
+  }
+ };
+}
+function sendDoodle(type,payload={}){
+ const packet={type,payload,round:room?.state?.round};
+ if(room?.game!=='doodle'||view!=='room')return false;
+ const ws=doodleSocket;
+ if(ws?.readyState===WebSocket.OPEN&&ws.bufferedAmount<256000){ws.send(JSON.stringify(packet));return true;}
+ if(doodleQueue.length>=200){toast('그림 연결이 느립니다. 잠시 후 다시 그려주세요.');return false;}
+ doodleQueue.push(packet);connectDoodleSocket();return true;
+}
+function enterRoom(newRoom){closeDoodleSocket();room=newRoom;view='room';solo=null;selection=room.game;sessionStorage.setItem('moyeo-last-room',room.id);history.replaceState(null,'',`/?room=${room.id}`);eventSource?.close();eventSource=new EventSource(`/api/events?sid=${encodeURIComponent(user.sid)}&code=${room.id}`);eventSource.addEventListener('state',e=>{try{updateRoom(JSON.parse(e.data));}catch{}});eventSource.onerror=()=>{$('serverStatus').textContent='재연결 중';};render();if(room.game==='doodle')connectDoodleSocket();}
 function userEditing() {
  const el=document.activeElement;
  return Boolean(el && root.contains(el) && (el.matches('input, textarea') || el.isContentEditable));
@@ -58,6 +112,10 @@ function sameInputContext(a,b) {
 function updateRoom(next) {
  if(!room||room.id!==next.id)return;
  const prev=room,changed=next.version!==prev.version || next.status!==prev.status;
+ if(prev.game==='doodle'&&next.game==='doodle'&&prev.state&&next.state&&prev.state.round===next.state.round&&
+    Number(prev.state.strokeSeq||0)>Number(next.state.strokeSeq||0)){
+  next.state.strokes=prev.state.strokes;next.state.strokeSeq=prev.state.strokeSeq;
+ }
  room=next;
  if(!changed)return;
  // Strokes and chat must never replace the canvas or an input element mid-action.
@@ -125,6 +183,15 @@ const yutCoords={0:[495,495],1:[495,402],2:[495,309],3:[495,216],4:[495,123],5:[
 const line=(a,b)=>`<path class="yut-path" d="M${yutCoords[a].join(',')} L${yutCoords[b].join(',')}"/>`;
 function yutGame(){const s=room.state,myTurn=s.turn===user.sid;const outer=Array.from({length:20},(_,i)=>line(i,i+1)).join('');const inside=[line(5,21),line(21,22),line(22,23),line(23,24),line(24,25),line(25,15),line(10,26),line(26,27),line(27,23)].join('');const pieces=Object.entries(s.pieces).flatMap(([pid,ps],pi)=>ps.filter(p=>!p.done&&p.node!==0).map((p,j)=>{const [x,y]=yutCoords[p.node]||[495,495];const color=['#ff7582','#469bc4','#71bf90','#b18ad0'][pi];return `<circle class="yut-piece-dot" cx="${x+((j%2)*15-7)}" cy="${y+((Math.floor(j/2)%2)*15-7)}" r="10" fill="${color}"/>`;})).join('');return `<div class="game-topline"><span class="stage-badge">🎲 ${esc(nick(s.turn))}님 차례</span><span class="time-badge">${s.rollName||'윷을 던지세요'}</span></div><div class="yut-board"><svg class="yut-svg" viewBox="-15 -15 555 555" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="윷놀이 말판"><rect x="0" y="0" width="525" height="525" rx="17" fill="#fffaf0"/>${outer}${inside}${Object.entries(yutCoords).filter(([i])=>i!=='0').map(([i,[x,y]])=>`<circle class="yut-node ${[5,10,15,20].includes(+i)?'corner':''} ${+i===23?'center':''}" cx="${x}" cy="${y}" r="${[5,10,15,20,23].includes(+i)?19:12}"/>`).join('')}${pieces}<text x="438" y="522" font-size="14" fill="#9a6e56">출발/도착</text></svg></div><div class="yut-controls"><div class="central">${s.pending===null?`<p class="game-note">${myTurn?'윷을 던지세요!':`${esc(nick(s.turn))}님의 차례를 기다리는 중`}</p>${btn('roll','🎲 윷 던지기','button-primary',!myTurn||room.status==='finished')}`:`<div class="yut-roll-result">${esc(s.rollName)}! <span style="font-size:13px;color:#aaa">${s.pending>0?`${s.pending}칸 이동`:'한 칸 뒤로'}</span></div><p class="game-note">이동할 말을 선택하세요. 모서리에 있으면 지름길이 자동 적용됩니다.</p><div class="yut-token-list" style="justify-content:center">${s.pieces[user.sid].map((p,i)=>`<button class="choice-button" data-action="move" data-index="${i}" ${!myTurn||p.done||s.pending===-1&&p.node===0?'disabled':''}>${i+1}번 말 ${p.done?'🏁':p.node===0?'(출발 전)':`(${p.node}칸)`}</button>`).join('')}</div>`}</div><div class="game-prompt">완주한 말: ${Object.entries(s.pieces).map(([pid,ps])=>`${esc(nick(pid))} ${ps.filter(p=>p.done).length}/4`).join(' · ')}</div><div class="yut-guide">간소화한 윷놀이 규칙이며, 정밀한 전통 윷판과 일부 상황이 다를 수 있습니다.</div></div>${endBanner()}`;}
 let drawColor='#29283f',drawWidth=5;
+function drawDoodleSegment(st){
+ const canvas=$('doodleCanvas');if(!canvas||!st?.points?.length)return;
+ const ctx=canvas.getContext('2d'),pts=st.points;
+ ctx.strokeStyle=st.color;ctx.fillStyle=st.color;ctx.lineWidth=st.width;
+ ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
+ ctx.moveTo(pts[0][0]*canvas.width,pts[0][1]*canvas.height);
+ if(pts.length===1){ctx.arc(pts[0][0]*canvas.width,pts[0][1]*canvas.height,st.width/2,0,Math.PI*2);ctx.fill();}
+ else {for(const [x,y] of pts.slice(1))ctx.lineTo(x*canvas.width,y*canvas.height);ctx.stroke();}
+}
 function paintDoodleCanvas(){
  const canvas=$('doodleCanvas');
  if(!canvas||!room?.state?.strokes)return;
@@ -148,19 +215,19 @@ function setupCanvas(){
  paintDoodleCanvas();
  if(room.state.artist!==user.sid||room.status!=='playing')return;
  const coord=e=>{const b=c.getBoundingClientRect();return [Math.min(1,Math.max(0,(e.clientX-b.left)/b.width)),Math.min(1,Math.max(0,(e.clientY-b.top)/b.height))];};
- let activePointer=null;
+ let activePointer=null, lastDoodleFlush=0;
  const sendStroke=()=>{
   if(!activeDoodleStroke)return;
   const st=activeDoodleStroke;
   activeDoodleStroke=null;
-  if(st.points.length)act('stroke',st);
+  if(st.points.length)sendDoodle('stroke',st);
  };
  c.addEventListener('pointerdown',e=>{
   if(activePointer!==null)return;
   e.preventDefault();activePointer=e.pointerId;
   c.setPointerCapture(e.pointerId);
   activeDoodleStroke={points:[coord(e)],color:drawColor,width:drawWidth};
-  paintDoodleCanvas();
+  drawDoodleSegment(activeDoodleStroke);
  });
  c.addEventListener('pointermove',e=>{
   if(e.pointerId!==activePointer||!activeDoodleStroke)return;
@@ -168,18 +235,22 @@ function setupCanvas(){
   const last=pts.at(-1);
   if(Math.abs(last[0]-pt[0])<0.001&&Math.abs(last[1]-pt[1])<0.001)return;
   pts.push(pt);
-  if(pts.length>=150){
-   // Send in chunks rather than silently losing the beginning of a long stroke.
+  // Draw locally immediately; stream small segments to peers every ~45ms.
+  drawDoodleSegment({points:[last,pt],color:activeDoodleStroke.color,width:activeDoodleStroke.width});
+  const now=performance.now();
+  if(pts.length>=145||now-lastDoodleFlush>=45){
    const segment=activeDoodleStroke;
    activeDoodleStroke={points:[pt],color:segment.color,width:segment.width};
-   act('stroke',segment);
+   sendDoodle('stroke',segment);
+   lastDoodleFlush=now;
   }
-  paintDoodleCanvas();
  });
  c.addEventListener('pointerup',e=>{
   if(e.pointerId!==activePointer)return;
   e.preventDefault();activePointer=null;
-  if(activeDoodleStroke){activeDoodleStroke.points.push(coord(e));sendStroke();}
+  if(activeDoodleStroke){const point=coord(e),last=activeDoodleStroke.points.at(-1);
+    if(Math.abs(point[0]-last[0])>0.001||Math.abs(point[1]-last[1])>0.001)activeDoodleStroke.points.push(point);
+    sendStroke();}
  });
  c.addEventListener('pointercancel',e=>{
   if(e.pointerId!==activePointer)return;
@@ -219,7 +290,19 @@ function render(){
 }
 function nextNeeded(word){const n=word.charAt(word.length-1);const i=n.charCodeAt(0)-44032;const set=[n];if(i>=0&&i<11172){const cho=Math.floor(i/588),jung=Math.floor(i%588/28),tail=i%588;if(cho===5){set.push(String.fromCharCode(44032+( [2,6,12,17,20].includes(jung)?11:2)*588+tail));}if(cho===2&&[2,6,12,17,20].includes(jung))set.push(String.fromCharCode(44032+11*588+tail));}return set;}
 function soloChoices(){const used=new Set(solo.history);const options=[];for(const letter of nextNeeded(solo.history.at(-1))){for(const w of allWordsByFirst.get(letter)||[]){if(!used.has(w))options.push(w);}}return options;}
-function soloStart(game){view='solo';selection=game;room=null;solo=game==='wordchain'?{game,history:['사과'],playerLives:2,aiLives:2,turn:'player',round:1,deadline:Date.now()+30000,score:0,finished:false,msg:'당신 차례입니다.'}:{game,board:Array(225).fill(null),turn:'player',moves:0,finished:false,msg:'흑돌을 먼저 놓으세요.'};render();}
+function soloOpeningWord(){
+ // Use familiar dictionary words whose endings still have plenty of replies.
+ const familiar=['사과','바나나','학교','우산','도토리','초콜릿','고양이','자전거','비둘기','토마토','사랑','자동차','고구마','기차','나무','강아지','여름','겨울','바다','하늘','김치','감자','의자','수박','포도','여행','건물','그림','가방','마음','동물','공책','책상','달력','선물','친구','우유','라면'];
+ let eligible=familiar.filter(w=>allWordSet.has(w)&&nextNeeded(w).some(last=>(startCounts.get(last)||0)>=20));
+ if(eligible.length<2)eligible=familiar.filter(w=>allWordSet.has(w));
+ if(!eligible.length)eligible=['사과'];
+ let candidates=eligible.filter(w=>w!==previousSoloStarter);
+ if(!candidates.length)candidates=eligible;
+ const starter=candidates[Math.floor(Math.random()*candidates.length)];
+ previousSoloStarter=starter;
+ return starter;
+}
+function soloStart(game){if(activeGomokuWorker){activeGomokuWorker.terminate();activeGomokuWorker=null;}view='solo';selection=game;room=null;solo=game==='wordchain'?{game,history:[soloOpeningWord()],playerLives:2,aiLives:2,turn:'player',round:1,deadline:Date.now()+30000,score:0,finished:false,msg:'당신 차례입니다.'}:{game,board:Array(225).fill(null),turn:'player',moves:0,finished:false,msg:'흑돌을 먼저 놓으세요.'};render();}
 function soloGame(){const game=solo.game;setNav('home');let content='';if(game==='wordchain'){
   const last=solo.history.at(-1);
   content=`<div class="game-topline"><span class="stage-badge">🤖 AI 끝말잇기 연습</span>${timeBar(solo.deadline,30)}</div><div class="word-scoreboard"><div class="word-player ${solo.turn==='player'?'active':''}"><strong>🙂 ${esc(user.nick)}</strong>♥ ${solo.playerLives} · ${solo.score}점</div><div class="word-player ${solo.turn==='ai'?'active':''}"><strong>🤖 컴퓨터</strong>♥ ${solo.aiLives}</div></div><div class="wordchain-word central"><span class="wordchain-caption">마지막으로 나온 단어</span><div class="last-word">${esc(last.slice(0,-1))}<span>${esc(last.at(-1))}</span></div><span class="next-letter">${esc(last.at(-1))}</span></div><p class="game-note">${esc(solo.msg)} 표준국어대사전 명사 212,942개를 사용합니다.</p><form data-form="soloWord" class="action-form"><input class="text-input" name="word" autocomplete="off" placeholder="단어를 입력하세요" ${solo.turn!=='player'||solo.finished?'readonly':''} maxlength="24" required/><button type="submit" class="button button-primary" ${solo.turn!=='player'||solo.finished?'disabled':''}>내기 →</button></form><div class="word-tags">${solo.history.map(w=>`<span class="word-tag">${esc(w)}</span>`).join('')}</div>`;
@@ -320,18 +403,38 @@ function soloPlace(x,y){
  solo.board[ix]='black';solo.moves++;
  if(countFive(solo.board,x,y,'black')){solo.finished=true;solo.msg='당신 승리! 오목 완성.';render();return;}
  if(solo.moves>=225){solo.finished=true;solo.msg='무승부';render();return;}
- const current=solo;
- solo.turn='ai';solo.msg='컴퓨터가 다음 수를 계산하고 있습니다.';render();
- setTimeout(()=>{
+  const current=solo;
+ solo.turn='ai';solo.msg='컴퓨터가 공격 수순을 탐색하고 있습니다…';render();
+ if(activeGomokuWorker){activeGomokuWorker.terminate();activeGomokuWorker=null;}
+ function finishAi(ch,reason){
   if(solo!==current||solo.finished||solo.game!=='omok'||solo.turn!=='ai')return;
-  const ch=chooseOmokMove(solo.board);
+  if(!ch || solo.board[ch.y*15+ch.x])ch=chooseOmokMove(solo.board);
   if(!ch){solo.finished=true;solo.msg='무승부';render();return;}
   solo.board[ch.y*15+ch.x]='white';solo.moves++;
-  if(countFive(solo.board,ch.x,ch.y,'white')){solo.finished=true;solo.msg='컴퓨터 승리! 다음 판에 도전하세요.';}
+  if(countFive(solo.board,ch.x,ch.y,'white')){solo.finished=true;solo.msg='컴퓨터 승리! 오목 완성.';}
   else if(solo.moves>=225){solo.finished=true;solo.msg='무승부';}
-  else {solo.turn='player';solo.msg='당신 차례입니다.';}
+  else {solo.turn='player';solo.msg=`당신 차례입니다. ${reason?'(AI: '+reason+')':''}`;}
   render();
- },260);
+ }
+ if(typeof Worker!=='undefined'){
+  try{
+   const worker=new Worker('./gomoku-ai.worker.js?v=20261120d',{type:'module'});
+   activeGomokuWorker=worker;
+   worker.onmessage=e=>{
+    if(activeGomokuWorker!==worker)return;
+    worker.terminate();activeGomokuWorker=null;
+    if(e.data?.error){console.warn('Gomoku search failed:',e.data.error);finishAi(chooseOmokMove(solo.board),'보조 AI');return;}
+    finishAi({x:e.data.x,y:e.data.y},e.data.reason);
+   };
+   worker.onerror=e=>{
+    console.error('Gomoku worker error',e.message);
+    if(activeGomokuWorker!==worker)return;
+    worker.terminate();activeGomokuWorker=null;
+    finishAi(chooseOmokMove(solo.board),'보조 AI');
+   };
+   worker.postMessage({id:solo.moves,board:solo.board,timeMs:1750});
+  }catch(error){console.warn(error);setTimeout(()=>finishAi(chooseOmokMove(solo.board),'보조 AI'),150);}
+ }else setTimeout(()=>finishAi(chooseOmokMove(solo.board),'보조 AI'),150);
 }
 function updateTick(){document.querySelectorAll('[data-deadline]').forEach(el=>{let seconds=Math.max(0,(Number(el.dataset.deadline)-Date.now())/1000);if(el.classList.contains('time-badge')){el.textContent=formatTime(seconds)+'초';el.classList.toggle('warning',seconds<6);} });document.querySelectorAll('[data-timer-fill]').forEach(el=>{const total=Number(el.dataset.total)||20;el.style.width=`${Math.max(0,Math.min(100,(Number(el.dataset.deadline)-Date.now())/total/10))}%`;});if(view==='solo'&&solo?.game==='wordchain'&&!solo.finished&&solo.turn==='player'&&Date.now()>solo.deadline){solo.playerLives--;if(solo.playerLives<=0){solo.finished=true;solo.msg='시간 초과. 컴퓨터 승리!';}else {solo.deadline=Date.now()+30000;solo.msg='시간 초과! 목숨이 하나 줄었습니다.';}render();}}
 function scrollGames(){document.getElementById('gamesSection')?.scrollIntoView({behavior:'smooth'});}
@@ -345,7 +448,9 @@ document.addEventListener('click',async e=>{
  if(action==='openJoin'){$('joinInput').value='';$('joinDialog').showModal();return;}
  if(action==='scrollGames'){scrollGames();return;}if(action==='createRoom'){await createRoom(selection);return;}
  if(action==='refreshRooms'){await refreshRooms(view==='detail'?selection:'');render();return;}
- if(action==='start'||action==='ready'||action==='rematch'||action==='clear'||action==='skip'||action==='ring'||action==='roll'||action==='discussionEnd'){await act(action);return;}
+ if(action==='clear'&&room?.game==='doodle'){sendDoodle('clear');return;}
+ if(action==='skip'&&room?.game==='doodle'){sendDoodle('skip');return;}
+ if(action==='start'||action==='ready'||action==='rematch'||action==='ring'||action==='roll'||action==='discussionEnd'){await act(action);return;}
  if(action==='leave'){if(confirm('게임방을 나가시겠습니까?'))await leave();return;}
  if(action==='share'||action==='copyCode'){if(!room)return;const text=action==='copyCode'?room.id:`${location.origin}/?room=${room.id}`;try{await navigator.clipboard.writeText(text);toast('초대 정보를 복사했습니다.');}catch{toast(text);}return;}
  if(action==='place'){await act('place',{x:Number(b.dataset.x),y:Number(b.dataset.y)});return;}
@@ -357,11 +462,28 @@ document.addEventListener('click',async e=>{
  if(action==='backDetail'){view='detail';solo=null;await refreshRooms(selection);render();return;}
  if(action==='soloPlace'){soloPlace(Number(b.dataset.x),Number(b.dataset.y));return;}
 });
-// Enter while selecting a Korean IME syllable must not submit the answer.
-document.addEventListener('compositionstart',e=>{if(e.target.closest?.('form[data-form]'))composingForm=true;});
-document.addEventListener('compositionend',e=>{if(e.target.closest?.('form[data-form]')){composingForm=false;compositionJustEndedAt=Date.now();}});
+// When Korean IME uses Enter to finish composing, that SAME key should
+// submit the word once compositionend fires. No second click or Enter needed.
+document.addEventListener('compositionstart',e=>{
+ if(e.target.closest?.('form[data-form]')){composingForm=true;pendingCompositionSubmit=null;}
+});
+document.addEventListener('compositionend',e=>{
+ const form=e.target.closest?.('form[data-form]');if(!form)return;
+ composingForm=false;
+ const pending=pendingCompositionSubmit;
+ pendingCompositionSubmit=null;
+ if(pending?.form===form){
+  setTimeout(()=>{
+   if(form.isConnected&&pending.input.isConnected&&form.contains(pending.input))form.requestSubmit();
+  },0);
+ }
+});
 document.addEventListener('keydown',e=>{
- if(e.key==='Enter' && e.target.closest?.('form[data-form]') && (e.isComposing||composingForm||e.keyCode===229||Date.now()-compositionJustEndedAt<35))e.preventDefault();
+ const form=e.target.closest?.('form[data-form]');
+ if(e.key!=='Enter'||!form)return;
+ if(e.isComposing||composingForm||e.keyCode===229){
+  e.preventDefault();pendingCompositionSubmit={form,input:e.target};
+ }
 },true);
 document.addEventListener('focusout',e=>{
  if(!root.contains(e.target)||!deferredRoomRender)return;
@@ -370,10 +492,20 @@ document.addEventListener('focusout',e=>{
 document.addEventListener('submit',async e=>{
  const form=e.target;if(form.id==='nickForm'){e.preventDefault();user.nick=($('nicknameInput').value.trim().slice(0,14)||'게스트');localStorage.setItem('moyeo-nick',user.nick);$('nickDialog').close();if(room)await act('rename',{nick:user.nick});render();toast('닉네임을 변경했습니다.');return;}
  if(form.id==='joinForm'){e.preventDefault();const code=$('joinInput').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==6){toast('6자리 코드를 입력하세요.');return;}await joinRoom(code);return;}
- if(!form.dataset.form)return;e.preventDefault();if(composingForm||Date.now()-compositionJustEndedAt<35)return;const values=Object.fromEntries(new FormData(form).entries());const type=form.dataset.form;
+ if(!form.dataset.form)return;e.preventDefault();if(composingForm)return;const values=Object.fromEntries(new FormData(form).entries());const type=form.dataset.form;
  if(type==='soloWord'){const input=form.querySelector('input[name=word]');if(input)input.value='';const worked=soloPlayWord(values.word);if(worked===false&&input){input.value=values.word;input.focus({preventScroll:true});}return;}
  const mapping={word:'word',chat:'chat',clue:'clue',guess:'guess'};
- if(mapping[type]){const input=form.querySelector('input,textarea');if(input)input.value='';const accepted=await act(mapping[type],values);if(!accepted&&input?.isConnected){input.value=Object.values(values)[0]||'';input.focus({preventScroll:true});}if(accepted&&deferredRoomRender){deferredRoomRender=false;render();}}
+ if(mapping[type]){
+  const input=form.querySelector('input,textarea');
+  if(room?.game==='doodle'&&type==='chat'){
+   if(sendDoodle('chat',values)){if(input)input.value='';input?.focus({preventScroll:true});}
+   return;
+  }
+  if(input)input.value='';
+  const accepted=await act(mapping[type],values);
+  if(!accepted&&input?.isConnected){input.value=Object.values(values)[0]||'';input.focus({preventScroll:true});}
+  if(accepted&&deferredRoomRender){deferredRoomRender=false;render();}
+ }
 });
 $('brand').addEventListener('click',e=>{e.preventDefault();if(room){if(confirm('게임방을 나가고 홈으로 돌아갈까요?'))leave();}else routeHome();});
 $('nicknameBtn').addEventListener('click',revealNickname);

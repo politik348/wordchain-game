@@ -151,3 +151,25 @@ ZIP 외에도 JSON/XML/CSV/TXT 파일 또는 폴더를 넣을 수 있습니다. 
 국립국어원, **표준국어대사전** (2026년 11월 6일 내려받기 데이터). https://kdict.korean.go.kr/standard/main/main.do.
 이 사전 데이터를 사용한 단어 목록은 **CC BY-SA 2.0 대한민국**에 따른 출처표시와 동일조건변경허락을 준수하여 활용합니다. https://creativecommons.org/licenses/by-sa/2.0/kr/ .
 이 자료는 국립국어원 공식 게임 서비스가 아닙니다.
+
+
+## 2026-11-20 실전 AI/끝말잇기 패치
+
+- **오목 AI:** 기존 1수 평가 위주의 방어형 AI 대신 별도 Web Worker의 제한시간 탐색 엔진을 추가했습니다. 즉시 승리/필수 차단, 열린 4·끊긴 4, 열린 3, 양방향 위협을 평가하고 iterative-deepening negamax + alpha-beta로 최대 4수 앞을 탐색합니다. AI 응답은 게임 보드가 리셋되면 무시합니다. 단, 완벽한 오목 엔진이나 렌주 금수 규칙 검증기는 아닙니다.
+- **Enter 한 번 제출:** 한글 IME 조합 확정에 사용된 Enter는 `compositionend` 직후 한 번만 제출되도록 처리했습니다. 별도 클릭 없이 다음 차례에 자동 포커스합니다.
+- **AI 끝말잇기 시작:** 매 판 확인된 대사전 단어 중 친숙한 단어를 무작위로 고르고, 바로 앞 판과 동일한 단어는 피합니다.
+- 출처/방식: Allis et al., *Go-Moku Solved by New Search Techniques* (AAAI Fall Symposium 1993); 공개 기술 참고: https://github.com/justa-cai/gomoku. 외부 엔진 코드는 복사하지 않고 자체 작성했습니다.
+
+## 2026-11-20 세 번째 수정: 낙서왕 실시간 WebSocket, 끝말잇기, 오목 AI
+
+- **낙서왕 실시간 그림:** 기존 `POST /api/rooms/:code/action`의 `stroke`/`clear` 대신 `ws(s)://호스트/ws/doodle?code=방코드&sid=사용자ID`로 WebSocket 연결을 유지합니다. 선을 그리는 중 약 45ms 간격으로 좌표 구간을 전달하고 상대방 캔버스에 즉시 그립니다. 채팅/정답 제출과 화가 넘기기도 WebSocket을 사용합니다. 나머지 게임의 방·턴 동기화는 기존 SSE를 유지합니다.
+- **복구 및 안전장치:** 새 참가자와 재접속 시 현재 획을 동기화합니다. 전송 순서와 라운드 번호를 검증하며 화가 이외의 그림 전송을 차단합니다. 각 프레임 길이를 제한하고 브라우저 출처를 확인합니다. 외부 npm 라이브러리 없이 Node.js 내장 HTTP 업그레이드와 RFC 6455 프레이밍을 구현했습니다.
+- **한글 Enter:** 조합 중 Enter를 누르면 합성 완료(`compositionend`) 직후 답안을 한 번 제출합니다. 다음 본인 차례에 입력창 자동 포커스가 돌아옵니다.
+- **시작 단어:** 컴퓨터 연습 시작 단어를 여러 익숙한 명사 중에서 추첨하며 직전 판의 시작 단어는 제외합니다. 이어질 단어가 없는 후보는 피하도록 사전 첫 음절 분포를 이용합니다.
+- **공격형 오목 AI:** 별도 Web Worker에서 위협 패턴 평가와 깊이 제한 negamax/알파–베타 탐색을 실행합니다. `gomoku-engine.mjs` 정적 모듈을 올바른 JS MIME 타입으로 제공하도록 서버에 `.mjs` 처리를 추가했습니다. 완전한 렌주 금수 검사나 강제 승리 전용 TSS 엔진은 아니며, 보드 국면에 따라 실력이 달라집니다.
+- **테스트:** `npm test`는 서버/클라이언트/오목 탐색/실시간 WebSocket 통합 검사를 실행합니다. 수동 브라우저 검사는 실제 서버 접속 대신 HTML을 가상 환경에 로드하여 Enter-IME와 입력 포커스·시작 단어를 검증했습니다. 실제 인터넷 브라우저에서 여러 명이 그리는 전체 사용자 경로는 배포 후 확인이 필요합니다.
+
+### 구현 참고
+- WebSockets Standard: https://websockets.spec.whatwg.org/
+- MDN WebSocket: https://developer.mozilla.org/en-US/docs/Web/API/WebSocket
+- Victor Allis, `Searching for Solutions in Games and Artificial Intelligence` (1994), Gomoku threat-space search: https://www.cs.vu.nl/~victor/thesis.html

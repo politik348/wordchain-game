@@ -41,14 +41,39 @@ test('Wordchain initializes round, validates lexicon and turn',async()=>{
  assert.equal((await state(a)).state.turn,a.players[0].sid);
 });
 
-test('Doodle accepts strokes only from the artist and chat from other player',async()=>{
+function connectDoodle(a,p){
+ const ws=new WebSocket(base.replace(/^http/,'ws')+`/ws/doodle?code=${a.code}&sid=${a.players[p].sid}`);
+ const messages=[];
+ ws.addEventListener('message',e=>messages.push(JSON.parse(e.data)));
+ return {ws,messages};
+}
+async function waitFor(condition,timeout=1800){
+ const started=Date.now();while(Date.now()-started<timeout){const v=condition();if(v)return v;await new Promise(r=>setTimeout(r,20));}
+ throw Error('Expected WebSocket state was not received');
+}
+test('Doodle streams strokes and clears over WebSockets instead of POST',async()=>{
  const a=await make('doodle',2);assert.equal(a.room.state.artist,a.players[0].sid);
- await action(a,0,'stroke',{points:[[.1,.2],[.3,.4]],color:'#29283f',width:5});
- assert.equal((await state(a)).state.strokes.length,1);
- await post(`/api/rooms/${a.code}/action`,{sid:a.players[1].sid,type:'stroke',payload:{points:[[.5,.5]]}},403);
- await action(a,1,'chat',{text:'바나나'});
+ const artist=connectDoodle(a,0),viewer=connectDoodle(a,1);
+ try{
+  await waitFor(()=>artist.messages.find(x=>x.type==='sync')&&viewer.messages.find(x=>x.type==='sync'));
+  artist.ws.send(JSON.stringify({type:'stroke',round:a.room.state.round,payload:{points:[[.1,.2],[.3,.4]],color:'#29283f',width:5}}));
+  const drawn=await waitFor(()=>viewer.messages.find(x=>x.type==='stroke'));
+  assert.equal(drawn.seq,1);assert.deepEqual(drawn.stroke.points,[[.1,.2],[.3,.4]]);
+  assert.equal((await state(a)).state.strokes.length,1);
+  viewer.ws.send(JSON.stringify({type:'stroke',round:a.room.state.round,payload:{points:[[.2,.2]]}}));
+  const refusal=await waitFor(()=>viewer.messages.find(x=>x.type==='error'));
+  assert.match(refusal.message,/화가만/);
+  await post(`/api/rooms/${a.code}/action`,{sid:a.players[0].sid,type:'stroke',payload:{points:[[.5,.5]]}},426);
+  artist.ws.send(JSON.stringify({type:'clear',round:a.room.state.round,payload:{}}));
+  const cleared=await waitFor(()=>viewer.messages.find(x=>x.type==='clear'));
+  assert.ok(cleared.seq>drawn.seq);
+  assert.equal((await state(a)).state.strokes.length,0);
+  viewer.ws.send(JSON.stringify({type:'chat',round:a.room.state.round,payload:{text:'이건 뭘까요?'}}));
+  await waitFor(()=>viewer.messages.find(x=>x.type==='error')?.message.includes('채팅')||false,100).catch(()=>{});
+  await new Promise(r=>setTimeout(r,80));
+  assert.equal((await state(a)).state.chat.at(-1).text,'이건 뭘까요?');
+ }finally{artist.ws.close();viewer.ws.close();}
 });
-
 test('Liar game keeps word hidden from liar, accepts clues, voting and final guess',async()=>{
  const a=await make('liar',3);const views=await Promise.all(a.players.map((_,i)=>state(a,i)));
  const liarIndex=views.findIndex(v=>v.state.isLiar);assert.ok(liarIndex>=0);assert.equal(views[liarIndex].state.myWord,null);
