@@ -50,7 +50,7 @@ const modeDescriptions={
  local:{title:'한 화면에서 함께',description:'같은 기기로 번갈아 놀아요',tag:'LOCAL',art:'local'}
 };
 function modeIcon(kind){
- if(kind==='cat')return '<svg viewBox="0 0 64 62" aria-hidden="true"><path d="M11 25L14 6 29 18 37 18 52 6 55 25" fill="#ffdeb6" stroke="#966e8e" stroke-width="3"/><ellipse cx="33" cy="34" rx="26" ry="23" fill="#ffdeb6" stroke="#966e8e" stroke-width="3"/>'+smile(33,34,.32)+'</svg>';
+ if(kind==='cat')return '<img class="pg-mode-cat-img" src="/assets/cat-hub-challenge-user.webp" alt="" width="780" height="780" loading="lazy" decoding="async">';
  if(kind==='online')return '<svg viewBox="0 0 64 62" aria-hidden="true">'+dot(20,26,16,'#ffcdcf')+dot(45,26,16,'#b8e0ff')+smile(20,26,.22)+smile(45,26,.22)+rect(2,42,60,12,7,'#ddd2ff')+'</svg>';
  if(kind==='local')return '<svg viewBox="0 0 64 62" aria-hidden="true">'+rect(10,16,44,34,9,'#ffe5a7','#c7a986',3)+dot(20,28,6,'#ef91ad')+dot(44,28,6,'#8ac5c7')+dot(32,41,6,'#b5a4e8')+'</svg>';
  return '<svg viewBox="0 0 64 62" aria-hidden="true">'+star(32,30,22)+dot(25,27,3,'#866889')+dot(39,27,3,'#866889')+'</svg>';
@@ -62,7 +62,7 @@ export function renderPregame({game,allowedModes=['online'],mode='online',settin
  const safeModes=allowedModes.filter(m=>modeDescriptions[m]);const chosenMode=safeModes.includes(mode)?mode:safeModes[0];
  const modes=safeModes.map(m=>{
   const d=modeDescriptions[m],on=chosenMode===m;
-  return '<button type="button" class="pg-mode-card'+(on?' is-active':'')+'" data-pg-mode="'+m+'" aria-pressed="'+on+'"><span class="pg-mode-art">'+modeIcon(m)+'</span><span class="pg-mode-copy"><strong>'+d.title+'</strong><small>'+d.description+'</small><em>'+d.tag+'</em></span><span class="pg-check">'+(on?'✓':'')+'</span></button>';
+  return '<button type="button" class="pg-mode-card'+(on?' is-active':'')+'" data-pg-mode="'+m+'" aria-pressed="'+on+'"><span class="pg-mode-art'+(m==='cat'?' pg-mode-art-cat':'')+'">'+modeIcon(m)+'</span><span class="pg-mode-copy"><strong>'+d.title+'</strong><small>'+d.description+'</small><em>'+d.tag+'</em></span><span class="pg-check">'+(on?'✓':'')+'</span></button>';
  }).join('');
  const controls=settings.length?settings.map(entry=>{
   const curr=String(entry.value??'');
