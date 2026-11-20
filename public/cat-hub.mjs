@@ -29,9 +29,9 @@ export function renderCatHub(games) {
         '<p>오목부터 끝말잇기까지. 마음에 드는 게임을 고르고 고양이와 한 판 승부해 보세요!</p>'+
         '<a href="#cat-game-choices" class="cat-hub-jump">게임 선택하기 <span aria-hidden="true">↓</span></a>'+
       '</div>'+
-      '<a class="cat-hub-art" href="#cat-game-choices" aria-label="고양이를 이겨라 배너 — 대전 게임 선택으로 이동">'+
-        '<img src="/assets/cat-feature-banner.png" alt="왕관을 쓴 고양이와 함께하는 고양이를 이겨라! 게임 배너" width="775" height="470" loading="eager" decoding="async">'+
-      '</a>'+
+      '<div class="cat-hub-character" aria-hidden="true">'+
+        '<img src="/assets/cat-feature-banner.png" alt="" width="775" height="470" loading="eager" decoding="async">'+
+      '</div>'+
     '</section>'+
     '<div class="cat-hub-heading" id="cat-game-choices"><h2>어떤 게임으로 도전할까요?</h2><span>6가지 고양이 대전</span></div>'+
     '<div class="cat-choice-grid">'+games.map((g,index)=>{
