@@ -57,7 +57,7 @@ function modeIcon(kind){
 }
 export const PRE_GAME_THEMES=palette;
 export const renderPregameArt=scene;
-export function renderPregame({game,allowedModes=['online'],mode='online',settings=[],rules=[],rooms=[],startAction='lobbyStart',joinAction='openJoin',intro='',backAction='home',showJoin=true}={}){
+export function renderPregame({game,allowedModes=['online'],mode='online',settings=[],rules=[],rooms=[],startAction='lobbyStart',joinAction='openJoin',intro='',backAction='home',showJoin=true,aiDifficulty='beginner'}={}){
  const id=game?.id||'wordchain',theme=palette[id]||palette.wordchain,title=E(game?.name||id);
  const safeModes=allowedModes.filter(m=>modeDescriptions[m]);const chosenMode=safeModes.includes(mode)?mode:safeModes[0];
  const modes=safeModes.map(m=>{
@@ -79,7 +79,13 @@ export function renderPregame({game,allowedModes=['online'],mode='online',settin
  '<nav class="pg-crumb"><button type="button" data-action="'+E(backAction)+'">← 게임 목록</button><span>MOYEO GAMES</span><span>/</span><b>'+title+'</b></nav>'+
  '<section class="pg-hero"><div class="pg-hero-copy"><span class="pg-eyebrow">✦ '+E(theme.tag)+' · MOYEO GAMES</span><h1>'+title+'<span class="pg-hero-spark">✦</span></h1><p>'+E(intro||game?.desc||'나만의 작은 게임 세상에서 신나는 모험을 시작하세요.')+'</p><div class="pg-hero-badges"><span>✧ 전용 캐릭터</span><span>◈ '+E(game?.badge||'게임 시작')+'</span><span>♡ 기분 좋은 한 판</span></div></div><div class="pg-art-wrap">'+scene(id)+'</div></section>'+
  '<section class="pg-config"><header class="pg-config-heading"><span>GAME SETUP</span><h2>어떤 모험을 시작할까?</h2><p>상대와 규칙을 고르면 준비 끝! 설정은 게임별로 기억해 둘게요.</p></header>'+
- '<div class="pg-config-grid"><section class="pg-config-panel"><div class="pg-column-title"><span class="pg-column-number">01</span><div><h3>누구와 플레이할까요?</h3><p>이 게임이 실제로 지원하는 방법만 표시해요.</p></div></div><div class="pg-modes">'+modes+'</div><div class="pg-mascot-tip"><span class="pg-tip-dot">♡</span><p>'+(chosenMode==='online'?'친구와 온라인으로 즐기려면 로그인한 다음 방을 만들어요.':chosenMode==='cat'?'고양이가 준비하고 있어요. 이번에는 이길 수 있을까요?':'천천히 시작해요. 새로운 기록이 기다리고 있어요!')+'</p></div></section>'+
+ '<div class="pg-config-grid"><section class="pg-config-panel"><div class="pg-column-title"><span class="pg-column-number">01</span><div><h3>누구와 플레이할까요?</h3><p>이 게임이 실제로 지원하는 방법만 표시해요.</p></div></div><div class="pg-modes">'+modes+'</div>'+
+ (chosenMode==='cat'?'<div class="pg-ai-difficulty"><div class="pg-ai-difficulty-title"><span>✦ 고양이 난이도</span><small>난이도가 높을수록 더 치밀하게 생각해요</small></div><div class="pg-ai-levels" role="group" aria-label="고양이 AI 난이도">'+
+ [{value:'beginner',label:'초급',desc:'똑똑한 연습 상대'},{value:'intermediate',label:'중급',desc:'날카로운 수싸움'},{value:'advanced',label:'고급',desc:'최강의 도전'}].map(option=>{
+ const active=aiDifficulty===option.value;
+ return '<button type="button" class="pg-ai-level'+(active?' is-active':'')+'" data-pg-difficulty="'+option.value+'" aria-pressed="'+active+'"><strong>'+option.label+'</strong><small>'+option.desc+'</small><span class="pg-ai-level-check">'+(active?'✓':'')+'</span></button>';
+ }).join('')+'</div></div>':'')+
+ '<div class="pg-mascot-tip"><span class="pg-tip-dot">♡</span><p>'+(chosenMode==='online'?'친구와 온라인으로 즐기려면 로그인한 다음 방을 만들어요.':chosenMode==='cat'?'고양이가 준비하고 있어요. 이번에는 이길 수 있을까요?':'천천히 시작해요. 새로운 기록이 기다리고 있어요!')+'</p></div></section>'+
  '<section class="pg-config-panel"><div class="pg-column-title"><span class="pg-column-number">02</span><div><h3>게임 규칙을 정해볼까요?</h3><p>실제로 작동하는 게임 옵션만 선택할 수 있어요.</p></div></div><div class="pg-settings">'+controls+'</div></section></div>'+
  '<div class="pg-launch"><div><strong>✦ '+E(modeDescriptions[chosenMode]?.title||'게임 시작')+'</strong><small>선택한 설정으로 새 게임을 시작합니다.</small></div><button type="button" class="pg-launch-button" data-action="'+E(startAction)+'">'+E(startLabel)+' <span aria-hidden="true">↗</span></button></div>'+
  (showJoin&&chosenMode==='online'?'<div class="pg-join"><span>친구에게 이미 방 코드를 받았나요?</span><button data-action="'+E(joinAction)+'" type="button">초대받은 방 입장하기 ↗</button></div>':'')+
