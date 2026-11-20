@@ -355,3 +355,21 @@ test('bankrupt player with a double bonus never receives another turn',()=>{
  assert.equal(s.players[s.turnIndex].id,'bob');
  assert.equal(s.winner,null);
 });
+
+test('v5 ordinary mode supports 20 rounds while endless still has no round limit',()=>{
+ const twenty=createGame({players,maxRounds:20});
+ assert.equal(twenty.maxRounds,20);
+ assert.equal(twenty.round,1);
+ const endless=createGame({players,maxRounds:0});
+ assert.equal(endless.maxRounds,0);
+});
+
+test('v5 online room preserves the selected 20-round length',async()=>{
+ const host='round20-host-'+Date.now();
+ const guest='round20-guest-'+Date.now();
+ const room=await request('/api/marble/rooms',{sid:host,name:'A',rounds:20,turnSeconds:30},201);
+ assert.equal(room.rounds,20);
+ await request(`/api/marble/rooms/${room.code}/join`,{sid:guest,name:'B'});
+ const result=await request(`/api/marble/rooms/${room.code}/start`,{sid:host});
+ assert.equal(result.state.maxRounds,20);
+});

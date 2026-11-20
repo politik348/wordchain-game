@@ -23,7 +23,7 @@ export const TILES=[
  city('로마',250,7,'🏛️'),city('뉴욕',270,7,'🗽')
 ];
 export const MAX_PLAYERS=4, START_CASH=1900, PASS_BONUS=220;
-export const ALLOWED_ROUNDS=[8,12,16], DEFAULT_ROUNDS=12;
+export const ALLOWED_ROUNDS=[8,12,16,20], DEFAULT_ROUNDS=12;
 export const ENDLESS_ROUNDS=0, BANK_LOAN=450, BANK_REPAY=540;
 export const FORTUNE_CARDS=[
  {title:'대박 굿즈 출시!',effect:'cash',amount:240,emoji:'🎁'},

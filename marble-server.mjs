@@ -60,7 +60,7 @@ export async function handleMarbleRequest(req,res,pathname){
   if(pathname==='/api/marble/rooms'&&req.method==='POST'){
    const data=await readJSON(req),account=await multiplayerAccount(req,data.sid||null),sid=account?.id||normSid(data.sid);
    let id;do{id=code();}while(rooms.has(id));
-   const r={code:id,host:sid,players:[{id:sid,name:account?.dripNickname||cleanName(data.name)}],state:null,rounds:[0,8,12,16].includes(Number(data.rounds))?Number(data.rounds):12,turnSeconds:[15,30,45].includes(Number(data.turnSeconds))?Number(data.turnSeconds):30,version:0,updatedAt:Date.now(),deadline:null,subscribers:new Set()};
+   const r={code:id,host:sid,players:[{id:sid,name:account?.dripNickname||cleanName(data.name)}],state:null,rounds:[0,8,12,16,20].includes(Number(data.rounds))?Number(data.rounds):12,turnSeconds:[15,30,45].includes(Number(data.turnSeconds))?Number(data.turnSeconds):30,version:0,updatedAt:Date.now(),deadline:null,subscribers:new Set()};
    rooms.set(id,r);reply(res,201,visible(r));return true;
   }
   const match=pathname.match(/^\/api\/marble\/rooms\/([A-Z0-9]{6})(?:\/(join|leave|start|action|events))?$/i);
