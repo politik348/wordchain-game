@@ -41,7 +41,7 @@ test('Pre-game detail uses shared illustrated UI and exposes only supported play
  const detailLine=app.split('\n').find(line=>line.startsWith('function detail(){'));
  assert.ok(detailLine);
  assert.match(detailLine,/pregameFor\(selection,false\)/);
- assert.match(app,/catGames=new Set\(\['omok','yut','wordchain','rummikub'\]\)/);
+ assert.match(app,/catGamesSupported=new Set\(\['omok','yut','wordchain','rummikub'\]\)/);
  assert.match(app,/data-pg-setting/);
  assert.match(app,/persistPregamePrefs/);
  assert.match(app,/b\.dataset\.action==='lobbyStart'/);
