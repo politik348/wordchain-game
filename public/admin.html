@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>모여게임즈 · 가입번호 발급</title>
+<style>
+:root{font-family:system-ui,'Noto Sans KR',sans-serif;color:#3f3445;background:#fff8ef}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px}.panel{width:min(460px,100%);padding:34px;border-radius:24px;background:#fff;box-shadow:0 18px 42px #59442d17;border:1px solid #f0e5db}h1{font-size:25px;letter-spacing:-1px;margin:0 0 10px}p{line-height:1.8;color:#8b7983;font-size:13px}form{display:grid;gap:17px;margin-top:25px}label{display:grid;gap:8px;font-size:13px;font-weight:800}input{border:1.5px solid #e8dfe0;padding:13px 14px;border-radius:12px;width:100%;font-size:14px}input:focus{outline:3px solid #ffe7d4;border-color:#f19b79}button{cursor:pointer;background:#f16f79;color:white;padding:14px 16px;font-size:14px;font-weight:900;border:0;border-radius:13px}button:disabled{opacity:.5}.result{background:#eaf7ec;padding:16px 18px;border-radius:16px;margin-top:18px;word-break:break-all}.result strong{font-size:27px;letter-spacing:5px;color:#38885e}.result button{margin-top:10px;background:#fff;color:#3a8558;border:1px solid #d8ebdb}.err{background:#fff0ed;color:#b34838;padding:12px;border-radius:12px;margin-top:12px}small{font-size:12px;color:#92858d}a{color:#bc6c6d}.notice{font-size:11px;color:#9b8e95;margin-top:20px}
+</style></head><body><main class="panel"><a href="/">← 모여게임즈</a><h1>🔐 회원가입 번호 발급</h1><p>운영자가 드립대학 닉네임별로 1회용 4자리 코드를 발급하는 화면입니다. 발급한 번호는 해당 사용자에게 직접 전달하세요.</p>
+<form id="issueForm">
+<label>운영자 인증키<input name="adminKey" type="password" minlength="24" required autocomplete="off" placeholder="Render 환경변수 MOYEO_ADMIN_KEY"></label>
+<label>가입시킬 사람의 드립대학 닉네임<input name="dripNickname" minlength="2" maxlength="24" autocomplete="off" required placeholder="정확한 닉네임"></label>
+<label>직접 지정할 4자리 번호 <small>(선택 사항 · 비워두면 무작위 발급)</small><input name="code" pattern="[0-9]{4}" maxlength="4" inputmode="numeric" placeholder="예: 0427"></label>
+<button type="submit" id="issueButton">해당 닉네임의 인증번호 발급</button></form>
+<div id="result" hidden class="result" aria-live="polite"></div><div id="error" hidden class="err" role="alert"></div>
+<p class="notice">관리자 인증키는 저장하거나 서버에 노출하지 않으며, 인증번호는 14일 내 1회만 사용할 수 있습니다. 인증번호를 재발급하면 이전 번호는 무효화됩니다.</p></main>
+<script>
+const form=document.getElementById('issueForm'),result=document.getElementById('result'),error=document.getElementById('error'),button=document.getElementById('issueButton');
+form.addEventListener('submit',async event=>{
+ event.preventDefault();button.disabled=true;result.hidden=true;error.hidden=true;
+ const data=Object.fromEntries(new FormData(form));
+ try{
+  const response=await fetch('/api/admin/invites',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+data.adminKey},body:JSON.stringify({dripNickname:data.dripNickname,code:data.code})});
+  const payload=await response.json();
+  if(!response.ok)throw Error(payload.error||'발급 실패');
+  result.replaceChildren();
+  const name=document.createElement('div');name.textContent=payload.dripNickname+'님의 1회용 코드';
+  const code=document.createElement('strong');code.textContent=payload.code;
+  const copy=document.createElement('button');copy.type='button';copy.textContent='4자리 번호 복사';copy.onclick=async()=>{await navigator.clipboard.writeText(payload.code);copy.textContent='복사했습니다';};
+  result.append(name,code,document.createElement('hr'),copy);result.hidden=false;
+  form.elements.code.value='';
+ }catch(e){error.textContent=e.message;error.hidden=false;}finally{button.disabled=false;}
+});
+</script></body></html>

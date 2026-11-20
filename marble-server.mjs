@@ -4,6 +4,7 @@
  */
 import {randomBytes, randomInt} from 'node:crypto';
 import {createGame,applyAction,chooseCatAction,surrender} from './public/marble/engine.mjs';
+import {multiplayerAccount} from './auth.mjs';
 
 const rooms=new Map();
 const MAX_BYTES=12_000;
@@ -56,31 +57,31 @@ export async function handleMarbleRequest(req,res,pathname){
   const u=new URL(req.url,'http://localhost');
   if(pathname==='/api/marble/health'&&req.method==='GET'){reply(res,200,{ok:true,rooms:rooms.size});return true;}
   if(pathname==='/api/marble/rooms'&&req.method==='POST'){
-   const data=await readJSON(req),sid=normSid(data.sid);
+   const data=await readJSON(req),account=await multiplayerAccount(req,data.sid||null),sid=account?.id||normSid(data.sid);
    let id;do{id=code();}while(rooms.has(id));
-   const r={code:id,host:sid,players:[{id:sid,name:cleanName(data.name)}],state:null,rounds:[8,12,16].includes(Number(data.rounds))?Number(data.rounds):12,turnSeconds:[15,30,45].includes(Number(data.turnSeconds))?Number(data.turnSeconds):30,version:0,updatedAt:Date.now(),deadline:null,subscribers:new Set()};
+   const r={code:id,host:sid,players:[{id:sid,name:account?.dripNickname||cleanName(data.name)}],state:null,rounds:[8,12,16].includes(Number(data.rounds))?Number(data.rounds):12,turnSeconds:[15,30,45].includes(Number(data.turnSeconds))?Number(data.turnSeconds):30,version:0,updatedAt:Date.now(),deadline:null,subscribers:new Set()};
    rooms.set(id,r);reply(res,201,visible(r));return true;
   }
   const match=pathname.match(/^\/api\/marble\/rooms\/([A-Z0-9]{6})(?:\/(join|leave|start|action|events))?$/i);
   if(!match)throw fail(404,'요청한 주소가 없습니다.');
   const r=get(match[1].toUpperCase()),op=match[2]||'';
   if(op==='events'&&req.method==='GET'){
-   const sid=normSid(u.searchParams.get('sid'));member(r,sid);
+   const sid=normSid(u.searchParams.get('sid'));await multiplayerAccount(req,sid);member(r,sid);
    res.writeHead(200,{'Content-Type':'text/event-stream; charset=utf-8','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});
    r.subscribers.add(res);res.write(`event: state\ndata: ${JSON.stringify(visible(r))}\n\n`);
    const ping=setInterval(()=>{try{res.write(': ping\n\n');}catch{}},20000);
    req.on('close',()=>{clearInterval(ping);r.subscribers.delete(res);});return true;
   }
   if(op===''&&req.method==='GET'){
-   member(r,normSid(u.searchParams.get('sid')));reply(res,200,visible(r));return true;
+   const sid=normSid(u.searchParams.get('sid'));await multiplayerAccount(req,sid);member(r,sid);reply(res,200,visible(r));return true;
   }
   if(req.method!=='POST')throw fail(405,'POST 요청이 필요합니다.');
-  const data=await readJSON(req),sid=normSid(data.sid);
+  const data=await readJSON(req),account=await multiplayerAccount(req,data.sid||null),sid=account?.id||normSid(data.sid);
   if(op==='join'){
    if(r.state&&!r.players.some(p=>p.id===sid))throw fail(400,'이미 진행 중인 게임입니다.');
    if(!r.players.some(p=>p.id===sid)){
     if(r.players.length>=4)throw fail(400,'4인 정원입니다.');
-    r.players.push({id:sid,name:cleanName(data.name)});
+    r.players.push({id:sid,name:account?.dripNickname||cleanName(data.name)});
    }
    notify(r);reply(res,200,visible(r));return true;
   }

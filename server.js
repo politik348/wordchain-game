@@ -8,6 +8,7 @@ import {acceptWebSocket} from './websocket-lite.mjs';
 import {applyYutMove,legalYutMoves} from './public/yut-solo-engine.mjs';
 import {startRummikub, sanitizeRummikub, actRummikub, tickRummikub, labelRummikub} from './rummikub/multiplayer.mjs';
 import {handleMarbleRequest} from './marble-server.mjs';
+import {handleAccountRequest,multiplayerAccount} from './auth.mjs';
 import {TURN_SECONDS, dictionaryIndex, replies, validReply} from './public/chain-utils.mjs';
 import { words as starterWords, startingWords, drawingWords, liarWords } from './data/words.js';
 // An imported full dictionary overrides the starter lexicon for multiplayer.
@@ -522,16 +523,19 @@ const MIME={'.webp':'image/webp','.png':'image/png','.html':'text/html; charset=
 const handler=async(req,res)=>{
   const u=new URL(req.url,'http://localhost');const pathname=decodeURIComponent(u.pathname);
   try {
+    if(await handleAccountRequest(req,res,pathname))return;
     if(await handleMarbleRequest(req,res,pathname))return;
     if(pathname==='/api/health')return simpleReply(res,200,{ok:true,rooms:rooms.size,dictionaryWords:DICT_COUNT,dictionarySource:'표준국어대사전 + 우리말샘'});
     if(pathname==='/api/dictionary'&&req.method==='GET'){res.setHeader('Cache-Control','public, max-age=86400');return simpleReply(res,200,words);}
     if(pathname==='/api/rooms'&&req.method==='GET'){
+      await multiplayerAccount(req);
       const game=u.searchParams.get('game');const list=[...rooms.values()].filter(r=>r.status==='lobby'&&(!game||r.game===game)).map(r=>({id:r.id,game:r.game,host:player(r,r.host)?.nick,count:r.players.length,max:GAME_INFO[r.game].max}));
       return simpleReply(res,200,{rooms:list.slice(-40).reverse()});
     }
     if(pathname==='/api/rooms'&&req.method==='POST'){
       const b=await body(req);if(!GAME_INFO[b.game])throw err(400,'게임을 선택하세요.');
-      const sid=b.sid?cleanSid(b.sid):id();const nick=cleanNick(b.nick);
+      const account=await multiplayerAccount(req,b.sid||null);
+      const sid=account?.id||(b.sid?cleanSid(b.sid):id()),nick=account?.dripNickname||cleanNick(b.nick);
       let code;do{code=randomBytes(4).toString('hex').slice(0,6).toUpperCase();}while(rooms.has(code));
       const r={id:code,game:b.game,options:makeOptions(b.game,b.options),host:sid,players:[{id:sid,nick,ready:true}],status:'lobby',state:null,notices:[],updatedAt:Date.now()};
       rooms.set(code,r);return simpleReply(res,201,{sid,room:sanitize(r,sid)});
@@ -540,21 +544,25 @@ const handler=async(req,res)=>{
     if(roomPath){
       const r=getRoom(roomPath[1]);const op=roomPath[2];
       if(!op&&req.method==='GET'){
-        const sid=cleanSid(u.searchParams.get('sid'));requireMember(r,sid);return simpleReply(res,200,{room:sanitize(r,sid)});
+        const sid=cleanSid(u.searchParams.get('sid'));await multiplayerAccount(req,sid);requireMember(r,sid);return simpleReply(res,200,{room:sanitize(r,sid)});
       }
       if(req.method!=='POST')throw err(405,'지원하지 않는 요청입니다.');
-      const b=await body(req);const sid=b.sid?cleanSid(b.sid):id();
+      const b=await body(req);const account=await multiplayerAccount(req,b.sid||null),sid=account?.id||(b.sid?cleanSid(b.sid):id());
       if(op==='join'){
         if(!player(r,sid)){
           if(r.status!=='lobby')throw err(400,'진행 중인 방에는 참가할 수 없습니다.');
           if(r.players.length>=GAME_INFO[r.game].max)throw err(400,'방이 가득 찼습니다.');
-          r.players.push({id:sid,nick:cleanNick(b.nick),ready:false});
+          r.players.push({id:sid,nick:account?.dripNickname||cleanNick(b.nick),ready:false});
         }
         touch(r,`${player(r,sid).nick}님이 입장했습니다.`);
         return simpleReply(res,200,{sid,room:sanitize(r,sid)});
       }
       requireMember(r,sid);
-      if(op==='action'){act(r,sid,clampText(b.type,40),b.payload||{});return simpleReply(res,200,{room:sanitize(r,sid)});}
+      if(op==='action'){
+        const action=clampText(b.type,40);
+        if(account && action==='rename')throw err(403,'가입한 드립대학 닉네임은 게임 중 변경할 수 없습니다.');
+        act(r,sid,action,b.payload||{});return simpleReply(res,200,{room:sanitize(r,sid)});
+      }
       if(op==='leave'){
         const wasHost=r.host===sid;
         r.players=r.players.filter(p=>p.id!==sid);
@@ -567,6 +575,7 @@ const handler=async(req,res)=>{
     }
     if(pathname==='/api/events'&&req.method==='GET'){
       const sid=cleanSid(u.searchParams.get('sid')),code=clampText(u.searchParams.get('code'),12).toUpperCase();
+      await multiplayerAccount(req,sid);
       const r=getRoom(code);requireMember(r,sid);
       res.writeHead(200,{'Content-Type':'text/event-stream; charset=utf-8','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});
       res.write(': connected\n\n');
@@ -592,13 +601,15 @@ const handler=async(req,res)=>{
 };
 export const server=http.createServer(handler);
 // Drawing, erasing, guessing and skipping are persistent bidirectional WebSocket messages.
-server.on('upgrade',(req,socket,head)=>{
+server.on('upgrade',async(req,socket,head)=>{
  try{
   const u=new URL(req.url,'http://localhost');
   if(u.pathname!=='/ws/doodle')throw err(404,'WebSocket 경로가 아닙니다.');
   // Browser clients must be same-origin; sid identifies an existing room member.
   if(req.headers.origin&&new URL(req.headers.origin).host!==req.headers.host)throw err(403,'출처가 올바르지 않습니다.');
-  const sid=cleanSid(u.searchParams.get('sid')),r=getRoom(u.searchParams.get('code'));
+  const sid=cleanSid(u.searchParams.get('sid'));
+  await multiplayerAccount(req,sid);
+  const r=getRoom(u.searchParams.get('code'));
   requireMember(r,sid);
   if(r.game!=='doodle')throw err(403,'낙서왕 전용 연결입니다.');
   const clients=doodleSockets.get(r.id)||new Set();
