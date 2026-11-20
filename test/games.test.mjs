@@ -129,11 +129,22 @@ test('Bell awards or penalizes ring when cards are shown',async()=>{
  const after=await state(a);assert.ok(after.state.scores[a.players[0].sid]>=0);
 });
 
-test('Yut turn performs a throw and move or skips back-do',async()=>{
- const a=await make('yut',2);
- assert.equal(a.room.state.pieces[a.players[0].sid].length,4);
- await action(a,0,'roll');const s=(await state(a)).state;
- if(s.pending!==null){await action(a,0,'move',{index:0});}
+test('Yut collects bonus throws, then allows selected toss movement',async()=>{
+ const a=await make('yut',2),sidA=a.players[0].sid;
+ assert.equal(a.room.state.pieces[sidA].length,4);
+ let s=(await state(a)).state,attempts=0;
+ while(s.turn===sidA&&s.phase==='throw'&&attempts++<26){
+  await action(a,0,'roll');s=(await state(a)).state;
+ }
+ if(s.turn===sidA&&s.phase==='move'){
+  assert.ok(s.rolls.length>0);
+  const index=s.rolls.findIndex(n=>n>0);
+  if(index>=0){
+   await action(a,0,'move',{index:0,rollIndices:[index]});
+   s=(await state(a)).state;
+   assert.ok(Array.isArray(s.rolls));
+  }
+ }
  assert.equal((await state(a)).status,'playing');
 });
 
