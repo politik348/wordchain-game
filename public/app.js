@@ -3,7 +3,8 @@ import {configureRummikubUI, renderRummikubGame} from './rummikub/ui.mjs?v=20261
 import {createSoloRummikub, soloRoom, soloPlayRummikub, soloTickRummikub, catPlayRummikub} from './rummikub/solo.mjs';
 import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove, yutSelectedSteps, usableYutRolls} from './yut-solo-engine.mjs?v=20261120yut4';
 import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut4';
-import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut4';
+import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut5';
+import {installYutPowerControl} from './yut-power.mjs?v=20261120yut5';
 import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261120banner1';
 import {createMembershipUI} from './auth-ui.mjs?v=20261120statusrefresh1';
 const GAMES=[
@@ -262,7 +263,7 @@ function yutGame(){
  const status=`<div class="game-topline"><span class="stage-badge">🎲 ${esc(nick(s.turn))}님 차례</span>${room.status==='playing'?timeBar(s.deadline,room.options?.turnSeconds):''}<span class="time-badge">${esc(s.rollName||'윷놀이')}</span></div>`;
  const progress=renderYutPieceStats(s.pieces,names,user.sid);
  const guide=`<div class="game-prompt"><strong>${room.status==='finished'?'대국 종료':canThrow?'추가 던지기를 모두 마치세요!':canMove?'윷 결과와 말을 골라 이동 경로를 확인하세요.':esc(nick(s.turn))+'님이 플레이 중입니다.'}</strong></div>`;
- const throwUi=renderYutThrow({roll:s.lastRoll??null,rolling:yutRolling?.scope==='room'&&yutRolling?.roomId===room.id,actor:canThrow?'당신 차례입니다 · 던지기':canMove?'던지기 완료 · 이동 단계':`현재: ${nick(s.turn)}`,showAction:canThrow,action:'roll'});
+ const throwUi=renderYutThrow({roll:s.lastRoll??null,rolling:yutRolling?.scope==='room'&&yutRolling?.roomId===room.id,actor:canThrow?'당신 차례입니다 · 던지기':canMove?'던지기 완료 · 이동 단계':`현재: ${nick(s.turn)}`,showAction:canThrow,action:'roll',power:yutRolling?.scope==='room'?yutRolling.power:0});
  const rolls=renderYutRollTray({rolls:s.rolls||[],phase:s.phase,chosen:choice.indices,action:'yutRollChoice',myTurn:mineTurn});
  const board=renderYutBoard({pieces:s.pieces,me:user.sid,turn:s.turn,steps:canMove?choice.steps:null,active:room.status==='playing',action:'yutPick',routeAction:'yutRoute',selected,lastMove:s.lastMove,labels:names});
  const picker=canMove?renderYutRouteChooser(s.pieces[user.sid],choice.steps,selected,'yutRoute'):'';
@@ -730,16 +731,20 @@ async function yutMoveRoute(mode,index,shortcut){
  if(isSolo)soloYutApply('player',index,shortcut,indices);
  else await act('move',{index,shortcut,rollIndices:indices});
 }
-async function startYutThrow(mode){
+async function startYutThrow(mode,power=55){
  const isSolo=mode==='solo',s=isSolo?solo:room?.state;
  if(yutRolling||!s||s.phase!=='throw'||(isSolo?s.turn!=='player'||s.finished:s.turn!==user.sid||room.status!=='playing'))return;
- const oldSolo=solo,oldRoom=room?.id;
- yutRouteChoice=null;yutRollSelection=null;yutRolling={scope:mode,roomId:oldRoom};render();
- await new Promise(resolve=>setTimeout(resolve,730));
- const stillHere=isSolo?solo===oldSolo&&view==='solo':room?.id===oldRoom&&room.status==='playing';
- if(stillHere){if(isSolo)soloYutRoll();else await act('roll');}
- yutRolling=null;
- if(isSolo?view==='solo':room?.id===oldRoom)render();
+ const oldSolo=solo,oldRoom=room?.id,safePower=Math.max(5,Math.min(100,Math.round(Number(power)||55)));
+ yutRouteChoice=null;yutRollSelection=null;yutRolling={scope:mode,roomId:oldRoom,power:safePower};render();
+ try{
+  // Holding changes how far/long the sticks fly, not the probability of Do/Gae/Geol/Yut/Mo.
+  await new Promise(resolve=>setTimeout(resolve,810+safePower*4));
+  const stillHere=isSolo?solo===oldSolo&&view==='solo':room?.id===oldRoom&&room.status==='playing';
+  if(stillHere){if(isSolo)soloYutRoll();else await act('roll');}
+ }finally{
+  if(yutRolling?.scope===mode&&yutRolling?.roomId===oldRoom)yutRolling=null;
+  if(isSolo?view==='solo'&&solo===oldSolo:room?.id===oldRoom)render();
+ }
 }
 function scrollGames(){document.getElementById('gamesSection')?.scrollIntoView({behavior:'smooth'});}
 function rkScheduleCat(){
@@ -762,6 +767,13 @@ configureRummikubUI({
   }
   return false;
  }
+});
+const yutPowerControl=installYutPowerControl({
+ canThrow(mode){
+  const s=mode==='solo'?solo:room?.state;
+  return !yutRolling&&s?.phase==='throw'&&(mode==='solo'?solo?.game==='yut'&&s.turn==='player'&&!s.finished:room?.game==='yut'&&room.status==='playing'&&s.turn===user.sid);
+ },
+ onThrow(mode,power){void startYutThrow(mode,power);}
 });
 document.addEventListener('click',async e=>{
  const g=e.target.closest('[data-game]');if(g){if(g.dataset.game==='marble'){location.href='/marble/index.html';return;}if(g.dataset.game==='gamehell'){location.href='/gamehell/index.html';return;}if(g.dataset.game==='tetris'){location.href='/tetris/index.html';return;}if(g.dataset.game==='logic'){location.href='/logic/index.html';return;}selection=g.dataset.game;view='detail';await refreshRooms(selection);render();window.scrollTo(0,0);return;}
@@ -791,7 +803,11 @@ document.addEventListener('click',async e=>{
  if(action==='place'){await act('place',{x:Number(b.dataset.x),y:Number(b.dataset.y)});return;}
  if(action==='night'||action==='mafiaVote'||action==='liarVote'){await act(action==='mafiaVote'?'vote':action==='liarVote'?'vote':'night',{target:b.dataset.target});return;}
  if(action==='drawColor'){drawColor=b.dataset.color;document.querySelectorAll('.color-dot').forEach(el=>el.classList.toggle('selected',el.dataset.color===drawColor));return;}
- if(action==='roll'){await startYutThrow('room');return;}
+ if(action==='roll'||action==='soloYutRoll'){
+  if(yutPowerControl.shouldIgnoreClick())return;
+  // Accessible fallback for screen readers and conventional button activation.
+  await startYutThrow(action==='roll'?'room':'solo',55);return;
+ }
   if(action==='yutRollChoice'){yutSelectRoll('room',Number(b.dataset.rollIndex));return;}
   if(action==='soloYutRollChoice'){yutSelectRoll('solo',Number(b.dataset.rollIndex));return;}
  if(action==='yutPick'){await yutMovePick('room',Number(b.dataset.index));return;}
@@ -819,7 +835,7 @@ document.addEventListener('click',async e=>{
  if(action==='soloReset'){soloStart(selection);return;}
  if(action==='backCatHub'){view='catHub';solo=null;render();window.scrollTo(0,0);return;}
  if(action==='soloPlace'){soloPlace(Number(b.dataset.x),Number(b.dataset.y));return;}
- if(action==='soloYutRoll'){await startYutThrow('solo');return;}
+ if(action==='soloYutRoll')return;
  if(action==='soloYutMove'){soloYutApply('player',Number(b.dataset.index),b.dataset.shortcut!=='0');return;}
  if(b.hasAttribute('data-stone-style-choice')){
    const style=b.dataset.stoneStyleChoice;if(style!=='normal'&&style!=='crazy')return;
