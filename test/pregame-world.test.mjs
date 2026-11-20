@@ -78,8 +78,8 @@ test('main game modes, option saving, start dispatch and lobby chat all use real
  assert.match(app,/lobbyChat:'lobbyChat'/);
  assert.match(server,/if\(type==='lobbyChat'\)/);
  assert.match(server,/st!=='lobby'/);
- assert.match(index,/pregame\.css\?v=20261120pg3/);
- assert.match(index,/app\.js\?v=20261120pg3/);
+ assert.match(index,/pregame\.css\?v=20261120catlevels1/);
+ assert.match(index,/app\.js\?v=20261120catlevels1/);
 });
 
 test('standalone pregame starts real engines with selections, and retains Marble v5 screen',()=>{
