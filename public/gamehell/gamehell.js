@@ -20,18 +20,63 @@ const modes=[
   {id:'chain',title:'찰싹친구들',emoji:'🧲',cat:'timing',desc:'움직이는 친구를 정확히 맞춰 고양이 행렬을 완성!',hint:'움직이는 친구가 중심에 올 때 터치',tip:'중앙에 가까울수록 추가 보너스!',color:'#ffc98f',target:1300}
 ];
 const labels={timing:'타이밍',action:'액션',control:'컨트롤'};
-const skins=[{id:'cheese',name:'치즈냥',cost:0,color:'#ffbd78'},{id:'peach',name:'복숭냥',cost:15,color:'#ffc1c8'},{id:'mint',name:'민트냥',cost:40,color:'#a9e9ca'},{id:'space',name:'우주냥',cost:90,color:'#a5b4fc'}];
+const skins=(Array.isArray(window.MOYEO_CHARACTERS)?window.MOYEO_CHARACTERS:[]).filter(c=>c&&typeof c.id==='string'&&/^[a-z0-9_-]+$/i.test(c.id)).map(c=>({...c,cost:Math.max(0,Math.floor(Number(c.price)||0)),color:c.color||'#ffbd78',image:c.image||''}));
+if(!skins.length)skins.push({id:'cheese',name:'치즈냥',cost:0,color:'#ffbd78',emoji:'🐱',image:''});
 const numbers=n=>Math.floor(n).toLocaleString('ko-KR');
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),rand=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.floor(Math.random()*a.length)];
 let save={best:{},plays:0,sound:true,coins:0,skin:'cheese',unlocked:['cheese']};
 try{save={...save,...JSON.parse(localStorage.getItem(storeKey)||'{}')}}catch{}
-if(!save.best||typeof save.best!=='object')save.best={};if(!Array.isArray(save.unlocked))save.unlocked=['cheese'];if(!skins.some(s=>s.id===save.skin))save.skin='cheese';save.coins=Math.max(0,Number(save.coins)||0);
+if(!save.best||typeof save.best!=='object')save.best={};
+if(!Array.isArray(save.unlocked))save.unlocked=[skins[0].id];
+save.unlocked=[...new Set([skins[0].id,...save.unlocked.filter(id=>skins.some(s=>s.id===id))])];
+if(!skins.some(s=>s.id===save.skin&&save.unlocked.includes(s.id)))save.skin=skins[0].id;
+save.coins=Math.max(0,Math.floor(Number(save.coins)||0));
 function persist(){try{localStorage.setItem(storeKey,JSON.stringify(save))}catch{}}
-function skinColor(){return skins.find(s=>s.id===save.skin)?.color||skins[0].color}
-function renderSkins(msg){$('#coinBalance').textContent=`${numbers(save.coins)} 별조각`;document.documentElement.style.setProperty('--cat-skin',skinColor());
-  $('#skinList').replaceChildren(...skins.map(s=>{const isUnlocked=save.unlocked.includes(s.id);const btn=document.createElement('button');btn.type='button';btn.className=`skin-btn${save.skin===s.id?' active':''}${isUnlocked?'':' locked'}`;btn.title=isUnlocked?`${s.name} 선택`:`${s.name} ${s.cost} 별조각으로 해금`;btn.innerHTML=`<span class="skin-swatch" style="background:${s.color}">${isUnlocked?'ᴗ':'🔒'}</span><span class="skin-name">${isUnlocked?s.name:s.cost+'★'}</span>`;btn.addEventListener('click',()=>{if(isUnlocked){save.skin=s.id;renderSkins(`${s.name} 선택 완료!`);persist();beep(620,.13,'triangle')}else if(save.coins>=s.cost){save.coins-=s.cost;save.unlocked.push(s.id);save.skin=s.id;persist();renderSkins(`${s.name} 획득!`);beep(860,.19,'triangle')}else{renderSkins(`${numbers(s.cost-save.coins)}개만 더 모으면 해금!`);beep(190,.14,'triangle')}});return btn}));
-  if(msg)$('#skinMessage').textContent=msg;
+function currentCharacter(){return skins.find(s=>s.id===save.skin)||skins[0]}
+function skinColor(){return currentCharacter().color}
+const charImages=new Map();
+function loadCharacterImage(character){if(!character.image)return null;if(charImages.has(character.id))return charImages.get(character.id);
+  const img=new Image();const state={img,ready:false};charImages.set(character.id,state);
+  img.onload=()=>{state.ready=true;renderSkins()};img.onerror=()=>{state.ready=false};img.src=character.image;return state;
 }
+function avatar(char,extraClass=''){const wrap=document.createElement('div');wrap.className=`character-avatar ${extraClass}`;wrap.style.setProperty('--avatar-color',char.color);
+  const state=loadCharacterImage(char);if(state?.ready){const img=document.createElement('img');img.src=char.image;img.alt='';wrap.append(img)}else{const face=document.createElement('span');face.className='avatar-face';face.textContent=char.emoji||'🐱';wrap.append(face)}return wrap}
+let shopFilter='all';
+function shopMessage(msg){$('#shopNotice').textContent=msg;$('#skinMessage').textContent=msg}
+function buyOrEquip(id){const s=skins.find(s=>s.id===id);if(!s)return;
+  if(save.unlocked.includes(id)){save.skin=id;persist();renderSkins();shopMessage(`${s.name} 장착 완료!`);beep(650,.12,'triangle');return}
+  if(save.coins<s.cost){shopMessage(`별조각이 ${numbers(s.cost-save.coins)}개 부족해요!`);beep(190,.13,'triangle');return}
+  // 한 번만 결제하고 영구 보유, 장착은 별도 행동
+  save.coins-=s.cost;save.unlocked.push(id);persist();renderSkins();shopMessage(`${s.name} 구매 완료! 이제 '장착하기'를 눌러주세요.`);beep(850,.2,'triangle');
+}
+function renderShop(){const el=$('#characterGrid');if(!el)return;$('#shopBalance').textContent=numbers(save.coins);
+  const owned=skins.filter(s=>save.unlocked.includes(s.id)).length;$('#ownedCount').textContent=`${owned} / ${skins.length} 수집`;
+  $('#ownedProgress').style.width=`${100*owned/skins.length}%`;
+  const choices=skins.filter(s=>shopFilter==='all'||(shopFilter==='owned'?save.unlocked.includes(s.id):!save.unlocked.includes(s.id)));
+  el.replaceChildren(...choices.map(s=>{const own=save.unlocked.includes(s.id),selected=save.skin===s.id;
+    const card=document.createElement('article');card.className=`character-card${selected?' equipped':''}`;
+    const mark=document.createElement('span');mark.className='character-status';mark.textContent=selected?'장착 중':own?'보유':'미보유';card.append(mark,avatar(s));
+    const title=document.createElement('h3');title.textContent=s.name;const desc=document.createElement('p');desc.textContent=s.detail||'새로운 모여 친구';
+    const price=document.createElement('div');price.className='character-price';price.textContent=own?'✓ 영구 보유':`★ ${numbers(s.cost)}`;
+    const btn=document.createElement('button');btn.type='button';btn.className='character-action';btn.disabled=selected;btn.textContent=selected?'장착 완료':own?'장착하기':`★ ${numbers(s.cost)} 구매`;
+    btn.addEventListener('click',()=>buyOrEquip(s.id));card.append(title,desc,price,btn);return card}));
+  $$('.shop-tab').forEach(b=>b.classList.toggle('active',b.dataset.shopFilter===shopFilter));
+}
+function renderSkins(msg){$('#coinBalance').textContent=`${numbers(save.coins)} 별조각`;$('#headerStars').textContent=numbers(save.coins);
+  document.documentElement.style.setProperty('--cat-skin',skinColor());
+  $('#equippedName').textContent=currentCharacter().name;
+  const display=avatar(currentCharacter(),'mini-avatar');display.id='equippedAvatar';$('#equippedAvatar').replaceWith(display);
+  if(msg)$('#skinMessage').textContent=msg;
+  renderShop();
+}
+function openShop(){if(phase==='playing')pauseGame();$('#shopModal').hidden=false;document.body.classList.add('shop-visible');renderShop();$('#closeShopBtn').focus()}
+function closeShop(){$('#shopModal').hidden=true;document.body.classList.remove('shop-visible');$('#openShopBtn').focus()}
+$('#openShopBtn').addEventListener('click',openShop);
+$('#shopHeaderBtn').addEventListener('click',openShop);
+$('#closeShopBtn').addEventListener('click',closeShop);
+$('#shopBackdrop').addEventListener('click',closeShop);
+$$('.shop-tab').forEach(b=>b.addEventListener('click',()=>{shopFilter=b.dataset.shopFilter;renderShop()}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#shopModal').hidden){e.preventDefault();closeShop()}},true);
 let chosen=modes[0],duration=45,phase='ready',g=null,keysDown=new Set(),pointerDown=false,mouseX=W/2,mouseY=H/2,activeFilter='all',lastFrame=0,toastTimer=0;
 let audioCtx=null;
 function beep(freq=550,len=.085,type='sine',vol=.05){if(!save.sound)return;try{audioCtx??=new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();const now=audioCtx.currentTime;const o=audioCtx.createOscillator(),v=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,now);o.frequency.exponentialRampToValueAtTime(Math.max(40,freq*.67),now+len);v.gain.setValueAtTime(vol,now);v.gain.exponentialRampToValueAtTime(.0001,now+len);o.connect(v);v.connect(audioCtx.destination);o.start(now);o.stop(now+len)}catch{}}
@@ -46,7 +91,7 @@ function line(x1,y1,x2,y2,color,w=3){ctx.strokeStyle=color;ctx.lineWidth=w;ctx.l
 function txt(text,x,y,size=18,color='#fff',align='center',weight=900){ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillStyle=color;ctx.font=`${weight} ${size}px 'Noto Sans KR',sans-serif`;ctx.fillText(text,x,y)}
 function path(points,color,width=3){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.stroke()}
 function star(x,y,r=11,color='#ffe37b',rot=-Math.PI/2){ctx.fillStyle=color;ctx.beginPath();for(let i=0;i<10;i++){const a=rot+i*Math.PI/5;const rr=i%2?r*.46:r;const xx=x+Math.cos(a)*rr,yy=y+Math.sin(a)*rr;i?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy)}ctx.closePath();ctx.fill()}
-function cat(x,y,r=23,{color=null,eyes=true,rotate=0}={}){ctx.save();ctx.translate(x,y);ctx.rotate(rotate);ctx.lineJoin='round';ctx.lineWidth=Math.max(2,r*.12);ctx.strokeStyle='#6b4059';ctx.fillStyle=color||skinColor();ctx.beginPath();ctx.moveTo(-r*.85,-r*.45);ctx.lineTo(-r*.73,-r*1.15);ctx.lineTo(-r*.2,-r*.75);ctx.arc(0,0,r,Math.PI*1.25,Math.PI*1.75);ctx.lineTo(r*.25,-r*.75);ctx.lineTo(r*.73,-r*1.15);ctx.lineTo(r*.85,-r*.45);ctx.quadraticCurveTo(r*1.02,r*.9,0,r);ctx.quadraticCurveTo(-r*1.1,r*.87,-r*.85,-r*.45);ctx.closePath();ctx.fill();ctx.stroke();ctx.strokeStyle='#f98da0';ctx.lineWidth=r*.1;line(-r*.55,-r*.68,-r*.57,-r*.82,'#ef88a3',r*.08);line(r*.55,-r*.68,r*.57,-r*.82,'#ef88a3',r*.08);if(eyes){circ(-r*.38,-r*.08,r*.09,'#3d3446');circ(r*.38,-r*.08,r*.09,'#3d3446');circ(-r*.59,r*.35,r*.16,'#ff8b98');circ(r*.59,r*.35,r*.16,'#ff8b98');ctx.strokeStyle='#583b52';ctx.lineWidth=Math.max(1.4,r*.07);ctx.beginPath();ctx.arc(0,r*.24,r*.19,.1,Math.PI-.1);ctx.stroke();}ctx.restore()}
+function cat(x,y,r=23,{color=null,eyes=true,rotate=0}={}){ctx.save();ctx.translate(x,y);ctx.rotate(rotate);if(!color){const sprite=loadCharacterImage(currentCharacter());if(sprite?.ready){ctx.drawImage(sprite.img,-r*1.25,-r*1.32,r*2.5,r*2.64);ctx.restore();return}}ctx.lineJoin='round';ctx.lineWidth=Math.max(2,r*.12);ctx.strokeStyle='#6b4059';ctx.fillStyle=color||skinColor();ctx.beginPath();ctx.moveTo(-r*.85,-r*.45);ctx.lineTo(-r*.73,-r*1.15);ctx.lineTo(-r*.2,-r*.75);ctx.arc(0,0,r,Math.PI*1.25,Math.PI*1.75);ctx.lineTo(r*.25,-r*.75);ctx.lineTo(r*.73,-r*1.15);ctx.lineTo(r*.85,-r*.45);ctx.quadraticCurveTo(r*1.02,r*.9,0,r);ctx.quadraticCurveTo(-r*1.1,r*.87,-r*.85,-r*.45);ctx.closePath();ctx.fill();ctx.stroke();ctx.strokeStyle='#f98da0';ctx.lineWidth=r*.1;line(-r*.55,-r*.68,-r*.57,-r*.82,'#ef88a3',r*.08);line(r*.55,-r*.68,r*.57,-r*.82,'#ef88a3',r*.08);if(eyes){circ(-r*.38,-r*.08,r*.09,'#3d3446');circ(r*.38,-r*.08,r*.09,'#3d3446');circ(-r*.59,r*.35,r*.16,'#ff8b98');circ(r*.59,r*.35,r*.16,'#ff8b98');ctx.strokeStyle='#583b52';ctx.lineWidth=Math.max(1.4,r*.07);ctx.beginPath();ctx.arc(0,r*.24,r*.19,.1,Math.PI-.1);ctx.stroke();}ctx.restore()}
 function heart(x,y,s=11){ctx.save();ctx.translate(x,y);ctx.scale(s/12,s/12);ctx.fillStyle='#ff718e';ctx.beginPath();ctx.moveTo(0,8);ctx.bezierCurveTo(-22,-4,-7,-15,0,-7);ctx.bezierCurveTo(7,-15,22,-4,0,8);ctx.fill();ctx.restore()}
 function scenery(theme='#2b396f',t=0){const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,theme);grad.addColorStop(1,'#111d42');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);for(let i=0;i<42;i++){const x=(i*91+37)%W,y=((i*139+23+Math.floor(t*(i%3+1)*7))%H);circ(x,y,i%5?1.5:2.5,'#ffffff35')}for(let i=0;i<7;i++){const x=((i*87+23)%510)-42,y=(i*110+Math.sin(t*.4+i)*14)%H;circ(x,y,25+i%3*12,'#ffffff0d');circ(x+22,y+8,20,'#ffffff0d')}}
 function ground(y=500,c='#71528c'){rect(0,y,W,H-y,c);rect(0,y,W,8,'#f3c5f1')}
