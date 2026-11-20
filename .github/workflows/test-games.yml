@@ -1,7 +1,7 @@
 name: Test games
 on:
   push:
-    branches: [main, feature/cat-ai-yut-omok-styles-20261120]
+    branches: [main]
   pull_request:
     branches: [main]
 jobs:
@@ -16,3 +16,11 @@ jobs:
       - run: node --check public/app.js
       - run: node --check public/yut-solo-engine.mjs
       - run: node --check public/yut-solo-ui.mjs
+      - run: node --check server.js
+      - run: node --check marble-server.mjs
+      - run: node --check rummikub/multiplayer.mjs
+      - run: node --check public/rummikub/ui.mjs
+      - run: node --check public/rummikub/engine.mjs
+      - run: node --check public/rummikub/solo.mjs
+      - run: node --check public/marble/app.mjs
+      - run: node --check public/marble/engine.mjs

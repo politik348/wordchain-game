@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>모여게임즈 · 루미큐브 (고양이를 이겨라)</title>
+<link rel="stylesheet" href="./rummikub.css">
+<style>
+ body{background:#fff8f5;margin:0;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',Arial,sans-serif;color:#423549}
+ .topbar{max-width:1020px;margin:auto;padding:19px 20px;display:flex;justify-content:space-between;align-items:center}
+ .brand{font-size:21px;font-weight:900}.brand span{color:#ed6c91}
+ .note{max-width:1010px;margin:0 auto 16px;padding:0 18px;font-size:12px;color:#92828d}
+ #app{max-width:980px;margin:10px auto 35px;padding:25px;background:white;border-radius:25px;box-shadow:0 4px 24px #916b6b13}
+ button{font:inherit}.reset{background:#ffebf1;border:1px solid #f2bbcd;color:#a34b72;border-radius:11px;padding:10px 13px;font-size:12px;cursor:pointer}
+ #toast{position:fixed;bottom:15px;right:15px;z-index:5}.toast{background:#453747;color:white;padding:12px 16px;border-radius:12px;margin-top:9px;max-width:330px}
+ .time-badge{background:#ffeefa;padding:9px;border-radius:20px;font-size:12px}
+ @media(max-width:650px){#app{padding:9px;border-radius:15px;margin:10px 8px}}
+</style>
+</head><body>
+<header class="topbar"><div class="brand">✳ 모여<span>게임즈</span> <small>· 루미큐브</small></div><button id="reset" class="reset">↻ 새 게임</button></header>
+<p class="note">독립 실행 데모 · 고양이와 연습하기 / 멀티플레이는 통합 후 기존 모여게임즈 게임방에서 작동합니다.</p>
+<main id="app"></main><div id="toast" role="status"></div>
+<script type="module" src="./demo.mjs"></script>
+</body></html>
