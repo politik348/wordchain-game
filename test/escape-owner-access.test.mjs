@@ -24,7 +24,7 @@ async function post(route,body,adminSecret){
  return {status:response.status,data:await response.json(),cookie:response.headers.get('set-cookie')};
 }
 test('escape content files are private while the entry and owner-approval pages are public',async()=>{
- for(const url of ['/escape/index.html','/escape/game.js','/escape/styles.css']){
+ for(const url of ['/escape/index.html','/escape/game.js','/escape/room3d.js','/escape/styles.css']){
   const denied=await get(url);
   assert.equal(denied.status,401,url);
   assert.ok(!String(denied.data).includes('gameScreen'),url);
@@ -52,7 +52,7 @@ test('admin-only owner consent is bound to registered account and can be revoked
  const initial=await get('/api/escape/access',cookie);
  assert.equal(initial.data.authenticated,true);
  assert.equal(initial.data.approved,false);
- for(const url of ['/escape/index.html','/escape/game.js','/escape/styles.css']){
+ for(const url of ['/escape/index.html','/escape/game.js','/escape/room3d.js','/escape/styles.css']){
   assert.equal((await get(url,cookie)).status,403,url);
  }
  const unauthorized=await post('/api/admin/escape-access',{dripNickname:'탐험가',approve:true},'incorrect-admin-key-xxxxxxxxxxxxxxxxxxxxxxxx');
@@ -63,7 +63,7 @@ test('admin-only owner consent is bound to registered account and can be revoked
  assert.equal(approved.data.approved,true);
  const granted=await get('/api/escape/access',cookie);
  assert.equal(granted.data.approved,true);
- for(const url of ['/escape/index.html','/escape/game.js','/escape/styles.css']){
+ for(const url of ['/escape/index.html','/escape/game.js','/escape/room3d.js','/escape/styles.css']){
   const response=await get(url,cookie);
   assert.equal(response.status,200,url);
   assert.match(response.cache,/private, no-store/);
