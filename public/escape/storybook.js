@@ -67,7 +67,7 @@
   };
   function refresh(){
     const room=scene.dataset.room||'foyer';
-    if(room!==lastRoom){lastRoom=room;pan=0;zoom=1.025;drag=null;update();}
+    if(room!==lastRoom){cancelFocus();lastRoom=room;pan=0;zoom=1.025;drag=null;update();}
     const src=loaded.get(room);
     if(src){
       art.style.backgroundImage='url("'+src+'")';
