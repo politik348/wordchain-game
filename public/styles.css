@@ -505,3 +505,28 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
 @media(prefers-reduced-motion:reduce){
   .game-card-illustrated .game-illust-animal{transition:none}
 }
+
+
+/* Cat Challenge · taste playground (escape EP01 and arcade mini trial). */
+.cat-hub-page .cat-taste-section{margin:32px 0 20px;padding:26px;border:1px solid #eddcc9;border-radius:26px;background:linear-gradient(135deg,#fff9f1,#fffafc);box-shadow:0 10px 24px #7c554012}
+.cat-hub-page .cat-taste-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.cat-hub-page .cat-taste-eyebrow{display:block;font-weight:900;color:#c47670;font-size:11px;letter-spacing:1.1px}
+.cat-hub-page .cat-taste-heading h2{margin:6px 0;color:#4b3546;font-size:25px;letter-spacing:-1px}
+.cat-hub-page .cat-taste-heading p{margin:0;color:#866e75;font-size:13px;line-height:1.6}
+.cat-hub-page .cat-taste-count{font-size:12px;font-weight:900;background:#fff;color:#b56d64;border-radius:999px;padding:7px 12px;white-space:nowrap}
+.cat-hub-page .cat-taste-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.cat-hub-page .cat-taste-card{position:relative;border:1px solid #f3d9dd;border-radius:21px;display:flex;align-items:center;text-align:left;gap:14px;width:100%;min-height:174px;cursor:pointer;padding:18px;background:linear-gradient(135deg,#fff0f5,#fffaf4);box-shadow:0 8px 18px #55334810;transition:transform .16s ease,box-shadow .16s ease;font:inherit}
+.cat-hub-page .cat-taste-card:hover{transform:translateY(-3px);box-shadow:0 13px 23px #55334820}
+.cat-hub-page .cat-taste-card:focus-visible{outline:3px solid #e0a2c8;outline-offset:3px}
+.cat-hub-page .cat-taste-arcade{background:linear-gradient(135deg,#edf4ff,#fff6eb);border-color:#d6e3f3}
+.cat-hub-page .cat-taste-art{width:90px;height:106px;flex-shrink:0;display:grid;place-items:center;position:relative;border-radius:20px;font-size:48px;background:#ffffffcc;box-shadow:inset 0 0 0 1px #ffffff80}
+.cat-hub-page .cat-taste-art i{position:absolute;font-size:18px;font-style:normal;top:8px;right:8px;color:#cf8b7d}
+.cat-hub-page .cat-taste-copy{display:flex;flex-direction:column;gap:5px;min-width:0;padding-right:13px}
+.cat-hub-page .cat-taste-copy small{font-weight:900;font-size:10px;color:#c57987;letter-spacing:.5px}
+.cat-hub-page .cat-taste-copy strong{font-size:19px;letter-spacing:-.6px;color:#50364b}
+.cat-hub-page .cat-taste-copy span{font-size:12px;line-height:1.65;color:#866f7e;word-break:keep-all}
+.cat-hub-page .cat-taste-copy em{font-size:11px;font-weight:900;font-style:normal;color:#6c799c;margin-top:3px}
+.cat-hub-page .cat-taste-arrow{position:absolute;right:14px;bottom:15px;font-size:20px;color:#ad859e}
+.cat-hub-page .cat-taste-footnote{font-size:11px;color:#957d77;line-height:1.6;margin:16px 2px 0}
+@media(max-width:850px){.cat-hub-page .cat-taste-grid{grid-template-columns:1fr}}
+@media(max-width:520px){.cat-hub-page .cat-taste-section{padding:16px;border-radius:20px}.cat-hub-page .cat-taste-heading{align-items:flex-start}.cat-hub-page .cat-taste-count{display:none}.cat-hub-page .cat-taste-card{min-height:148px;padding:14px}.cat-hub-page .cat-taste-art{width:73px;height:87px;font-size:40px}.cat-hub-page .cat-taste-copy strong{font-size:16px}}

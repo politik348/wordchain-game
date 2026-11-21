@@ -19,7 +19,7 @@ test('Game Hell v2.1 uses original records, 8 SVG characters and wall-clock time
  assert.match(js,/moyeo-gamehell-v1/);
  assert.match(js,/function syncWallClock\(\)/);
  assert.doesNotMatch(js,/visibilitychange[^\n]*pauseGame\(\)/);
- assert.match(page,/gamehell\.js\?v=20261120pg3/);
+ assert.match(page,/gamehell\.js\?v=20261121taste1/);
  const win={};runInNewContext(characters,{window:win});
  assert.equal(win.MOYEO_CHARACTERS.length,8);
  for(const item of win.MOYEO_CHARACTERS){

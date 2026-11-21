@@ -64,6 +64,16 @@
     // Owner permission is checked on the server before this page or any game asset
     // is served. Revalidate while playing to honor approval revocations and logout.
     (function(){
+      if(location.pathname.startsWith('/taste/escape/')){
+        const preview=document.createElement('div');
+        preview.id='escapeTasteNotice';
+        preview.setAttribute('role','note');
+        preview.style.cssText='position:fixed;z-index:9999;bottom:12px;left:50%;transform:translateX(-50%);max-width:calc(100vw - 24px);background:#171c36f2;color:#fff5df;border:1px solid #f1d89b;border-radius:16px;box-shadow:0 6px 25px #0006;padding:10px 16px;display:flex;align-items:center;gap:14px;font:700 12px/1.6 system-ui,sans-serif;';
+        const label=document.createElement('span');label.textContent='✦ 맛보기 · EP.01 13번째 종소리 전체 체험';
+        const link=document.createElement('a');link.href='/?cat=1';link.textContent='다른 체험 ↗';link.style.cssText='color:#fbd084;text-decoration:underline;white-space:nowrap';
+        preview.append(label,link);document.body.append(preview);
+        return; // Public demo has an explicit server allowlist, while /escape/* stays protected.
+      }
       let checking=false;
       async function verifyAccess(){
         if(checking)return;checking=true;

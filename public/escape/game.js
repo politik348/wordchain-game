@@ -2,7 +2,8 @@
    독립 실행, 로컬 저장, 기존 3D 룸 모듈 호환. */
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
-const SAVE='moyeo.escape.ep01.save.v21',HISTORY='moyeo.escape.ep01.endings.v21';
+const isTaste=location.pathname.startsWith('/taste/escape/');
+const SAVE=isTaste?'moyeo.escape.ep01.taste.save.v21':'moyeo.escape.ep01.save.v21',HISTORY=isTaste?'moyeo.escape.ep01.taste.endings.v21':'moyeo.escape.ep01.endings.v21';
 const store={getItem(k){try{return window.localStorage.getItem(k)}catch(e){return this.memory?.[k]||null}},setItem(k,v){try{window.localStorage.setItem(k,v)}catch(e){(this.memory??={})[k]=v}},removeItem(k){try{window.localStorage.removeItem(k)}catch(e){if(this.memory)delete this.memory[k]}}};
 const rooms=['foyer','study','greenhouse','tower'];
 const meta={foyer:['현관 홀','발자국과 낡은 거울이 숨긴 첫 번째 길'],study:['달빛 서재','먼지 낀 책과 오래된 피아노가 남긴 선율'],greenhouse:['유리 온실','빛을 기다리는 꽃과 네 개의 급수관'],tower:['시계탑','마지막 종을 기다리는 멈춘 시계']};

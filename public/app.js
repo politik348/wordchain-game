@@ -7,7 +7,7 @@ import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseC
 import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut5';
 import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut5';
 import {installYutPowerControl} from './yut-power.mjs?v=20261120yut5';
-import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261121catArt1';
+import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261121taste1';
 import {createMembershipUI} from './auth-ui.mjs?v=20261120statusrefresh1';
 import {renderPregame} from './pregame-lobbies.mjs?v=20261120catIcon2';
 import {renderOnlineWaiting} from './waiting-room.mjs?v=20261120catlevels1';
@@ -924,6 +924,8 @@ document.addEventListener('click',async e=>{
   $('joinInput').value='';$('joinDialog').showModal();return;
  }
  if(action==='openCatHub'){solo=null;view='catHub';render();window.scrollTo(0,0);return;}
+ if(action==='catTasteEscape'){location.href='/taste/escape/index.html';return;}
+ if(action==='catTasteArcade'){location.href='/gamehell/index.html?trial=1';return;}
  if(action==='catChoose'){
   const target=b.dataset.catGame;
   if(!CAT_CHALLENGE_GAMES.includes(target))return;

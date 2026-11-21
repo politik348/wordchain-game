@@ -485,6 +485,14 @@ function injectSocialTags(buffer) {
 }
 
 const MIME={'.avif':'image/avif','.webp':'image/webp','.png':'image/png','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json; charset=utf-8'};
+// Explicit public taste route: only the four EP01 client assets are shared.
+// The official /escape/* URLs remain member + owner-approval protected.
+const ESCAPE_TASTE_ASSETS=new Map([
+ ['/taste/escape/index.html','escape/index.html'],
+ ['/taste/escape/styles.css','escape/styles.css'],
+ ['/taste/escape/game.js','escape/game.js'],
+ ['/taste/escape/room3d.js','escape/room3d.js']
+]);
 const handler=async(req,res)=>{
   const u=new URL(req.url,'http://localhost');const pathname=decodeURIComponent(u.pathname);
   try {
@@ -551,16 +559,19 @@ const handler=async(req,res)=>{
       req.on('close',()=>{clearInterval(ping);connections.get(sid)?.delete(res);});return;
     }
     if(req.method==='GET'&&!pathname.startsWith('/api/')){
+      const isEscapeTaste=pathname.startsWith('/taste/escape/');
+      const tasteFile=ESCAPE_TASTE_ASSETS.get(pathname);
+      if(isEscapeTaste&&!tasteFile)throw err(404,'맛보기 파일을 찾을 수 없습니다.');
       const protectedEscape=pathname==='/escape'||pathname.startsWith('/escape/');
       if(protectedEscape)await requireEscapeAccess(req);
-      let file=pathname==='/'?'index.html':pathname.replace(/^\//,'');
+      let file=tasteFile||(pathname==='/'?'index.html':pathname.replace(/^\//,''));
       const absolute=path.resolve(PUBLIC,file);
       if(!absolute.startsWith(PUBLIC+path.sep)&&absolute!==path.join(PUBLIC,'index.html'))throw err(403,'허용되지 않은 경로입니다.');
       let s;try{s=await stat(absolute);}catch{throw err(404,'파일이 없습니다.');}
       if(!s.isFile())throw err(404,'파일이 없습니다.');
       let data=await readFile(absolute);
       if(file==='index.html') data=injectSocialTags(data);
-      res.writeHead(200,{'Content-Type':MIME[path.extname(file)]||'application/octet-stream','Cache-Control':protectedEscape?'private, no-store':path.extname(file)==='.html'?'no-cache':'public, max-age=300'});
+      res.writeHead(200,{'Content-Type':MIME[path.extname(file)]||'application/octet-stream','Cache-Control':protectedEscape?'private, no-store':isEscapeTaste?'public, no-cache':path.extname(file)==='.html'?'no-cache':'public, max-age=300'});
       return res.end(data);
     }
     throw err(404,'요청을 찾지 못했습니다.');

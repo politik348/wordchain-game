@@ -43,6 +43,20 @@ export function renderCatHub(games) {
         '<span class="cat-choice-arrow" aria-hidden="true">↗</span></button>';
     }).join('')+'</div>'+
     '<p class="cat-hub-note">고양이 AI와의 1인 대전 전용입니다. 친구와 대전하려면 홈에서 일반 게임을 선택하세요.</p>'+
+    '<section class="cat-taste-section" id="cat-taste" aria-labelledby="cat-taste-heading">'+
+      '<div class="cat-taste-heading"><div><span class="cat-taste-eyebrow">FREE PREVIEW · 먼저 즐겨봐요</span><h2 id="cat-taste-heading">맛보기 놀이터</h2><p>조금 다른 모여게임도 한 번 맛보세요! 체험은 회원 승인 없이 즐길 수 있어요.</p></div><span class="cat-taste-count">2가지 체험</span></div>'+
+      '<div class="cat-taste-grid">'+
+        '<button type="button" class="cat-taste-card cat-taste-escape" data-action="catTasteEscape" aria-label="방탈출 맛보기 · 13번째 종소리">'+
+          '<span class="cat-taste-art" aria-hidden="true">🔐<i>✧</i></span>'+
+          '<span class="cat-taste-copy"><small>ESCAPE ROOM · EP.01</small><strong>13번째 종소리</strong><span>달빛 저택의 첫 번째 방탈출 이야기를 끝까지 체험해요.</span><em>1편 전체 플레이 · 승인 불필요</em></span><span class="cat-taste-arrow" aria-hidden="true">↗</span>'+
+        '</button>'+
+        '<button type="button" class="cat-taste-card cat-taste-arcade" data-action="catTasteArcade" aria-label="모여게임지옥 맛보기 · 미니게임 세 가지">'+
+          '<span class="cat-taste-art" aria-hidden="true">🎮<i>★</i></span>'+
+          '<span class="cat-taste-copy"><small>GAME HELL · TRIAL</small><strong>모여게임지옥 체험판</strong><span>낙하대작전 · 폴짝도로 · 찰싹친구들 중 골라서 도전!</span><em>3종 미니게임 · 각 45초</em></span><span class="cat-taste-arrow" aria-hidden="true">↗</span>'+
+        '</button>'+
+      '</div>'+
+      '<p class="cat-taste-footnote">※ 맛보기 기록은 정식 게임과 분리되며, 방탈출 정식 입장의 주인장 승인제는 유지됩니다.</p>'+
+    '</section>'+
   '</div>';
 }
 
