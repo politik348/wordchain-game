@@ -14,7 +14,7 @@
   // Screen percentages match the painted prop locations, not the old WebGL coordinates.
   // All original puzzle IDs, progression flags, and actions remain unchanged.
   const spotPositions={
-    foyer:{invitation:[31,45],catbed:[9.6,83],rug:[47.9,89.5],cabinet:[73.6,63.8],crescent:[49.6,36.9],study:[16,59],cat:[92.8,84.1]},
+    foyer:{invitation:[29.1,48.8],catbed:[9.6,83],rug:[47.9,89.5],cabinet:[73.6,63.8],crescent:[49.6,36.9],study:[16,59],cat:[92.8,84.1]},
     study:{books:[23,38],portrait:[49.5,20],piano:[88,63],desk:[31,66],greenhouse:[94,34],cat:[76,82]},
     greenhouse:{record:[90,40],water:[12,70],beam:[72,44],flower:[91,76],shutter:[55,12],pot:[73,76],tower:[97,16]},
     tower:{pedestal:[19,79],clock:[51,27],keeper:[39,76],pin:[70,55],portal:[91,37],hall:[91,79]}
