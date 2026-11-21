@@ -16,7 +16,7 @@ test('all six cat challenge illustrations use the new sprite and keep clickable 
  const css=read('public/styles.css');
  const module=read('public/cat-hub.mjs');
  assert.match(css,/\/assets\/cat-challenge-highres-v2\.avif/);
- assert.match(module,/data-game=/);
+ assert.match(module,/data-cat-game=/);
  for(const id of catIds)assert.match(css,new RegExp('cat-choice-art-'+id));
 });
 test('six public-game cards use corresponding diverse-animal scenes, not enlarged emoji',()=>{
