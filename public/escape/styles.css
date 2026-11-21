@@ -469,3 +469,56 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
  .roll-dial-stop{font-size:15px;}
 }
 @media(prefers-reduced-motion:reduce){.pollen-tracks span,.pendulum-released .pendulum-rod,.pendulum-released .pendulum-weight{animation:none;}}
+
+
+/* EP01 ambient exploration: useful clues and ordinary props share the same soft light. */
+/* Never use correctness/solved state to assign an exclusive beacon. */
+.scene-3d .hotspot:not(.revealed)::before,
+#sceneCanvas.storybook-ready .hotspot:not(.revealed)::before{
+ width:6px;height:6px;opacity:.48;
+ transform:translate(-50%,-50%) scale(1);
+ background:#fff0d0;
+ box-shadow:0 0 6px 3px #ffe4a765,0 0 17px 7px #f6d6a130;
+ transition:opacity .22s,box-shadow .22s;
+}
+.scene-3d .hotspot:hover::before,
+.scene-3d .hotspot:focus-visible::before,
+#sceneCanvas.storybook-ready .hotspot:hover::before,
+#sceneCanvas.storybook-ready .hotspot:focus-visible::before{
+ opacity:.95;box-shadow:0 0 8px 5px #f9daaaa2,0 0 19px 10px #fce9af75;
+}
+.scene-3d .hotspot.done:not(.revealed)::before,
+#sceneCanvas.storybook-ready .hotspot.done:not(.revealed)::before{
+ background:#fff0d0;box-shadow:0 0 6px 3px #ffe4a765,0 0 17px 7px #f6d6a130;
+}
+.scene-3d .hotspot:not(.revealed)::after,
+#sceneCanvas.storybook-ready .hotspot:not(.revealed)::after{
+ content:"";position:absolute;inset:17px;border-radius:50%;
+ border:1px solid #ffebbf69;box-shadow:0 0 6px #f3daaf40;
+ pointer-events:none;opacity:.45;
+}
+.scene-3d .hotspot:hover:not(.revealed)::after,
+.scene-3d .hotspot:focus-visible:not(.revealed)::after,
+#sceneCanvas.storybook-ready .hotspot:hover:not(.revealed)::after,
+#sceneCanvas.storybook-ready .hotspot:focus-visible:not(.revealed)::after{opacity:.9;}
+/* The targets remain generously clickable; only the subtle pin is visible when idle. */
+.scene-3d .hotspot,
+#sceneCanvas.storybook-ready .hotspot{min-width:44px;min-height:44px;touch-action:manipulation;}
+.ambient-description{
+ position:relative;background:linear-gradient(145deg,#efe2cc,#dcc7ab);
+ color:#4a3a35;padding:25px 22px;margin:16px auto 10px;
+ border:1px solid #af9275;border-radius:12px;box-shadow:0 10px 27px #1117255e;
+ font-family:Georgia,'Noto Sans KR',serif;font-size:15px;line-height:1.95;
+}
+.ambient-description::before{
+ content:"✦";position:absolute;top:7px;right:12px;color:#9b846b;font-size:13px;
+}
+.ambient-time-note{
+ display:block;text-align:center;color:#e3c9a6;font-size:12px;font-weight:750;
+ letter-spacing:.1px;padding:9px 12px;margin:10px auto;
+ background:#554a5ba8;border:1px solid #a996926a;border-radius:9px;
+}
+@media(max-width:530px){
+ .ambient-description{padding:18px 15px;font-size:13px;line-height:1.85;}
+ .scene-3d .hotspot,#sceneCanvas.storybook-ready .hotspot{min-width:44px;min-height:44px;}
+}
