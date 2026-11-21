@@ -118,7 +118,7 @@ function render(){if(!g)return;let [name,caption]=meta[g.room],index=rooms.index
  $('sceneNav').innerHTML=rooms.map((r,i)=>`<button data-room="${r}" class="nav-btn ${r===g.room?'current':''} ${!canEnter(r)?'locked':''} ${canEnter(r)&&r!==g.room?'available':''}" ${r===g.room?'disabled aria-current="step"':''} ${!canEnter(r)?'aria-disabled="true"':''}><span class="nav-index">${canEnter(r)?String(i+1).padStart(2,'0'):'♙'}</span><span class="nav-copy"><small>${r===g.room?'현재 탐험 중':!canEnter(r)?'아직 잠긴 공간':'이동 가능한 공간'}</small><b>${meta[r][0]}</b></span><span class="nav-status" aria-hidden="true">${r===g.room?'✦':!canEnter(r)?'⌑':'↗'}</span></button>`).join('');
  $('sealsBar').innerHTML=Object.entries(seals).map(([id,v])=>`<div title="${v[1]}" class="seal ${g.seals.includes(id)?'found':''}">${v[0]}</div>`).join('');
  $('sceneArtwork').innerHTML=drawScene(g.room);$('sceneCanvas').dataset.room=g.room;window.Moyeo3D?.setRoom(g.room);
- $('hotspots').innerHTML=hotspots[g.room].map(x=>`<button type="button" class="hotspot ${x.ok?.()?'done':''}" data-object="${x.id}" style="left:${x.x}%;top:${x.y}%" aria-label="${x.name}" title="${x.name}"><span>${x.name}</span></button>`).join('');window.Moyeo3D?.refresh();
+ $('hotspots').innerHTML=hotspots[g.room].map(x=>`<button type="button" class="hotspot ${x.ok?.()?'done':''}" data-object="${x.id}" style="left:${x.x}%;top:${x.y}%" aria-label="${x.name}"><span>${x.name}</span></button>`).join('');window.Moyeo3D?.refresh();
  $('inventoryNum').textContent=g.inventory.length;$('inventory').innerHTML=g.inventory.length?g.inventory.map(id=>`<button class="inventory-item ${g.selected===id?'selected':''}" data-item="${id}" title="${items[id][2]}"><span class="item-icon">${items[id][0]}</span><span class="item-name">${items[id][1]}</span></button>`).join(''):'<div class="inventory-empty"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M14 25h36l-3.5 27h-29L14 25Z" fill="#d8c5a8" fill-opacity=".13" stroke="#e4cfac" stroke-width="2.6" stroke-linejoin="round"/><path d="M24 25v-6a8 8 0 0 1 16 0v6" stroke="#e4cfac" stroke-width="2.6" stroke-linecap="round"/><path d="m27 38 4 4 7-8" stroke="#ddc29c" stroke-opacity=".5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>아직 획득한 아이템이 없어요.</span><small>저택을 살펴보고 단서를 찾아보세요.</small></div>';
  let val=['foot','mirror','books','piano','film','water','light','blackout','clock','pin'].filter(done).length;$('completionText').textContent=val+'/10';$('completionFill').style.width=(val*10)+'%';$('objectiveText').textContent=objective();$('soundBtn').textContent=g.sound?'♫':'♪̸';
  let next=rooms[index+1];$('nextRoomBtn').classList.toggle('hidden',!next||!clearRoom(g.room));if(next)$('nextRoomBtn').textContent=`${meta[next][0]}으로 이동 →`;
@@ -728,12 +728,9 @@ scene.addEventListener('pointermove',e=>{
  const area=scene.getBoundingClientRect();
  scene.style.setProperty('--ambient-x',((e.clientX-area.left)/area.width-.5)*9+'px');
  scene.style.setProperty('--ambient-y',((e.clientY-area.top)/area.height-.5)*6+'px');
- const all=[...$('hotspots').querySelectorAll('.hotspot')].filter(el=>getComputedStyle(el).display!=='none');
- let nearest=null,dist=72;
- for(const el of all){const rect=el.getBoundingClientRect();const d=Math.hypot(e.clientX-(rect.left+rect.width/2),e.clientY-(rect.top+rect.height/2));if(d<dist){dist=d;nearest=el;}}
- all.forEach(el=>el.classList.toggle('near',el===nearest));
+ // No proximity-based highlighting: a nearby puzzle target must never glow automatically.
 });
-scene.addEventListener('pointerleave',()=>{scene.style.setProperty('--ambient-x','0px');scene.style.setProperty('--ambient-y','0px');$('hotspots').querySelectorAll('.near').forEach(el=>el.classList.remove('near'))});
+scene.addEventListener('pointerleave',()=>{scene.style.setProperty('--ambient-x','0px');scene.style.setProperty('--ambient-y','0px')});
 document.querySelector('[data-camera="discover"]')?.addEventListener('click',exploreSuggestion);
 
 // Dynamic UI events, touch and mouse support.
