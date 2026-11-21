@@ -13,10 +13,12 @@ test('Marble v5 has separate normal/endless cards and normal-only round options'
  assert.ok(app.includes("let mode=catChallenge?'ai':'local',gameMode='normal',rounds=12"));
  assert.ok(app.includes("const ROUND_OPTIONS=[8,12,16,20]"));
  assert.ok(app.includes("const roundsForGame=()=>gameMode==='endless'?0:rounds"));
- assert.ok(app.includes('data-game-mode="normal"'));
- assert.ok(app.includes('data-game-mode="endless"'));
- assert.ok(app.includes('data-rounds="${n}"'));
- assert.ok(app.includes("gameMode==='normal'?"));
+ assert.ok(app.includes("key:'gameMode'"));
+ assert.ok(app.includes("value:'normal'"));
+ assert.ok(app.includes("value:'endless'"));
+ assert.ok(app.includes("if(gameMode==='normal')settings.push("));
+ assert.ok(app.includes("key:'rounds'"));
+ assert.ok(app.includes("ROUND_OPTIONS.map(n=>"));
  assert.ok(app.includes("rounds:roundsForGame()"));
  assert.match(api,/\[0,8,12,16,20\]/);
 });
@@ -24,7 +26,7 @@ test('Marble v5 has separate normal/endless cards and normal-only round options'
 test('Marble v5 opponent card UI preserves isolated cat route and account-gated friend modes',()=>{
  assert.match(app,/const catChallenge=new URLSearchParams/);
  assert.ok(app.includes("mode=catChallenge?'ai':'local'"));
- assert.ok(app.includes("catChallenge?battles.filter(b=>b.id==='ai'):battles.filter(b=>b.id!=='ai')"));
+ assert.ok(app.includes("allowedModes:catChallenge?['cat']:['online','local']"));
  assert.ok(app.includes("mode=catChallenge?'ai':'local';location.hash=''"));
  assert.ok(app.includes("if(mode==='local'&&!(await ensureMember()))return"));
  assert.ok(app.includes("async function createOnline(){if(!(await ensureMember()))return"));
@@ -46,7 +48,7 @@ test('Marble v5 uses four original mascot SVGs consistently',()=>{
   assert.ok(svg.length>500);
  }
  assert.ok(app.includes('characterArt('));
- assert.ok(html.includes('20261120v5'));
+ assert.ok(html.includes('20261120sharedSetup1'));
  assert.ok(css.includes('mm-opponent-card'));
  assert.ok(css.includes('mm-start-layout'));
  assert.ok(css.includes('@media'));
