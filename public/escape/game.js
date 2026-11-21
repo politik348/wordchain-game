@@ -15,8 +15,8 @@ const clueText={
  track:['양탄자 아래의 발자국','침대에서 시작된 작은 발자국과 커다란 신발 자국이 오래된 타일 위에 서로 겹쳐 있다.'],
  portrait:['서재의 초상화','미로와 한 어린 소녀가 함께 앉아 있다. 금빛 액자 아래쪽에 작은 흠집이 보인다.'],
  dust:['서가의 황동 문양','서가 양 끝에 별과 초승달이 새겨져 있다. 책등마다 두 개의 문양이 서로 다른 높이에 있다. 한 권의 책에는 거의 먼지가 없다.'],
- roll:['기계식 자동연주 원통','원통에는 여섯 줄의 작은 구멍이 반복된다. 왼쪽 모서리에 별, 축의 다른 쪽에 다이아몬드 자국이 있다.'],
- water:['정원 관리 기록','네 수조 가운데 해 그림 옆에는 세 번째 눈금 높이의 물때가 있고, 구름 수조 바닥에는 진흙이 굳어 있다. 물은 측면 배관으로만 오간다. 이전 그림에서는 별 수조의 수면이 달보다 한 눈금 높다.'],
+ roll:['기계식 자동연주 원통','원통에는 여섯 줄의 작은 구멍이 반복된다. 왼쪽 모서리에 별이 새겨져 있고 기계 축에도 같은 별이 보인다.'],
+ water:['정원 관리 기록','네 수조 가운데 해 그림 옆에는 세 번째 눈금 높이의 물때가 있고, 구름 수조 바닥에는 마른 진흙이 굳었고 수면 흔적은 없다. 물은 측면 배관으로만 오간다. 이전 그림에서는 별 수조의 수면이 달보다 한 눈금 높다.'],
  watering:['온실 자동 급수 시계','유리 덮개 아래 마지막 급수 종료 시각 21:10. 시계 바늘은 그 뒤 더 움직이지 않았다.'],
  powder:['달빛꽃 관찰 기록','희게 마른 꽃가루는 밝은 곳에서는 보이지 않지만 창을 가리면 흐릿한 은빛 반점을 남긴다.'],
  clock:['시계 관리인의 메모','현관 자동 잠금과 온실 급수 종료는 밤에 있었다. 급수 장치의 마지막 진동이 멎은 뒤 모래가 완전히 내려가는 데는 다섯 분이 걸렸다.'],
@@ -44,9 +44,9 @@ const hints={
  ],
  piano:[
   '책장 뒤에서 나온 원통의 돌기와 피아노 위 황동 축의 흔적을 관찰해 보세요.',
-  '여섯 걸림점과 작은 별, 다이아몬드 모양의 흠집이 서로 다른 위치에 있습니다.',
+  '여섯 걸림점과 두 개의 작은 별 표식이 남아 있습니다.',
   '원통을 축에 끼우는 방향이 바뀌면 손가락이 건드리는 건반도 달라집니다. 짧은 선율을 듣고 연주해 보세요.',
-  '정답: 원통의 다섯 번째 걸림점(◇ 표시)에 맞춘 뒤 왼쪽부터 2·5·3·2번째 건반을 누릅니다.'
+  '정답: 원통의 다섯 번째 걸림점(별 표식)에 맞춘 뒤 왼쪽부터 2·5·3·2번째 건반을 누릅니다.'
  ],
  film:[
   '서재 초상화의 액자와 책상 유리에는 닮은 크기의 흠집이 있습니다.',
@@ -144,7 +144,7 @@ function inspect(id){if(g.ending){ending(g.ending);return}switch(id){
  case 'piano':piano();break;
  case 'desk':desk();break;
  case 'greenhouse':move('greenhouse');break;
- case 'record':clue('water');clue('powder');clue('watering');article('달빛 온실 관리판','네 개의 물통을 잇는 황동관에는 새는 곳이 없다.\n해 그림 수조에는 세 번째 눈금 높이의 물때가 남아 있다. 구름 수조의 배출구는 말라 있다.\n서랍 안의 오래된 그림에서는 별 수조의 물이 달보다 딱 한 줄 높다.\n\n자동 급수 시계: 「종료 21:10」. 낡은 꽃가루가 기록지 가장자리에 붙어 있다.');break;
+ case 'record':clue('water');clue('powder');clue('watering');article('달빛 온실 관리판','네 개의 물통을 잇는 황동관에는 새는 곳이 없다.\n해 그림 수조에는 세 번째 눈금 높이의 물때가 남아 있다. 구름 수조의 배출구와 바닥에는 물때가 전혀 없다.\n서랍 안의 오래된 그림에서는 별 수조의 물이 달보다 딱 한 줄 높다.\n\n자동 급수 시계: 「종료 21:10」. 낡은 꽃가루가 기록지 가장자리에 붙어 있다.');break;
  case 'water':water();break;
  case 'beam':beam();break;
  case 'flower':
@@ -301,10 +301,10 @@ function piano(){
  if(done('piano')){article('다시 연주하는 피아노','작은 피아노는 이제 루나의 자장가를 연주한다. 미로가 자리를 잡고 웅크린다.');return;}
  if(!has('roll')){article('기계식 피아노','반쯤 열린 황동 원통 장치는 비어 있다. 여섯 개의 건반 위에는 고정된 연주 손가락들이 매달려 있다.');return;}
  const offset=g.drumOffset||0;
- const dial=Array.from({length:6},(_,i)=>'<button class="roll-dial-stop '+(offset===i?'selected':'')+'" data-action="drum-'+i+'" aria-label="원통 눈금 '+(i+1)+'" title="원통 눈금 '+(i+1)+'">'+(i===4?'◇':i===0?'✦':'·')+'</button>').join('');
+ const dial=Array.from({length:6},(_,i)=>'<button class="roll-dial-stop '+(offset===i?'selected':'')+'" data-action="drum-'+i+'" aria-label="원통 눈금 '+(i+1)+'" title="원통 눈금 '+(i+1)+'">'+(i===4?'✦':'·')+'</button>').join('');
  const roll=rollPegs.map((pos,i)=>'<div class="roll-row">'+Array.from({length:6},(_,j)=>'<span class="'+(pos===j?'peg':'')+'">'+(pos===j?'●':'·')+'</span>').join('')+'</div>').join('');
  modal('ROOM 02 · 퍼즐 4','멈춘 자장가',
-  '<p class="modal-description">나무 건반 위에는 원통을 붙잡는 황동 손가락이 달려 있다. 표면이 닳은 축에는 여섯 개의 걸림점이 있다. 원통의 작은 별과 장치 테두리의 다이아몬드 모양 흠집이 눈에 띈다.</p>'+
+  '<p class="modal-description">나무 건반 위에는 원통을 붙잡는 황동 손가락이 달려 있다. 표면이 닳은 축에는 여섯 개의 걸림점이 있다. 원통의 작은 별과 장치 테두리의 별 모양 흠집이 눈에 띈다.</p>'+
   '<div class="roll-sheet"><span class="roll-star">✦</span>'+roll+'</div>'+
   '<div class="roll-dial">'+dial+'</div>'+
   '<div class="puzzle-buttons"><button data-action="drum-play">원통 손잡이 감기 ♪</button></div>'+
