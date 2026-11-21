@@ -388,7 +388,7 @@ const hotspots={
  foyer:[{id:'invitation',x:27,y:40,name:'현관의 초대장',icon:'✉'},{id:'catbed',x:20,y:70,name:'고양이 침대',icon:'♧'},{id:'rug',x:47,y:83,name:'오래된 양탄자',icon:'⌕',ok:()=>done('rug')},{id:'cabinet',x:76,y:72,name:'황동 수납장',icon:'▣',ok:()=>done('foot')},{id:'crescent',x:54,y:35,name:'반쪽 달 장식',icon:'☾',ok:()=>done('mirror')},{id:'foyer-bell',x:80,y:55,name:'탁자 위 작은 종',icon:'♫'},{id:'study',x:14,y:54,name:'서재 문',icon:'⌑'},{id:'cat',x:84,y:76,name:'미로',icon:'♣'}],
  study:[{id:'books',x:24,y:42,name:'계절 책장',icon:'▤',ok:()=>done('books')},{id:'portrait',x:47,y:30,name:'루나의 초상화',icon:'▧',ok:()=>has('film')},{id:'piano',x:74,y:77,name:'자동연주 피아노',icon:'♫',ok:()=>done('piano')},{id:'desk',x:38,y:78,name:'잠긴 서랍과 유리판',icon:'⌗',ok:()=>done('film')},{id:'greenhouse',x:91,y:56,name:'온실 문',icon:'⌑'},{id:'cat',x:79,y:57,name:'미로',icon:'♣'}],
  greenhouse:[{id:'record',x:21,y:30,name:'정원 재배 기록',icon:'▤'},{id:'water',x:25,y:73,name:'네 개의 급수관',icon:'◉',ok:()=>done('water')},{id:'beam',x:64,y:38,name:'채광과 반사 장치',icon:'◐',ok:()=>done('light')},{id:'flower',x:53,y:64,name:'달빛꽃',icon:'❀',ok:()=>done('light')},{id:'shutter',x:86,y:25,name:'채광창 손잡이',icon:'☾'},{id:'pot',x:76,y:75,name:'오래된 유리 화분',icon:'⌕',ok:()=>has('collar')},{id:'tower',x:91,y:56,name:'시계탑 입구',icon:'⌑'}],
- tower:[{id:'pedestal',x:23,y:75,name:'세 인장의 제단',icon:'❖'},{id:'clock',x:50,y:36,name:'거대한 시계',icon:'◷',ok:()=>done('clock')},{id:'keeper',x:19,y:33,name:'시계 관리 기록',icon:'▤'},{id:'pin',x:78,y:81,name:'붉은 고정쇠',icon:'⌁',ok:()=>done('pin')},{id:'portal',x:84,y:54,name:'마지막 문',icon:'✦',ok:()=>done('pin')},{id:'hall',x:94,y:87,name:'돌아가는 계단',icon:'⌑'}]
+ tower:[{id:'pedestal',x:23,y:75,name:'세 인장의 제단',icon:'❖'},{id:'clock',x:50,y:36,name:'거대한 시계',icon:'◷',ok:()=>done('clock')},{id:'keeper',x:19,y:33,name:'시계 관리 기록',icon:'▤'},{id:'pin',x:78,y:81,name:'붉은 고정쇠',icon:'⌁',ok:()=>done('pin')},{id:'portal',x:84,y:54,name:'마지막 문으로 올라가는 계단',icon:'✦',ok:()=>done('pin')},{id:'hall',x:94,y:87,name:'돌아가는 계단',icon:'⌑'}]
 };
 // Neutral examination targets are interwoven with puzzle elements, never appended as a separate hint tier.
 for(const [room,objects] of Object.entries(ambientScenes)){
@@ -458,7 +458,7 @@ function inspect(id){if(g.ending){ending(g.ending);return}rememberInspection(id)
  case 'keeper':clue('clock');clue('pin');article('시계 관리인의 낡은 장부','첫 번째 줄: 「문이 닫히는 소리를 들었다. 잠시 뒤 온실 쪽 자동 급수관이 멈췄다.」\n\n두 번째 줄: 「급수관의 마지막 떨림이 멎자 모래시계를 뒤집었다. 모래가 완전히 떨어지는 데는 꼭 오 분.」\n\n마지막 줄: 「열두 번의 종은 고장이 남긴 경보다. 시계추가 멈추면 다음 종은 오지 않는다.」');break;
  case 'clock':clock();break;
  case 'pin':pin();break;
- case 'portal':if(done('pin'))finalChoices();else article('움직이지 않는 문','세 인장과 바늘만으로는 부족한 것 같다. 아직 추에 무언가 걸려 있다.');break;
+ case 'portal':if(done('pin'))finalChoices();else article('위층으로 향하는 계단','계단 위쪽에 닫힌 문이 희미하게 보인다. 아래층 시계추에는 아직 금속 고리가 걸려 있다.');break;
  case 'hall':move('foyer');break;
  }}
 function rug(){g.flags.rug=true;clue('track');modal('현관 홀 · 조사','들춰진 양탄자',`<p class="modal-description">먼지 속 작은 발자국이 이어진다. 타일 중간에는 방향이 다른 커다란 신발 자국도 섞여 있다.</p><div class="trail-grid">${Array.from({length:16},(_,i)=>{let p={0:'침대',1:'🐾',5:'🐾',6:'🐾',10:'종'};return `<div class="trail-cell ${[0,1,5,6,10].includes(i)?'pawmark':''}">${p[i]||([2,9,14].includes(i)?'⌑':'·')}</div>`}).join('')}</div><div class="investigation-actions"><button data-action="rug-pocket">접힌 안감도 조사한다</button></div><p class="puzzle-helper">발자국의 시작과 끝에 작은 상징이 있다. 큰 신발 자국은 오래된 흙자국처럼 보인다.</p>`);save()}
