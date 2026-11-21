@@ -485,7 +485,7 @@ function injectSocialTags(buffer) {
 }
 
 const MIME={'.avif':'image/avif','.webp':'image/webp','.png':'image/png','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json; charset=utf-8'};
-// Explicit public taste route: only the four EP01 client assets are shared.
+// Explicit public taste route: EP01 client files and four painted room assets only.
 // The official /escape/* URLs remain member + owner-approval protected.
 const ESCAPE_TASTE_ASSETS=new Map([
  ['/taste/escape/index.html','escape/index.html'],
