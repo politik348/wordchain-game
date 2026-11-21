@@ -32,7 +32,7 @@
       'foyer-window':[2.5,44]
     },
     study:{
-      books:[24,35],portrait:[95.1,22.7],piano:[88.7,57.7],
+      books:[28.8,30.5],portrait:[95.1,22.7],piano:[88.7,57.7],
       desk:[35,76.4], // desk drawer's brass fitting
       greenhouse:[94,34],cat:[76,82],
       'study-globe':[56.8,52.2],
@@ -52,7 +52,7 @@
       'green-planter':[79.6,73.6]
     },
     tower:{
-      pedestal:[69.1,69.5],clock:[52.5,18.5],
+      pedestal:[69.1,69.5],clock:[52.9,13.7],
       keeper:[30.6,77.1],pin:[70.3,58.2],
       portal:[91,35],hall:[91.5,72],
       'tower-globe':[13.7,58.7],
@@ -62,9 +62,10 @@
       'tower-lantern':[23.4,71.5]
     }
   };
-  // These interactions are available from room navigation / the Miro chat card,
-  // but the corresponding objects are NOT depicted in the illustration.
-  // Don't place misleading decorative dots on unrelated scenery.
+  // Some storyline objects are absent from the paintings. Study/greenhouse exits
+  // remain available via room navigation and Next Room; Miro via her dialog card.
+  // The optional cat-bed observation has no pictured bed; its trail is still
+  // accessible by lifting the rug. Never pin such IDs to unrelated scenery.
   const unpaintedHotspots={
     foyer:new Set(['catbed']),
     study:new Set(['greenhouse','cat']),
