@@ -34,6 +34,7 @@ function restore(key,defaults,valid){
 function main(){
  const game=location.pathname.startsWith('/tetris/')?'tetris':location.pathname.startsWith('/logic/')?'logic':location.pathname.startsWith('/gamehell/')?'gamehell':null;
  if(!game)return;
+ if(game==='gamehell'&&new URLSearchParams(location.search).get('trial')==='1')return; // The Cat taste route has a compact in-game starter.
  const cat=game==='tetris'&&new URLSearchParams(location.search).get('cat')==='1';
  const defaults=game==='tetris'?{difficulty:'normal',aiDifficulty:'beginner'}:game==='logic'?{size:'5'}:{minigame:'drill',duration:'45'};
  const valid=game==='tetris'?{difficulty:['easy','normal','hard'],aiDifficulty:['beginner','intermediate','advanced']}:game==='logic'?{size:['5','10','15']}:{minigame:arcadeModes.map(x=>x[0]),duration:['45','90','0']};
