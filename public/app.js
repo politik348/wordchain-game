@@ -1,4 +1,5 @@
 import {TURN_SECONDS, dictionaryIndex, replies as chainReplies, validReply, turnsLabel} from './chain-utils.mjs';
+import {chooseBeginnerCatWord} from './wordchain-beginner-ai.mjs?v=20261121beginner1';
 import {renderMafiaGame,renderMafiaRoleCatalog} from './mafia-ui.mjs?v=20261120mafia2';
 import {configureRummikubUI, renderRummikubGame} from './rummikub/ui.mjs?v=20261120rk3';
 import {createSoloRummikub, soloRoom, soloPlayRummikub, soloTickRummikub, catPlayRummikub} from './rummikub/solo.mjs?v=20261120catlevels1';
@@ -472,7 +473,10 @@ function soloGame(){
 }
 function chooseCatWord(possible,difficulty='beginner'){
  const rank=[...possible].sort((a,b)=>(startCounts.get(a.at(-1))||0)-(startCounts.get(b.at(-1))||0));
- if(difficulty==='beginner')return rank[Math.min(4,rank.length-1)];
+ if(difficulty==='beginner')return chooseBeginnerCatWord(possible,startCounts,(word,limit)=>{
+  const history=new Set(solo.history);history.add(word);
+  return chainReplies(allWordsByFirst,word,history,solo.mode,new Set(solo.usedEndings.player),limit).length;
+ });
  const limit=difficulty==='advanced'?rank.length:Math.min(rank.length,95);
  const candidates=rank.slice(0,limit),played=new Set(solo.history);
  let best=candidates[0],bestScore=-Infinity;
