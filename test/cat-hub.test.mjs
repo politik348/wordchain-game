@@ -31,14 +31,14 @@ test('all six Cat Challenge cards use matching generated illustrations',()=>{
  const games=CAT_CHALLENGE_GAMES.map((id,i)=>({id,name:['오목','윷놀이','루미큐브','모여마블','모여 테트리스','끝말잇기'][i],emoji:'🐱'}));
  const html=renderCatHub(games);
  const css=readFileSync(new URL('../public/styles.css',import.meta.url),'utf8');
- const image=readFileSync(new URL('../public/assets/cat-challenge-scenes-v1.avif',import.meta.url));
+ const image=readFileSync(new URL('../public/assets/cat-challenge-highres-v2.avif',import.meta.url));
  assert.equal((html.match(/class="cat-choice-illustration/g)||[]).length,6);
  for(const id of CAT_CHALLENGE_GAMES){
    assert.match(html,new RegExp('cat-choice-art-'+id));
    assert.match(css,new RegExp('cat-choice-art-'+id));
  }
- assert.match(css,/cat-challenge-scenes-v1\.avif/);
- assert.ok(image.length>10000,'six illustrations must contain actual picture bytes');
+ assert.match(css,/cat-challenge-highres-v2\.avif/);
+ assert.ok(image.length>100000,'high-resolution six-scene image must contain actual picture bytes');
  assert.equal(image.toString('ascii',4,12),'ftypavif');
  assert.match(readFileSync(new URL('../server.js',import.meta.url),'utf8'),/'\.avif':'image\/avif'/);
 });
