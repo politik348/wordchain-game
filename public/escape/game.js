@@ -91,7 +91,7 @@ const has=id=>g.inventory.includes(id), done=id=>!!g.flags[id], elapsed=()=>Math
 function save(){if(!g)return;try{store.setItem(SAVE,JSON.stringify({...g,elapsedCarry:elapsed(),startedAt:null}));}catch(e){}}
 function notify(s){const t=document.createElement('div');t.className='toast';t.textContent=s;$('toastRegion').appendChild(t);setTimeout(()=>t.remove(),3500)}
 function tone(kind='tap'){if(!g?.sound)return;try{audio??=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();let seq=kind==='gain'?[523,659,784]:kind==='bad'?[250,188]:kind==='bell'?[440,550,659,880]:[550];seq.forEach((hz,i)=>{let o=audio.createOscillator(),v=audio.createGain();o.type='sine';o.frequency.value=hz;v.gain.setValueAtTime(.0001,audio.currentTime+i*.13);v.gain.exponentialRampToValueAtTime(.06,audio.currentTime+i*.13+.025);v.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+i*.13+.33);o.connect(v);v.connect(audio.destination);o.start(audio.currentTime+i*.13);o.stop(audio.currentTime+i*.13+.35)})}catch(e){}}
-function item(id){if(has(id))return;g.inventory.push(id);notify('아이템 획득 · '+items[id][1]);tone('gain');save();render()}
+function item(id){if(has(id))return;g.inventory.push(id);notify('아이템 획득 · '+items[id][1]);tone('gain');render()}
 function clue(id){if(!g.clues.includes(id)){g.clues.push(id);save()}}
 
 /* Inspecting and pairing found objects never consumes mandatory puzzle inventory. */
@@ -110,14 +110,14 @@ function combineItems(a,b){
   g.combinedFindings??=[];
   const first=!g.combinedFindings.includes(key);
   if(first)g.combinedFindings.push(key);
-  save();render();
+  render();
   return modal('가방 · 아이템 조합',note[0],
    '<div class="combined-item-visual"><span>'+items[a][0]+'</span><b>+</b><span>'+items[b][0]+'</span></div>'+
    '<div class="letter">'+note[1]+'</div>'+
    '<p class="puzzle-helper">'+(first?'새로운 관찰이 탐험 수첩에 남았다.':'이미 살펴본 조합이다.')+'</p>',
    [['다른 아이템 보기','close',true],['조합 기록 열기','journal-moments']]);
  }
- save();render();
+ render();
  notify('두 물건을 함께 살펴봤지만 특별한 변화는 없었다.');
 }
 const itemBacks={
@@ -152,7 +152,7 @@ function invitationFlip(){
   [['앞면 다시 읽기','invitation',true],['돌아가기','close']]);
 }
 
-function seal(id){if(g.seals.includes(id))return;g.seals.push(id);notify('인장 획득 · '+seals[id][1]);tone('gain');save();render()}
+function seal(id){if(g.seals.includes(id))return;g.seals.push(id);notify('인장 획득 · '+seals[id][1]);tone('gain');render()}
 function clearRoom(id){return ({foyer:()=>done('foot')&&done('mirror')&&has('brassKey'),study:()=>done('books')&&done('piano'),greenhouse:()=>done('water')&&done('light'),tower:()=>done('clock')&&done('pin')})[id]();}
 function canEnter(id){let n=rooms.indexOf(id);return n===0||n>0&&rooms.slice(0,n).every(clearRoom)}
 function begin(){g=state();save();showGame();modal('PROLOGUE','13번째 종소리',`<div class="letter">달빛 저택으로 와 주세요.\n멈춘 시계가 다시 움직이기 전에, 사라진 기억을 찾아 주셨으면 합니다.\n\n— 발신인 미상</div><p class="modal-description">눈을 떠보니 현관문이 잠겨 있습니다. 고양이 미로가 마치 오래 기다렸다는 듯 말을 겁니다.</p><p class="story-voice">"여기 나가려면 인장 세 개를 찾아야 해. 근데… 내가 기다리던 사람이 누구였더라?"</p>`,[['현관 조사 시작','close',true]])}
@@ -174,7 +174,7 @@ function sceneMoment(kind='solved'){
  cinematicTimer=setTimeout(()=>{scene.classList.remove('cinematic-active');cinematicTimer=null},kind==='final-bell'?2200:1100);
 }
 
-function solved(key,text){g.flags[key]=true;g.activePuzzle=key;g.catMood=key==='pin'?'remembering':'happy';$('catDialog').textContent=key==='pin'?'아… 저 소리. 루나가 돌아올 거라고 했던 밤이야.':'와! 정말 움직였어. 방 안의 공기가 달라졌어!';tone('gain');save();render();const focusId=({foot:'cabinet',mirror:'crescent',books:'books',piano:'piano',film:'desk',water:'water',light:'flower',clock:'clock',pin:'pin'})[key];if(focusId)window.MoyeoEscapeCamera?.focusSolvedProp(focusId);sceneMoment(key==='pin'?'final-bell':key==='light'?'flower':'solved');modal('PUZZLE SOLVED','장치가 움직이기 시작했다',`<div class="collect-visual">✦</div><p class="modal-description">${text}</p>`)}
+function solved(key,text){g.flags[key]=true;g.activePuzzle=key;g.catMood=key==='pin'?'remembering':'happy';$('catDialog').textContent=key==='pin'?'아… 저 소리. 루나가 돌아올 거라고 했던 밤이야.':'와! 정말 움직였어. 방 안의 공기가 달라졌어!';tone('gain');render();const focusId=({foot:'cabinet',mirror:'crescent',books:'books',piano:'piano',film:'desk',water:'water',light:'flower',clock:'clock',pin:'pin'})[key];if(focusId)window.MoyeoEscapeCamera?.focusSolvedProp(focusId);sceneMoment(key==='pin'?'final-bell':key==='light'?'flower':'solved');modal('PUZZLE SOLVED','장치가 움직이기 시작했다',`<div class="collect-visual">✦</div><p class="modal-description">${text}</p>`)}
 function error(text='아직 맞지 않는 것 같습니다.'){g.errors++;tone('bad');notify(text);save()}
 function objective(){
  if(g.ending)return '저택의 밤이 지나갔다.';
@@ -336,7 +336,7 @@ function bellNote(index){
    g.ambientFlags??={};g.ambientFlags.bellPlayed=true;
    $('catDialog').textContent='이 소리… 나도 따라 부를 수 있을 것 같아. 야옹!';
    g.catMood='happy';render();
-   save();return foyerBell();
+   return foyerBell();
   }
   g.bellInput=[];notify('종소리가 짧게 흩어졌다. 다시 연주할 수 있다.');
  }
@@ -355,7 +355,6 @@ function sconceTouch(){
  tone('bad');
  $('catDialog').textContent='아이쿠! 불꽃에 손을 너무 가까이 댔잖아. 조심해!';
  g.catMood='startled';render();
- save();
  modal('저택 · 작은 사고','아이쿠, 너무 뜨거워요!',
   '<div class="ambient-warmth"><span aria-hidden="true">♨</span><p>깜짝 놀라 손을 뺐다. 다친 곳은 없지만 손끝이 잠깐 화끈거린다.</p>'+
   '<small>미로가 눈을 동그랗게 뜨고 쳐다본다.</small></div>'+
