@@ -530,3 +530,11 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
 .cat-hub-page .cat-taste-footnote{font-size:11px;color:#957d77;line-height:1.6;margin:16px 2px 0}
 @media(max-width:850px){.cat-hub-page .cat-taste-grid{grid-template-columns:1fr}}
 @media(max-width:520px){.cat-hub-page .cat-taste-section{padding:16px;border-radius:20px}.cat-hub-page .cat-taste-heading{align-items:flex-start}.cat-hub-page .cat-taste-count{display:none}.cat-hub-page .cat-taste-card{min-height:148px;padding:14px}.cat-hub-page .cat-taste-art{width:73px;height:87px;font-size:40px}.cat-hub-page .cat-taste-copy strong{font-size:16px}}
+
+
+/* Illustrated taste cards: cohesive hand-painted cat art (2026-11-21). */
+.cat-hub-page .cat-taste-art{width:130px;height:136px;overflow:hidden;flex-shrink:0;border-radius:19px;background:#fff6ef;box-shadow:0 3px 12px #4d2b4215;}
+.cat-hub-page .cat-taste-art img{display:block;width:100%;height:100%;object-fit:cover;object-position:center;transition:transform .25s ease;}
+.cat-hub-page .cat-taste-card:hover .cat-taste-art img{transform:scale(1.045);}
+@media(max-width:520px){.cat-hub-page .cat-taste-art{width:85px;height:103px;border-radius:15px;}.cat-hub-page .cat-taste-card{gap:10px;}}
+@media(prefers-reduced-motion:reduce){.cat-hub-page .cat-taste-art img{transition:none;}}

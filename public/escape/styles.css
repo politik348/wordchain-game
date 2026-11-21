@@ -287,3 +287,9 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 /* Low-amplitude lighting parallax follows pointer without shifting puzzle hit targets. */
 .scene-ambience{transform:translate3d(var(--ambient-x,0px),var(--ambient-y,0px),0);transition:transform .48s ease-out;will-change:transform;}
 @media(prefers-reduced-motion:reduce){.scene-ambience{transform:none;transition:none;will-change:auto;}}
+
+
+/* Illustration hero: original inline SVG replaced with the cat-and-mansion artwork. */
+.home-screen .hero-illustration{overflow:hidden;border-radius:25px;aspect-ratio:560 / 345;}
+.home-screen .hero-illustration img{display:block;width:100%;height:auto;object-fit:cover;object-position:top center;}
+@media(max-width:530px){.home-screen .hero-illustration{border-radius:18px;}}
