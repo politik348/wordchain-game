@@ -734,7 +734,23 @@ scene.addEventListener('pointerleave',()=>{scene.style.setProperty('--ambient-x'
 document.querySelector('[data-camera="discover"]')?.addEventListener('click',exploreSuggestion);
 
 // Dynamic UI events, touch and mouse support.
-$('hotspots').addEventListener('click',e=>{let b=e.target.closest('[data-object]');if(b)inspect(b.dataset.object)});
+// In small illustrated rooms two 48px hitboxes may touch at their edges.
+// Resolve the tap to the object whose visible-location center is closest.
+$('hotspots').addEventListener('click',e=>{
+ const tapped=e.target.closest('[data-object]');
+ if(!tapped)return;
+ if(e.detail===0||!Number.isFinite(e.clientX)||!Number.isFinite(e.clientY)){
+  inspect(tapped.dataset.object);return; // keyboard/screen reader clicks
+ }
+ let choice=tapped,shortest=Infinity;
+ for(const candidate of $('hotspots').querySelectorAll('.hotspot')){
+  const rect=candidate.getBoundingClientRect();
+  if(!rect.width||!rect.height||e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)continue;
+  const dist=(e.clientX-(rect.left+rect.right)/2)**2+(e.clientY-(rect.top+rect.bottom)/2)**2;
+  if(dist<shortest){shortest=dist;choice=candidate;}
+ }
+ inspect(choice.dataset.object);
+});
 $('sceneNav').addEventListener('click',e=>{let b=e.target.closest('[data-room]');if(b)move(b.dataset.room)});
 $('inventory').addEventListener('click',e=>{let b=e.target.closest('[data-item]');if(!b)return;g.selected=g.selected===b.dataset.item?null:b.dataset.item;$('catDialog').textContent=g.selected?items[g.selected][2]:'아이템 선택이 해제되었어.';render()});
 $('modalContent').addEventListener('click',e=>{let b=e.target.closest('[data-action]');if(b)handle(b.dataset.action)});
