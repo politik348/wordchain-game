@@ -22,7 +22,7 @@ const hints={
  clock:['현관 홀의 기록과 시계 관리인의 기록을 다시 비교해 보세요.','밤 9시에 현관이 잠긴 뒤 분침이 원의 1/4만큼 움직였습니다.','밤 9시 15분으로 시계 바늘을 맞추세요.'],
  pin:['종은 이미 열두 번 울렸습니다. 다음 종을 울리는 버튼을 찾을 필요가 있을까요?','시계의 기어는 움직이려 하지만 아래쪽 추가 움직이지 못합니다.','시계 아래 붉은 고정쇠를 잡아당기세요.']
 };
-const state=()=>({v:21,room:'foyer',visited:['foyer'],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[0,0,0,0],night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
+const state=()=>({v:21,room:'foyer',visited:['foyer'],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[1,2,1,2],glassA:{r:1,x:-1},glassB:{r:2,x:1},night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
 let g=null,modalOpen=false,audio=null,catTurns=0;
 const has=id=>g.inventory.includes(id), done=id=>!!g.flags[id], elapsed=()=>Math.floor((Date.now()-(g?.startedAt||Date.now()))/1000)+(g?.elapsedCarry||0), pretty=s=>{let v=Math.max(0,s);return `${String(Math.floor(v/3600)).padStart(2,'0')}:${String(Math.floor(v%3600/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`};
 function save(){if(!g)return;try{store.setItem(SAVE,JSON.stringify({...g,elapsedCarry:elapsed(),startedAt:null}));}catch(e){}}
@@ -282,10 +282,94 @@ function filmCheck(){
  error('필름 아래로 엷은 그림자가 생겼지만 서랍에서는 아무 소리도 들리지 않는다.');desk();
 }
 
-function water(){g.activePuzzle='water';if(done('water')){article('정상으로 돌아온 급수관','네 개의 화분에 물이 알맞게 공급된다.');return}let icons=['☀','☾','✦','☁'];modal('ROOM 03 · 퍼즐 6','네 화분의 수위',`<p class="modal-description">네 화분에는 각각 0부터 3까지 조절할 수 있는 급수 밸브가 있다. 창가에는 오래된 수위 흔적이 남아 있다.</p><div class="water-row">${icons.map((ic,i)=>`<div class="water-plant"><div class="plant-icon">${ic}</div><div class="water-meter">${Array.from({length:3},(_,j)=>`<span class="${3-j<=g.waterValues[i]?'on':''}"></span>`).join('')}</div><div class="water-value">${g.waterValues[i]}</div><div class="water-adjust"><button data-action="water-${i}-minus">−</button><button data-action="water-${i}-plus">＋</button></div></div>`).join('')}</div>`,[['급수 시험','water-check',true]])}
-function waterCheck(){if(g.waterValues.join(',')!=='3,1,2,0'){error('어느 한 화분의 수위가 맞지 않는다.');water();return}g.flags.valves=true;solved('water','급수관에서 물이 흘러나오고, 채광 장치의 잠금쇠가 열립니다. 시든 꽃이 조금씩 고개를 듭니다.')}
-function beam(){g.activePuzzle='light';if(done('light')){article('달빛이 도달한 꽃','은면 원판은 아직 받침대에 놓여 있다. 빛이 달빛꽃을 비추고 있다.');return}if(!done('water')){article('잠긴 채광 장치','급수 장치와 연결된 제어부가 잠겨 있다.');return}if(!has('silverDisc')){article('빈 원형 받침대','현관에서 사용하던 원판이 끼워질 것 같다.');return}let names=['—','/','|','\\'];modal('ROOM 03 · 퍼즐 7','달빛은 꺾인다',`<p class="modal-description">왼쪽 창으로 달빛이 들어온다. 중앙 회전 거울 아래에는 원형 받침대가 있다. 현관에서 가져온 은면 원판을 끼웠다.</p><div class="two-mirrors"><div class="moonbeam-graphic"><span>☾ 창문</span><span class="beam-arrow">→</span><span>거울 A</span><b>${names[g.mirrorA]}</b><span class="beam-arrow ${g.mirrorA===3?'beam-ok':''}">${g.mirrorA===3?'↓':'·'}</span><span>거울 B</span><b>${names[g.mirrorB]}</b><span class="beam-arrow ${g.mirrorA===3&&g.mirrorB===1?'beam-ok':''}">${g.mirrorA===3&&g.mirrorB===1?'←':'·'}</span><span>✿ 달빛꽃</span></div></div><div class="puzzle-buttons"><button data-action="beam-a">거울 A 돌리기 ↻</button><button data-action="beam-b">거울 B 돌리기 ↻</button></div>`,[['빛 비추기','beam-check',true]])}
-function beamCheck(){if(g.mirrorA!==3||g.mirrorB!==1){error('빛이 화분까지 도달하지 못했다.');beam();return}g.flags.light=true;seal('light');solved('light','거울 두 개를 거친 달빛이 꽃잎에 도착합니다. 꽃이 피어나고 빛의 인장을 획득했습니다. 꽃에서 미세한 은빛 가루가 떨어집니다.')}
+
+const greenhouseGlyphs=['☀','☾','✦','☁'];
+function water(){
+ g.activePuzzle='water';
+ if(done('water')){article('흐르는 급수관','물을 채운 뒤 낡은 제어부가 열렸고, 바닥을 따라 작은 물길이 흐른다.');return;}
+ if(!Array.isArray(g.waterValues)||g.waterValues.length!==4||g.waterValues.reduce((a,b)=>a+b,0)!==6)g.waterValues=[1,2,1,2];
+ const tanks=greenhouseGlyphs.map((icon,i)=>
+  '<div class="water-plant"><div class="plant-icon">'+icon+'</div><div class="water-meter">'+Array.from({length:3},(_,j)=>'<span class="'+(3-j<=g.waterValues[i]?'on':'')+'"></span>').join('')+'</div><div class="water-value">'+g.waterValues[i]+'</div></div>'
+ ).join('');
+ const gates=[0,1,2].map(i=>'<div class="water-gate"><button data-action="sluice-'+i+'-right" aria-label="'+(i+1)+'번째 관에서 다음 관으로 물 넘기기">→</button><button data-action="sluice-'+i+'-left" aria-label="'+(i+2)+'번째 관에서 이전 관으로 물 넘기기">←</button></div>').join('');
+ modal('ROOM 03 · 퍼즐 6','녹슨 수문',
+  '<p class="modal-description">유리 수조 네 개는 옆 수조와 가느다란 황동 관으로 이어져 있다. 물은 수조 밖으로 버릴 수 없고, 한쪽 밸브가 열리면 이웃 수조 쪽으로만 흐른다. 수조마다 눈금은 세 개뿐이다.</p>'+
+  '<div class="hydro-puzzle"><div class="water-row">'+tanks+'</div><div class="water-gates">'+gates+'</div></div>'+
+  '<p class="puzzle-helper">각 수조의 안쪽에는 서로 다른 오래된 물때가 남아 있다. 구름 그림 아래 관 끝에는 물기가 없다.</p>',
+  [['잠금쇠 만져 보기','water-check',true]]
+ );
+}
+function sluiceMove(index,dir){
+ if(done('water'))return;
+ if(!Number.isInteger(index)||index<0||index>2)return;
+ if(!Array.isArray(g.waterValues)||g.waterValues.reduce((a,b)=>a+b,0)!==6)g.waterValues=[1,2,1,2];
+ const from=dir==='right'?index:index+1,to=dir==='right'?index+1:index;
+ if(g.waterValues[from]===0){notify('빈 수조에서 물은 흐르지 않는다.');return;}
+ if(g.waterValues[to]===3){notify('그쪽 수조는 이미 가득 차 있다.');return;}
+ g.waterValues[from]--;g.waterValues[to]++;tone('tap');save();water();
+}
+function waterCheck(){
+ if(g.waterValues.join(',')!=='3,1,2,0'){
+  error('수문 아래의 황동 잠금쇠가 조금 움직이다 멈춘다.');water();return;
+ }
+ g.flags.valves=true;solved('water','물이 네 수조를 거쳐 흐르자 온실의 물줄기가 다시 살아납니다. 채광 장치에 걸려 있던 황동 걸쇠가 풀렸습니다.');
+}
+// Two stained-glass masks overlap to make a five-point light pattern.
+// Unlike the foyer puzzle, the aim is a projected silhouette, not ray routing.
+const glassPatterns={
+ A:[0,2,6,7,8,12,13,16,17,21,23],
+ B:[2,3,4,6,8,11,12,15,17,19,20],
+ target:[2,6,8,12,17]
+};
+function projectGlass(cells,setting){
+ let points=cells.map(i=>[i%5,Math.floor(i/5)]);
+ for(let turn=0;turn<setting.r;turn++)points=points.map(([x,y])=>[4-y,x]);
+ return points.map(([x,y])=>[x+setting.x,y]).filter(([x,y])=>x>=0&&x<5&&y>=0&&y<5).map(([x,y])=>y*5+x);
+}
+function glassOutput(){
+ const aa=new Set(projectGlass(glassPatterns.A,g.glassA)),bb=new Set(projectGlass(glassPatterns.B,g.glassB));
+ return [...aa].filter(x=>bb.has(x)).sort((a,b)=>a-b);
+}
+function glassGrid(cells,mode){
+ const set=new Set(cells);
+ return '<div class="glass-tiles '+mode+'">'+Array.from({length:25},(_,i)=>'<span class="'+(set.has(i)?'lit':'')+'">'+(set.has(i)?'✧':'')+'</span>').join('')+'</div>';
+}
+function beam(){
+ g.activePuzzle='light';
+ if(done('light')){article('꽃에 닿은 달빛','채광 장치 안쪽에 얇은 색유리 두 장이 나란히 끼워져 있다. 겹쳐진 빛이 달빛꽃 위에 머문다.');return;}
+ if(!done('water')){article('움직이지 않는 채광창','수문 장치와 맞물린 황동 걸쇠가 창틀을 붙잡고 있다.');return;}
+ if(!has('silverDisc')){article('비어 있는 원판 받침대','온실의 채광창 한쪽에 둥근 반사판을 놓았던 먼지 자국이 있다.');return;}
+ if(!g.glassA||!g.glassB){g.glassA={r:1,x:-1};g.glassB={r:2,x:1};}
+ const out=glassOutput();
+ const renderControls=(which,conf)=>'<div class="glass-filter"><div class="glass-filter-heading"><b>유리판 '+which+'</b><small>가운데 홈에 손가락 자국이 있다.</small></div>'+
+   glassGrid(projectGlass(glassPatterns[which],conf),'filter-'+which.toLowerCase())+
+   '<div class="glass-controls"><button data-action="glass-'+which+'-left" aria-label="'+which+' 유리판 왼쪽">←</button><button data-action="glass-'+which+'-turn" aria-label="'+which+' 유리판 회전">↻</button><button data-action="glass-'+which+'-right" aria-label="'+which+' 유리판 오른쪽">→</button></div></div>';
+ modal('ROOM 03 · 퍼즐 7','꽃에 내려앉은 그림자',
+  '<p class="modal-description">얇은 유리판 두 장에는 작은 투명한 틈들이 나 있다. 창틀 뒤의 달빛이 틈을 통과하면 꽃잎 위로 밝은 점들이 생긴다. 먼지 때문에 유리판을 천천히 움직일 수 있다.</p>'+
+  '<div class="glass-machine"><div class="glass-panes">'+renderControls('A',g.glassA)+renderControls('B',g.glassB)+'</div>'+
+  '<div class="glass-projection"><div class="glass-projection-caption">꽃 위의 달빛</div>'+glassGrid(out,'projection')+'</div></div>'+
+  '<p class="puzzle-helper">꽃잎의 각 부분에는 색이 다른 작은 자국들이 남아 있다.</p>',
+  [['채광 장치 고정하기','beam-check',true]]
+ );
+}
+function glassMove(which,act){
+ if(done('light')||!['A','B'].includes(which))return;
+ const target=which==='A'?g.glassA:g.glassB;
+ if(!target)return;
+ if(act==='turn')target.r=(target.r+1)%4;
+ else if(act==='left')target.x=Math.max(-1,target.x-1);
+ else if(act==='right')target.x=Math.min(1,target.x+1);
+ tone('tap');save();beam();
+}
+function beamCheck(){
+ const actual=glassOutput().join(',');
+ if(actual!==glassPatterns.target.join(',')){
+  error('꽃잎의 한쪽에는 빛이 닿지만, 다른 곳은 여전히 어둡다.');beam();return;
+ }
+ g.flags.light=true;seal('light');
+ solved('light','겹쳐진 두 유리판 사이로 다섯 갈래의 달빛이 꽃잎에 내려앉습니다. 꽃이 피어나고 빛의 인장을 획득했습니다. 흔들린 꽃술에서 작은 은빛 가루가 떨어집니다.');
+}
+
 function clock(){g.activePuzzle='clock';if(done('clock')){article('시계가 맞춰졌다','바늘은 9시 15분을 가리킨다. 제어부의 열두 표시등이 모두 켜졌지만 추는 여전히 멈춰 있다.');return}let minuteRot=g.minute*6,hourRot=g.hour*30+g.minute*.5;modal('ROOM 04 · 퍼즐 9','시계를 되돌릴 시각',`<p class="modal-description">세 인장을 제단에 끼우자 큰 시계의 바늘을 움직일 수 있게 되었다. 시계 바늘은 5분 간격으로 조정된다.</p><div class="clock-visual"><span class="clock-numeral n12">12</span><span class="clock-numeral n3">3</span><span class="clock-numeral n6">6</span><span class="clock-numeral n9">9</span><div class="clock-hand hour" style="transform:rotate(${hourRot}deg)"></div><div class="clock-hand minute" style="transform:rotate(${minuteRot}deg)"></div><div class="clock-pin"></div></div><div class="clock-controls"><div><label>시침</label><button class="small-adjust" data-action="clock-hour-minus">−</button><strong>${g.hour}</strong><button class="small-adjust" data-action="clock-hour-plus">＋</button></div><div><label>분침</label><button class="small-adjust" data-action="clock-minute-minus">−</button><strong>${String(g.minute).padStart(2,'0')}</strong><button class="small-adjust" data-action="clock-minute-plus">＋</button></div></div><div class="night-switch"><button class="${g.night?'active':''}" data-action="clock-night">${g.night?'☾ 밤':'☀ 낮'}</button></div>`,[['시계 고정하기','clock-check',true]])}
 function clockCheck(){if(g.hour!==9||g.minute!==15||!g.night){error('시계 내부에서 톱니가 걸리는 소리가 난다.');clock();return}g.flags.clock=true;solved('clock','바늘이 밤 9시 15분에서 멈춥니다. 열두 개의 경보등이 켜지지만 시계추는 아직 움직이지 않습니다.')}
 function pin(){g.activePuzzle='pin';if(done('pin')){article('해제된 비상 고정쇠','이제 시계 추가 일정한 속도로 흔들린다. 열세 번째 종소리가 이미 울렸다.');return}if(!done('clock')){article('붉은 고정쇠','고정쇠는 잠겨 있다. 제단에는 세 인장을 끼울 수 있지만 시계 바늘이 아직 정확한 곳에 놓이지 않았다.');return}modal('ROOM 04 · 퍼즐 10','마지막으로 남은 장애물',`<p class="modal-description">열두 개의 표시등이 차례로 켜졌지만 종소리는 멈췄다. 제어반의 버튼을 눌러도 반응이 없다.</p><div class="pendulum"><div class="pendulum-rod"></div><div class="pendulum-weight"></div><div class="pendulum-lock">붉은 비상 고정쇠</div></div><div class="puzzle-buttons"><button data-action="pin-push">종 울리기 버튼 누르기</button><button data-action="pin-pull">붉은 고정쇠 잡아당기기</button></div>`)}
@@ -308,8 +392,8 @@ if(action.startsWith('unbook-')){let slot=Number(action.slice(7));if(Number.isIn
 if(action==='portrait-back'){item('film');return modal('FOUND','별 구멍이 난 투명 필름',`<div class="collect-visual">▧</div><p class="modal-description">액자 뒷면에서 투명한 얇은 판이 나옵니다. 네 곳에 작은 구멍이 뚫려 있고 한쪽 모서리에 별이 있습니다.</p>`)}
 if(action.startsWith('drum-')&&action!=='drum-play')return drumSet(Number(action.slice(5)));if(action==='drum-play')return drumPlay();if(action.startsWith('key-'))return keyPress(Number(action.slice(4)));if(action==='piano-reset'){g.pianoInput=[];save();return piano()}
 if(action==='film-turn'){g.filmRotate=(g.filmRotate+1)%4;save();return desk()}if(action==='film-slide'){g.filmShift=g.filmShift===-1?0:g.filmShift===0?1:-1;save();return desk()}if(action==='film-check')return filmCheck();
-if(action==='water-check')return waterCheck();if(action.startsWith('water-')){let [_,i,d]=action.split('-');let idx=Number(i);g.waterValues[idx]=(g.waterValues[idx]+(d==='plus'?1:3))%4;return water()}if(action==='water-check')return waterCheck();
-if(action==='beam-a'){g.mirrorA=(g.mirrorA+1)%4;return beam()}if(action==='beam-b'){g.mirrorB=(g.mirrorB+1)%4;return beam()}if(action==='beam-check')return beamCheck();
+if(action==='water-check')return waterCheck();if(action.startsWith('sluice-')){const p=action.split('-');return sluiceMove(Number(p[1]),p[2])}
+if(action.startsWith('glass-')){const p=action.split('-');return glassMove(p[1],p[2])}if(action==='beam-check')return beamCheck();
 if(action.startsWith('clock-')){let p=action.split('-');if(p[1]==='night')g.night=!g.night;else if(p[1]==='hour')g.hour=((g.hour-1+(p[2]==='plus'?1:11))%12)+1;else if(p[1]==='minute')g.minute=(g.minute+(p[2]==='plus'?5:55))%60;else if(p[1]==='check')return clockCheck();return clock()}
 if(action==='pin-push'){error('버튼을 눌러도 시계추는 움직이지 않는다.');return pin()}if(action==='pin-pull')return pinPull();if(action.startsWith('ending-'))return finish(action.slice(7));if(action.startsWith('journal-'))return journal(action.slice(8));if(action.startsWith('hint-'))return hintMore(action.slice(5));}
 function catSvg(){return `<svg class="miro-portrait" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="미로"><defs><radialGradient id="miro-halo"><stop stop-color="#8c81b4" stop-opacity=".8"/><stop offset="1" stop-color="#303653" stop-opacity=".25"/></radialGradient><linearGradient id="miro-fur" x1="0" x2=".8" y2="1"><stop stop-color="#fff2df"/><stop offset=".65" stop-color="#e9ddd0"/><stop offset="1" stop-color="#c7c9d0"/></linearGradient></defs><circle cx="60" cy="60" r="56" fill="url(#miro-halo)"/><circle cx="92" cy="25" r="3" fill="#e8ca95"/><path d="m26 21 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="#e9c895" opacity=".8"/><g class="miro-tail"><path d="M90 88c21-3 25-23 15-26-9-3-15 5-14 10" fill="none" stroke="#cacbd2" stroke-width="13" stroke-linecap="round"/><path d="M103 63c-4-1-8 1-10 4" fill="none" stroke="#a6aaba" stroke-width="3" stroke-linecap="round"/></g><path d="M27 110c-3-18 11-29 33-29s37 12 34 29" fill="#f3e6d6" stroke="#807a8e" stroke-width="2"/><path d="m20 55-2-35c0-7 6-9 11-5l18 17a45 45 0 0 1 25 0l18-17c5-4 11-2 11 5l-2 35c3 29-15 45-40 45S17 84 20 55Z" fill="url(#miro-fur)" stroke="#7e7a8a" stroke-width="2.8" stroke-linejoin="round"/><path d="m24 26 2 24 19-12Z" fill="#dba9aa" opacity=".75"/><path d="m96 26-2 24-19-12Z" fill="#dba9aa" opacity=".75"/><path d="M30 45c10-7 19-9 30-8 11-1 20 1 30 8" fill="none" stroke="#ffffff" stroke-opacity=".75" stroke-width="4" stroke-linecap="round"/><g class="miro-eyes"><ellipse cx="42" cy="67" rx="10" ry="12" fill="#fff9ee"/><ellipse cx="77" cy="67" rx="10" ry="12" fill="#fff9ee"/><ellipse cx="43" cy="67" rx="5.5" ry="8.5" fill="#4b4b62"/><ellipse cx="77" cy="67" rx="5.5" ry="8.5" fill="#4b4b62"/><circle cx="45" cy="64" r="2.1" fill="#fff"/></g><ellipse cx="29" cy="79" rx="8" ry="4" fill="#e8a6aa" opacity=".5"/><ellipse cx="91" cy="79" rx="8" ry="4" fill="#e8a6aa" opacity=".5"/><path d="m55 78 5 4 5-4Z" fill="#ca9299"/><path d="M60 82c-2 6-5 7-9 4m9-4c2 6 5 7 9 4" fill="none" stroke="#99777e" stroke-width="2.3" stroke-linecap="round"/><path d="m33 82-16-2m17 6-14 3m67-7 16-2m-17 6 14 3" stroke="#b0a4a5" stroke-width="1.5" stroke-linecap="round"/><path d="M42 94c11 8 26 8 36 0l-6 14H49Z" fill="#bca3bc"/><path d="m51 98 9 7 9-7" stroke="#e5cc92" stroke-width="2" fill="none"/><circle cx="60" cy="105" r="3.5" fill="#f0d393"/></svg>`}
