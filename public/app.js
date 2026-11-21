@@ -1,4 +1,5 @@
 import {TURN_SECONDS, dictionaryIndex, replies as chainReplies, validReply, turnsLabel} from './chain-utils.mjs';
+import {renderMafiaGame,renderMafiaRoleCatalog} from './mafia-ui.mjs?v=20261120mafia2';
 import {configureRummikubUI, renderRummikubGame} from './rummikub/ui.mjs?v=20261120rk3';
 import {createSoloRummikub, soloRoom, soloPlayRummikub, soloTickRummikub, catPlayRummikub} from './rummikub/solo.mjs?v=20261120catlevels1';
 import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove, yutSelectedSteps, usableYutRolls} from './yut-solo-engine.mjs?v=20261120catlevels1';
@@ -16,7 +17,7 @@ const GAMES=[
  {id:'rummikub',name:'루미큐브',genre:'두뇌 · 숫자타일',players:'2~4명',emoji:'🀄',color:'#e4f5e9',badge:'친구 대전',desc:'숫자 타일을 조합하고 재배열하는 전략 게임. 친구들과 대결!',rules:[['최초 등록','내 타일만으로 30점 이상의 유효한 조합을 만듭니다.'],['묶음과 연속','같은 숫자 다른 색 3~4개, 같은 색 연속 숫자 3개 이상을 만듭니다.'],['재배열','최초 등록 이후 테이블의 모든 타일을 합법적으로 재배열할 수 있습니다.']]},
  {id:'marble',name:'모여마블',genre:'보드 · 부동산',players:'2~4명',emoji:'🌍',color:'#ffe7ef',badge:'친구 대전',desc:'귀여운 캐릭터와 함께하는 24칸 도시 투자! 일반 8·12·16·20라운드 또는 무한 파산전, 온라인/로컬 친구 대전.',rules:[['주사위','두 주사위를 굴려 도시를 이동합니다.'],['건설','도시를 구매하고 건물을 지어 통행료를 얻습니다.']]},
 
- {id:'mafia',name:'가면단',genre:'마피아 · 심리전',players:'4~12명',emoji:'🎭',color:'#e8e0f7',badge:'인기 게임',desc:'낮에는 토론, 밤에는 비밀 임무! 가면 뒤의 마피아를 찾아내세요.',rules:[['낮과 밤','밤에는 직업별 능력을 사용하고, 낮에는 토론과 투표를 진행해요.'],['비밀 직업','마피아·의사·경찰·시민 역할을 비밀리에 배정받아요.'],['승리 조건','마피아를 모두 찾아내면 시민 승리, 마피아 수가 시민 이상이면 마피아 승리.']]},
+ {id:'mafia',name:'가면단',genre:'마피아 · 직업 추리',players:'4~12명',emoji:'🎭',color:'#e8e0f7',badge:'특수 직업 12종',desc:'마피아, 스파이, 경찰, 의사, 기자, 영매 등 12종 직업! 비밀 행동과 공개 투표로 정체를 추리하세요.',rules:[['직업 모드','기본 직업 또는 특수 직업 모드를 선택하세요.'],['밤의 비밀','각 직업이 능력을 쓰고 마피아는 팀 채팅으로 작전을 논의합니다.'],['낮의 추리','토론 후 투표로 마피아를 찾아내세요. 정치인은 2표를 행사합니다.']]},
  {id:'omok',name:'오목',genre:'두뇌 · 보드',players:'2명',emoji:'⚫',color:'#f4dfb8',badge:'1:1 대결',desc:'15×15 바둑판 위에서 펼쳐지는 흑과 백의 전략 대결!',rules:[['돌 놓기','흑돌이 먼저 시작하고 번갈아 빈 교차점에 돌을 둡니다.'],['승리 조건','가로·세로·대각선으로 같은 색 돌 다섯 개를 이으면 승리합니다.'],['금수','흑돌의 직선 열린 쌍삼 금수를 간소화하여 검사합니다.']]},
  {id:'yut',name:'윷놀이',genre:'전통놀이 · 전략',players:'2~4명',emoji:'🎲',color:'#dff1db',badge:'전통 게임',desc:'도·개·걸·윷·모! 말을 업고 잡으며 신나게 달려 보세요.',rules:[['윷 던지기','윷·모가 나오면 계속 던진 뒤, 모은 결과를 원하는 순서로 사용합니다.'],['말 이동','도·개·걸·윷·모를 따로 또는 합쳐 이동할 수 있습니다. 말을 고르면 경로를 미리 보여준 뒤 확정합니다.'],['도착','상대 말을 잡으면 한 번 더 던지고, 내 말 4개를 모두 도착시키면 승리합니다.']]},
  {id:'doodle',name:'낙서왕',genre:'그림 · 퀴즈',players:'2~8명',emoji:'🎨',color:'#ffe0e6',badge:'친구 추천',desc:'한 명이 그리면 모두가 맞혀요! 손끝에서 펼쳐지는 그림 퀴즈.',rules:[['돌아가며 그리기','각 라운드의 화가만 제시어를 볼 수 있고 그림을 그립니다.'],['정답 맞히기','그림을 보고 정답을 채팅으로 입력하면 점수를 획득합니다.'],['시간 제한','80초마다 화가와 단어가 바뀝니다. 점수가 가장 높은 사람이 우승합니다.']]},
@@ -40,7 +41,8 @@ const gamePrefs={
  omok:{turnSeconds:30,stoneStyle:'normal',aiDifficulty:'beginner'},
  yut:{turnSeconds:45,aiDifficulty:'beginner'},
  rummikub:{turnSeconds:60,aiDifficulty:'beginner'},
- doodle:{turnSeconds:90}
+ doodle:{turnSeconds:90},
+ mafia:{mafiaMode:'special'}
 };
 const catGamesSupported=new Set(['omok','yut','wordchain','rummikub']);
 const pregameModes={};
@@ -52,6 +54,7 @@ try{
   if(catGamesSupported.has(game)&&['beginner','intermediate','advanced'].includes(options.aiDifficulty))gamePrefs[game].aiDifficulty=options.aiDifficulty;
   if(game==='omok'&&['normal','crazy'].includes(options.stoneStyle))gamePrefs[game].stoneStyle=options.stoneStyle;
   if(game==='wordchain'&&['wordchain','kungkungtta'].includes(options.wordMode))gamePrefs[game].wordMode=options.wordMode;
+  if(game==='mafia'&&['classic','special'].includes(options.mafiaMode))gamePrefs[game].mafiaMode=options.mafiaMode;
  }
 }catch{}
 function persistPregamePrefs(){try{localStorage.setItem('moyeo-pregame-settings-v1',JSON.stringify(gamePrefs));}catch{}}
@@ -60,6 +63,7 @@ function pregameModesFor(game,catOnly=false){return catOnly?['cat']:catGames.has
 function pregameSettingGroups(game){
  const prefs=gamePrefs[game];if(!prefs)return [];
  const groups=[];
+ if(game==='mafia'){groups.push({key:'mafiaMode',label:'직업 구성',large:true,value:prefs.mafiaMode||'special',choices:[{value:'classic',label:'기본 직업',description:'마피아 · 경찰 · 의사 · 시민'},{value:'special',label:'특수 직업',description:'군인 · 기자 · 정치인 · 스파이 등 인원별 랜덤 직업'}]});return groups;}
  if(game==='omok')groups.push({key:'stoneStyle',label:'오목 스타일',large:true,value:prefs.stoneStyle||'normal',choices:[
   {value:'normal',label:'정상 모드',description:'깔끔한 흑돌과 백돌'},
   {value:'crazy',label:'미친 모드',description:'캐릭터 오목돌이 펼치는 대결'}
@@ -74,7 +78,7 @@ function pregameSettingGroups(game){
 function pregameFor(game,catOnly=false){
  const g=GAME[game],allowedModes=pregameModesFor(game,catOnly);
  const mode=catOnly?'cat':allowedModes.includes(pregameModes[game])?pregameModes[game]:allowedModes[0];
- return renderPregame({game:g,allowedModes,mode,settings:pregameSettingGroups(game),aiDifficulty:gamePrefs[game]?.aiDifficulty||'beginner',rules:g.rules,rooms:catOnly?[]:roomList.filter(x=>x.game===game),showJoin:!catOnly,backAction:catOnly?'openCatHub':'home'});
+ return renderPregame({game:g,allowedModes,mode,settings:pregameSettingGroups(game),aiDifficulty:gamePrefs[game]?.aiDifficulty||'beginner',rules:g.rules,rooms:catOnly?[]:roomList.filter(x=>x.game===game),showJoin:!catOnly,backAction:catOnly?'openCatHub':'home'})+(game==='mafia'?renderMafiaRoleCatalog():'');
 }
 const dictionaryLabel='국립국어원 우리말샘 + 표준국어대사전 (확장 명사 437,875개)';
 function optionsFor(game){return {...(gamePrefs[game]||{})};}
@@ -275,7 +279,7 @@ function patchDoodle(previous,current){
 function clues(){return room.state.clues.map(c=>`<div class="clue-line"><strong>${esc(nick(c.by))}</strong><span>${esc(c.text)}</span></div>`).join('');}
 function votingChoices(action){const s=room.state;const already=s.votes.includes(user.sid);return `<div class="voter-grid">${room.players.map(p=>`<button class="choice-button" data-action="${action}" data-target="${p.id}" ${already||room.status==='finished'?'disabled':''}>${chars[room.players.indexOf(p)%chars.length]} ${esc(p.nick)}</button>`).join('')}</div>${already?'<p class="game-note">투표 완료. 다른 플레이어의 투표를 기다리고 있어요.</p>':''}`;}
 function liarGame(){const s=room.state,isLiar=s.isLiar;const result=room.status==='finished';return `<div class="game-topline"><span class="stage-badge">🕵️ ${s.phase==='clue'?'한 줄 설명':s.phase==='vote'?'라이어 투표':s.phase==='guess'?'최후의 추리':'게임 결과'}</span><span class="time-badge">${esc(s.topic)} 주제</span></div><div class="secret-card ${isLiar?'is-liar':''}"><small>${isLiar?'당신은 라이어입니다!':'당신이 받은 비밀 제시어'}</small><div class="secret-word">${isLiar?'🤫 제시어를 모릅니다':esc(s.myWord||s.word||'')}</div>${isLiar?'<p class="game-note">상대방의 힌트를 보고 제시어를 추측하세요.</p>':''}</div>${s.clues.length?`<h3>💬 참가자들의 힌트</h3>${clues()}`:''}${s.phase==='clue'?`<div class="hint-panel">현재 순서: ${esc(nick(s.speaker))} · 제시어를 직접 말하면 안 됩니다.</div>${s.speaker===user.sid?`<form data-form="clue" class="action-form"><input name="text" class="text-input" maxlength="60" placeholder="제시어에 대한 한 줄 설명" required autocomplete="off"/><button type="submit" class="button button-primary">설명하기</button></form>`:''}`:s.phase==='vote'?`<h3>의심스러운 사람에게 투표하세요!</h3>${votingChoices('liarVote')}`:s.phase==='guess'?`<div class="hint-panel">${esc(nick(s.liar||s.chosen))}님이 라이어로 지목됐습니다. 제시어를 맞히면 역전!</div>${isLiar?`<form data-form="guess" class="action-form"><input name="text" class="text-input" maxlength="40" placeholder="제시어 정답 입력" autocomplete="off" required/><button type="submit" class="button button-primary">최후의 추리</button></form>`:''}`:''}${result?`<div class="game-prompt">정답: <strong>${esc(s.word)}</strong> · 라이어: <strong>${esc(nick(s.liar))}</strong></div>`:''}${endBanner()}`;}
-function mafiaGame(){const s=room.state,alive=s.alive.includes(user.sid),day=s.phase!=='night',voted=s.votes.includes(user.sid);return `<div class="game-topline"><span class="stage-badge">🎭 ${s.day}일차</span><span class="time-badge">생존 ${s.alive.length}명 / ${room.players.length}명</span></div><div class="mafia-stage ${day?'day':''}"><span class="stage-icon">${day?'☀️':'🌙'}</span><div><h2>${s.phase==='night'?'깊은 밤입니다':s.phase==='discussion'?'낮 토론 시간':'운명의 투표 시간'}</h2><p>${s.phase==='night'?'마피아·의사·경찰은 자신의 능력을 사용하세요.':s.phase==='discussion'?'채팅으로 단서를 공유하고 범인을 추리하세요.':'의심되는 사람을 선택하세요.'}</p></div></div><div class="role-reveal"><span style="font-size:34px">${s.role==='마피아'?'🗡️':s.role==='의사'?'🩺':s.role==='경찰'?'🔍':'🏡'}</span><div><small>나의 비밀 역할</small><strong>${esc(s.role)}</strong>${s.investigation?`<small style="display:block;color:#e65d7b;margin-top:7px">수사 결과: ${esc(s.investigation)}</small>`:''}</div></div><div class="game-prompt"><strong>${alive?'당신은 생존 중입니다.':'탈락하여 관전 중입니다.'}</strong><br/>${s.phase==='night'?'밤의 역할을 가진 사람만 투표합니다. 일반 시민은 아침을 기다립니다.':s.phase==='discussion'?'의견을 나눈 뒤 방장이 투표를 시작합니다.':'기권도 가능합니다.'}</div>${s.phase==='night'&&alive&&s.role!=='시민'?`<h3>비밀 행동 대상 선택 ${s.nightSubmitted?.includes(user.sid)?'✓ 제출 완료':''}</h3><div class="voter-grid">${room.players.filter(p=>s.alive.includes(p.id)&&(s.role!=='마피아'||p.id!==user.sid)).map(p=>`<button class="choice-button" data-action="night" data-target="${p.id}" ${s.nightSubmitted?.includes(user.sid)?'disabled':''}>${chars[room.players.indexOf(p)]} ${esc(p.nick)}</button>`).join('')}</div>`:''}${s.phase==='discussion'&&amHost()?`<div class="button-row" style="margin:16px 0">${btn('discussionEnd','☀ 토론 마치고 투표 시작','button-primary')}</div>`:''}${s.phase==='vote'&&alive?`<div class="voter-grid">${room.players.filter(p=>s.alive.includes(p.id)).map(p=>`<button class="choice-button" data-action="mafiaVote" data-target="${p.id}" ${voted?'disabled':''}>${chars[room.players.indexOf(p)]} ${esc(p.nick)}</button>`).join('')}<button class="choice-button" data-action="mafiaVote" data-target="skip" ${voted?'disabled':''}>기권</button></div>`:''}${s.phase==='vote'&&!alive?'<p class="game-note">투표 중입니다. 관전해 주세요.</p>':''}${day&&alive?`<div class="draw-chat" style="margin-top:18px">${s.chat.slice(-18).map(c=>`<div class="chat-row"><strong>${esc(c.nick)}</strong> ${esc(c.text)}</div>`).join('')||'<span style="color:#aaa">여기에서 토론이 진행됩니다.</span>'}</div><form class="action-form" data-form="chat"><input class="text-input" name="text" maxlength="80" placeholder="추리와 의견을 나눠 보세요" autocomplete="off" required/><button type="submit" class="button button-primary">채팅</button></form>`:''}<div class="mafia-history">${s.history.slice(-5).map(h=>`<div>• ${esc(h.text)}</div>`).join('')}</div>${endBanner()}`;}
+function mafiaGame(){return renderMafiaGame(room,user.sid,{host:amHost(),timeBar,endBanner:endBanner()});}
 const cardEmoji={과일:'🍓',달:'🌙',별:'⭐',도깨비:'👹'};
 function bellGame(){const s=room.state;return `<div class="game-topline"><span class="stage-badge">🔔 도깨비 밤 장터</span><span class="time-badge">카드 ${s.draws}/${s.maxDraws}</span></div><div class="bell-table"><h2>짝이 나오면 종을 쳐요!</h2><p class="game-note">같은 그림이 2장 이상이거나 도깨비가 등장하면 성공!</p><div class="bell-cards">${room.players.map(p=>`<div class="bell-card ${s.cards[p.id]?'':'face-down'}"><span>${s.cards[p.id]?cardEmoji[s.cards[p.id]]:'❔'}</span><strong>${esc(p.nick)}</strong></div>`).join('')}</div><div style="display:flex;justify-content:center"><button type="button" class="big-bell" data-action="ring" aria-label="종 치기" ${room.status==='finished'?'disabled':''}>🔔</button></div><div class="bell-caption">${esc(s.feedback||'카드가 나오기를 기다리세요.')}</div><div class="roll-pill">쌓인 카드 ${s.pile}장 · 정답시 획득!</div></div>${endBanner()}`;}
 const yutCoords={0:[495,495],1:[495,402],2:[495,309],3:[495,216],4:[495,123],5:[495,30],6:[402,30],7:[309,30],8:[216,30],9:[123,30],10:[30,30],11:[30,123],12:[30,216],13:[30,309],14:[30,402],15:[30,495],16:[123,495],17:[216,495],18:[309,495],19:[402,495],20:[495,495],21:[408,117],22:[318,205],23:[263,263],24:[210,318],25:[117,408],26:[117,117],27:[205,205]};
@@ -924,6 +928,7 @@ document.addEventListener('click',async e=>{
  if(action==='leave'){if(confirm('게임방을 나가시겠습니까?'))await leave();return;}
  if(action==='share'||action==='copyCode'){if(!room)return;const text=action==='copyCode'?room.id:`${location.origin}/?room=${room.id}`;try{await navigator.clipboard.writeText(text);toast('초대 정보를 복사했습니다.');}catch{toast(text);}return;}
  if(action==='place'){await act('place',{x:Number(b.dataset.x),y:Number(b.dataset.y)});return;}
+ if(action==='mafiaPass'){await act('nightPass');return;}
  if(action==='night'||action==='mafiaVote'||action==='liarVote'){await act(action==='mafiaVote'?'vote':action==='liarVote'?'vote':'night',{target:b.dataset.target});return;}
  if(action==='drawColor'){drawColor=b.dataset.color;document.querySelectorAll('.color-dot').forEach(el=>el.classList.toggle('selected',el.dataset.color===drawColor));return;}
  if(action==='roll'||action==='soloYutRoll'){
@@ -1006,7 +1011,7 @@ document.addEventListener('submit',async e=>{
  if(form.id==='joinForm'){e.preventDefault();const code=$('joinInput').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==6){toast('6자리 코드를 입력하세요.');return;}await joinRoom(code);return;}
  if(!form.dataset.form)return;e.preventDefault();if(composingForm)return;const values=Object.fromEntries(new FormData(form).entries());const type=form.dataset.form;
  if(type==='soloWord'){const input=form.querySelector('input[name=word]');if(input)input.value='';const worked=soloPlayWord(values.word);if(worked===false&&input){input.value=values.word;input.focus({preventScroll:true});}return;}
- const mapping={word:'word',chat:'chat',lobbyChat:'lobbyChat',clue:'clue',guess:'guess'};
+ const mapping={word:'word',chat:'chat',lobbyChat:'lobbyChat',mafiaWhisper:'mafiaWhisper',clue:'clue',guess:'guess'};
  if(mapping[type]){
   const input=form.querySelector('input,textarea');
   if(room?.game==='doodle'&&type==='chat'){

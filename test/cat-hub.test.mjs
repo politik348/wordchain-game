@@ -50,7 +50,7 @@ test('Pre-game detail uses shared illustrated UI and exposes only supported play
 test('Marble isolates Cat mode from friend modes and returns to the Cat hub',()=>{
  assert.match(app,/\/marble\/index\.html\?cat=1/);
  assert.match(app,/\/tetris\/index\.html\?cat=1/);
- assert.match(marble,/const selectedBattles=catChallenge\?battles\.filter/);
+ assert.match(marble,/allowedModes:catChallenge\?\['cat'\]:\['online','local'\]/);
  assert.match(marble,/mode=catChallenge\?'ai':'local'/);
  assert.match(marble,/mode=catChallenge\?'ai':'local';location\.hash/);
  assert.match(marbleHtml,/id="mmReturnLink"/);

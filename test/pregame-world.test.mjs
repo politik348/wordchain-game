@@ -78,8 +78,8 @@ test('main game modes, option saving, start dispatch and lobby chat all use real
  assert.match(app,/lobbyChat:'lobbyChat'/);
  assert.match(server,/if\(type==='lobbyChat'\)/);
  assert.match(server,/st!=='lobby'/);
- assert.match(index,/pregame\.css\?v=20261120catlevels1/);
- assert.match(index,/app\.js\?v=20261120catlevels1/);
+ assert.match(index,/pregame\.css\?v=[^"']+/);
+ assert.match(index,/app\.js\?v=[^"']+/);
 });
 
 test('standalone pregame starts real engines with selections, and retains Marble v5 screen',()=>{
@@ -95,5 +95,5 @@ test('standalone pregame starts real engines with selections, and retains Marble
  assert.match(tetris,/difficulty==='hard'/);
  assert.match(logic,/standalone-pregame\.mjs/);
  assert.match(gamehell,/standalone-pregame\.mjs/);
- assert.match(marble,/mm-setup-v5/);
+ assert.match(marble,/renderPregame\(/);assert.match(marble,/allowedModes:catChallenge\?\['cat'\]:\['online','local'\]/);
 });
