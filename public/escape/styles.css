@@ -390,3 +390,82 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
  .rune-book-card>button:first-child span{font-size:14px;}
 }
 @media(prefers-reduced-motion:reduce){.moonbeam-light{animation:none;}}
+
+
+/* EP01 Puzzle laboratory — tactile controls, naturally discoverable observations. */
+.roll-dial{width:min(100%,360px);margin:12px auto 18px;display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px;background:linear-gradient(160deg,#4e435a,#302e4b);border:4px double #c1a27c;border-radius:19px;}
+.roll-dial-stop{min-width:0;aspect-ratio:1;border-radius:50%;border:2px solid #b3997d;background:radial-gradient(circle at 35% 24%,#727186,#3a3a59);color:#edd5a5;font-size:18px;transition:background .2s,transform .18s;box-shadow:inset 0 2px 4px #ffffff22,0 3px 9px #15152585;}
+.roll-dial-stop.selected{background:radial-gradient(circle at 35% 22%,#f4dca6,#ac8565);color:#493849;border-color:#f8e4b9;box-shadow:0 0 0 3px #f6d9a645,0 4px 12px #19152b99;transform:scale(1.06);}
+.roll-dial-stop:hover{border-color:#ffe7b6;transform:translateY(-2px);}
+.roll-sheet{position:relative;}
+.hydro-puzzle{position:relative;margin:18px 0;background:linear-gradient(180deg,#31465e,#24344f);border:2px solid #ac9a8480;border-radius:18px;padding:8px 8px 14px;box-shadow:inset 0 8px 18px #121b2b48;}
+.hydro-puzzle .water-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:4px auto 10px;}
+.hydro-puzzle .water-plant{border:1px solid #91b0bd7a;background:linear-gradient(180deg,#3b5361,#253448);padding:12px 3px;box-shadow:inset 0 3px 10px #141f3680;}
+.hydro-puzzle .water-value{font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;}
+.hydro-puzzle .water-meter{border-color:#b8cfd3;background:#13273bd1;}
+.hydro-puzzle .water-meter .on{background:linear-gradient(180deg,#a8e2d9,#5fa9b9);box-shadow:0 0 10px #8bcbd96a;}
+.water-gates{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:10px;width:80%;margin:0 auto;}
+.water-gate{display:flex;gap:6px;justify-content:space-around;align-items:center;min-width:0;padding:6px 3px;border-radius:9px;border:1px solid #c9bda45c;background:#1e2c45a0;}
+.water-gate button{flex:1;max-width:48px;min-width:29px;min-height:36px;background:linear-gradient(150deg,#516a80,#33475e);border:1px solid #b6d0d361;border-radius:7px;color:#d7f1ec;font-size:17px;font-weight:900;}
+.water-gate button:hover{background:#68869a;border-color:#d6e7db;}
+.glass-machine{display:grid;grid-template-columns:1fr;gap:13px;margin:18px 0 10px;}
+.glass-panes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.glass-filter{min-width:0;padding:12px;background:linear-gradient(155deg,#3c4d66,#283754);border:1px solid #a8c7c279;border-radius:14px;box-shadow:inset 0 1px #ffffff1b;}
+.glass-filter-heading{display:flex;flex-direction:column;gap:3px;text-align:center;margin-bottom:9px;}
+.glass-filter-heading b{color:#f4dfbb;font-size:12px;}
+.glass-filter-heading small{font-size:10px;color:#b4c7d5;}
+.glass-tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));aspect-ratio:1;gap:2px;padding:6px;border:2px solid #b1c7c47a;border-radius:13px;background:#13263d;margin:auto;}
+.glass-tiles>span{display:grid;place-items:center;min-width:0;background:#26334e;border:1px solid #6580973b;border-radius:4px;color:transparent;}
+.glass-tiles>span.lit{background:radial-gradient(circle,#f4e6b1 0,#acbed3 44%,#4c7494 98%);color:#fffad7;text-shadow:0 0 7px #fff6c5;font-size:12px;box-shadow:0 0 7px #f7d78d3f;}
+.glass-tiles.filter-a>span.lit{background:radial-gradient(circle,#ffebb8,#8fbbcd);}
+.glass-tiles.filter-b>span.lit{background:radial-gradient(circle,#f8d1c6,#b7accb);}
+.glass-controls{display:flex;gap:6px;justify-content:center;margin-top:12px;}
+.glass-controls button{flex:1;min-width:0;max-width:60px;padding:7px 4px;border:1px solid #d0c4b37a;border-radius:7px;background:#4b4b67;color:#f6e6cd;font-size:16px;font-weight:850;}
+.glass-controls button:hover{background:#625878;border-color:#f9dbaa;}
+.glass-projection{padding:15px;max-width:262px;width:100%;margin:0 auto;border:1px solid #d1bb8c74;border-radius:17px;background:radial-gradient(circle,#495875,#282e4e);}
+.glass-projection-caption{font-size:11px;font-weight:700;letter-spacing:.7px;text-align:center;color:#f0daae;margin-bottom:7px;}
+.glass-projection .glass-tiles{max-width:195px;}
+.glass-tiles.flower-imprint{width:min(100%,220px);background:#3c5e5e;border:5px solid #b5c69c;margin:17px auto;}
+.glass-tiles.flower-imprint>span{background:#536963;border-color:#9bb5a144;}
+.glass-tiles.flower-imprint>span.lit{background:radial-gradient(circle,#f6e8c4,#a6d8d3 55%,#41777e);box-shadow:inset 0 0 6px #e8e3c96a;}
+.pollen-tracks{padding:18px 12px;margin:17px auto;max-width:310px;border:1px solid #b7c1bb6b;border-radius:15px;background:radial-gradient(circle at 50% 40%,#49676c,#21344b);display:grid;gap:13px;text-align:center;}
+.pollen-tracks span{font-family:Georgia,serif;color:#e5f2c6;text-shadow:0 0 8px #a9ebe1;font-size:23px;letter-spacing:5px;animation:pollenShimmer 3.8s ease-in-out infinite alternate;}
+.pollen-tracks span:nth-child(2){animation-delay:1s;opacity:.6;}
+.pollen-tracks span:nth-child(3){animation-delay:2s;opacity:.35;}
+@keyframes pollenShimmer{from{filter:brightness(.7);transform:translateY(1px)}to{filter:brightness(1.2);transform:translateY(-1px)}}
+.pin-wheel-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:19px auto;}
+.pin-wheel{min-width:0;padding:13px 7px 10px;border:1px solid #e0c59780;border-radius:16px;background:linear-gradient(150deg,#615369,#353851);text-align:center;box-shadow:inset 0 2px #ffffff12;}
+.pin-wheel-title{color:#f7e4c3;font-weight:850;font-size:27px;line-height:1.25;}
+.pin-wheel-title small{display:block;font-size:10px;color:#e6cfbc;margin-top:6px;}
+.pin-wheel-glyphs{display:flex;justify-content:center;gap:7px;min-height:43px;align-items:center;margin:9px auto;padding:6px;background:#1e263eab;border:1px solid #c9a8874d;border-radius:8px;}
+.pin-wheel-glyphs span{font-size:16px;color:#7e809c;opacity:.54;}
+.pin-wheel-glyphs span.active{color:#ffe7ad;opacity:1;text-shadow:0 0 8px #ebc38b;}
+.pin-wheel button{font-size:10px;font-weight:850;line-height:1.4;min-height:41px;border:1px solid #d7b58d9d;border-radius:9px;color:#fcddaf;background:#554663;padding:7px 5px;}
+.pin-wheel button:hover{background:#6b5873;}
+.pendulum-released .pendulum-rod{animation:pendulumSway 2.5s ease-in-out infinite alternate;transform-origin:top center;}
+.pendulum-released .pendulum-weight{animation:pendulumWeight 2.5s ease-in-out infinite alternate;}
+@keyframes pendulumSway{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+@keyframes pendulumWeight{from{transform:translateX(-6px)}to{transform:translateX(6px)}}
+@media(max-width:530px){
+ .glass-filter{padding:7px 5px;}
+ .glass-panes{gap:7px;}
+ .glass-tiles{gap:1px;padding:4px;border-width:1px;border-radius:8px;}
+ .glass-tiles>span{border-radius:2px;}
+ .glass-filter-heading small{font-size:9px;}
+ .glass-controls{gap:4px;margin-top:7px;}
+ .glass-controls button{font-size:15px;min-height:34px;}
+ .hydro-puzzle{padding:5px;}
+ .hydro-puzzle .water-row{gap:3px;}
+ .hydro-puzzle .water-plant{padding:8px 2px;}
+ .water-gates{width:91%;gap:4px;}
+ .water-gate button{min-width:27px;min-height:33px;font-size:15px;padding:3px;}
+ .pin-wheel-row{gap:6px;}
+ .pin-wheel{padding:8px 3px;}
+ .pin-wheel-title{font-size:22px;}
+ .pin-wheel-title small{font-size:9px;}
+ .pin-wheel-glyphs{gap:4px;padding:5px 2px;}
+ .pin-wheel-glyphs span{font-size:13px;}
+ .roll-dial{padding:8px;gap:4px;}
+ .roll-dial-stop{font-size:15px;}
+}
+@media(prefers-reduced-motion:reduce){.pollen-tracks span,.pendulum-released .pendulum-rod,.pendulum-released .pendulum-weight{animation:none;}}
