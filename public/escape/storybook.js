@@ -45,7 +45,21 @@
   style.textContent=css.join('\n');
   document.head.appendChild(style);
 
-  let pan=0,zoom=1.025,drag=null,lastRoom=null;
+  let pan=0,zoom=1.025,drag=null,lastRoom=null,focusTimer=null;
+  const cancelFocus=()=>{if(focusTimer!==null){clearTimeout(focusTimer);focusTimer=null;}};
+  function focusSolvedProp(id){
+    if(!active()||!spotPositions[lastRoom]?.[id])return;
+    cancelFocus();
+    const beforePan=pan,beforeZoom=zoom;
+    const [x]=spotPositions[lastRoom][id];
+    pan=clamp((50-x)*.18,-8,8);
+    zoom=clamp(zoom+.065,1.025,1.16);
+    update();
+    focusTimer=setTimeout(()=>{
+      pan=beforePan;zoom=beforeZoom;focusTimer=null;update();
+    },1450);
+  }
+  window.MoyeoEscapeCamera={focusSolvedProp};
   const active=()=>scene.classList.contains('storybook-ready');
   const update=()=>{
     scene.style.setProperty('--storybook-pan',pan.toFixed(2)+'%');
@@ -81,6 +95,7 @@
       if(!active())return;
       const direction=control.dataset.camera;
       if(direction==='discover')return; // Existing exploration-reveal handler stays active.
+      cancelFocus();
       event.preventDefault();
       event.stopImmediatePropagation(); // Prevent hidden WebGL scene from rotating underneath.
       if(direction==='left')pan=clamp(pan+3.5,-8,8);
@@ -93,6 +108,7 @@
   }
   scene.addEventListener('wheel',event=>{
     if(!active())return;
+    cancelFocus();
     event.preventDefault();
     event.stopImmediatePropagation();
     zoom=clamp(zoom+(event.deltaY<0?.032:-.032),1.025,1.20);
@@ -103,6 +119,7 @@
   scene.addEventListener('pointerdown',event=>{
     if(!active()||event.target.closest('.hotspot,.camera-controls'))return;
     if(event.button!==0&&event.pointerType==='mouse')return;
+    cancelFocus();
     drag={id:event.pointerId,x:event.clientX,pan};
     if(scene.setPointerCapture)scene.setPointerCapture(event.pointerId);
   });
