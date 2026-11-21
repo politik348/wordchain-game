@@ -1,9 +1,11 @@
 /* MOYEO GAME HELL · Standalone, original arcade collection.
    No dependencies, no imported art, no server-side changes required. */
 const W=420,H=600, TAU=Math.PI*2;
+const arcadeTrial=new URLSearchParams(location.search).get('trial')==='1';
+const TRIAL_MODE_IDS=new Set(['drill','hurdle','chain']);
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const canvas=$('#arena'),ctx=canvas.getContext('2d',{alpha:false});
-const storeKey='moyeo-gamehell-v1';
+const storeKey=arcadeTrial?'moyeo-gamehell-trial-v1':'moyeo-gamehell-v1';
 const modes=[
   {id:'drill',title:'낙하대작전',emoji:'💎',cat:'timing',desc:'안전한 바닥을 골라 드릴! 위험한 가시는 피해요.',hint:'세 칸 중 안전한 칸을 터치',tip:'보석 칸은 높은 점수, 가시 칸은 체력 감소!',color:'#ff9f82'},
   {id:'hurdle',title:'폴짝도로',emoji:'🐾',cat:'action',desc:'장애물을 넘고 점프 궤적에 놓인 별을 직접 먹는 달리기 게임!',hint:'터치로 점프 · 공중에서 한 번 더',tip:'장애물 바로 앞에서 점프하면 별이 점프 경로에 들어와요.',color:'#8fe3ff'},
@@ -18,7 +20,7 @@ const modes=[
   {id:'slalom',title:'숲길슬라럼',emoji:'🌲',cat:'control',desc:'스키를 타고 나무 사이 안전한 길로 달려요.',hint:'터치할 때마다 좌우 차선 변경',tip:'나무가 아래에 내려오기 전에 미리 이동!',color:'#b5e6a3'},
   {id:'balloon',title:'풍선탈출',emoji:'🎈',cat:'control',desc:'바람을 피해 공중의 구름 사이를 유영해요.',hint:'누르고 상승 · 놓으면 서서히 하강',tip:'바람을 예측하면서 풍선 고도를 유지하세요.',color:'#ff9cbe'},
   {id:'chain',title:'찰싹친구들',emoji:'🧲',cat:'control',desc:'자동으로 움직이며 친구를 모으고, 꼬리에 부딪히지 않고 오래 버텨요.',hint:'터치 · SPACE = 회전 방향 바꾸기',tip:'친구를 모으면 꼬리가 길어져요. 벽과 자신의 꼬리를 피하세요!',color:'#ffc98f'}
-];
+].filter(m=>!arcadeTrial||TRIAL_MODE_IDS.has(m.id));
 const labels={timing:'타이밍',action:'액션',control:'컨트롤'};
 const skins=(Array.isArray(window.MOYEO_CHARACTERS)?window.MOYEO_CHARACTERS:[]).filter(c=>c&&typeof c.id==='string'&&/^[a-z0-9_-]+$/i.test(c.id)).map(c=>({...c,cost:Math.max(0,Math.floor(Number(c.price)||0)),color:c.color||'#ffbd78',image:c.image||'',rarity:c.rarity||'common',perk:c.perk||null}));
 if(!skins.length)skins.push({id:'cheese',name:'치즈냥',cost:0,color:'#ffbd78',image:'./assets/characters/cheese.svg'});
@@ -308,4 +310,20 @@ function drawFriend(x,y,r,c){circ(x,y+2,r+2,'#211e48');circ(x,y,r,c);
   circ(x-r*.44,y+r*.28,r*.15,'#f68fa644');circ(x+r*.44,y+r*.28,r*.15,'#f68fa644');
   line(x-r*.18,y+r*.32,x+r*.18,y+r*.32,'#755b75',Math.max(1,r*.12));}
 function drillRow(){const types=['rock','rock','gem'];types[Math.floor(rand(0,3))]='spike';if(!types.includes('gem'))types[(types.findIndex(a=>a==='spike')+1)%3]='gem';return types.sort(()=>Math.random()-.5)}
+if(arcadeTrial){
+  document.body.classList.add('gamehell-trial');
+  document.title='모여게임지옥 · 맛보기 3종';
+  const headline=document.querySelector('.intro h1');
+  if(headline)headline.innerHTML='세 게임 먼저 <em>맛보기!</em>';
+  const intro=document.querySelector('.intro p');
+  if(intro)intro.textContent='낙하대작전 · 폴짝도로 · 찰싹친구들. 각 45초씩 체험하고 기록을 세워보세요! 맛보기의 별조각과 기록은 정식판과 별도로 저장됩니다.';
+  const topPill=document.querySelector('.top-pill');if(topPill)topPill.textContent='TRIAL · 3 GAMES';
+  const gameCount=document.querySelector('#libraryTitle .count');if(gameCount)gameCount.textContent='3';
+  const introChips=document.querySelector('.intro-chips');if(introChips)introChips.innerHTML='<span>★ 무료 체험 3종</span><span>⏱ 각 45초</span><span>☑ 정식 기록과 분리</span>';
+  const back=document.createElement('a');back.href='/?cat=1';back.className='gamehell-trial-back';back.textContent='← 고양이를 이겨라 · 맛보기 목록';document.querySelector('.intro')?.prepend(back);
+  for(const selector of ['#shopHeaderBtn','#openShopBtn','.wardrobe','.achievements']){const el=document.querySelector(selector);if(el)el.style.display='none';}
+  for(const button of document.querySelectorAll('.duration'))if(Number(button.dataset.duration)!==45){button.style.display='none';button.disabled=true;}
+  const durationLabel=document.querySelector('.mode-select>span');if(durationLabel)durationLabel.textContent='맛보기 제한시간 · 45초';
+  const note=document.querySelector('.library-foot small');if(note)note.textContent='맛보기는 3종만 제공되며, 정식 게임에는 13종과 캐릭터 상점이 있습니다.';
+}
 renderSkins();updateRecords();selectGame(modes[0].id);requestAnimationFrame(loop);
