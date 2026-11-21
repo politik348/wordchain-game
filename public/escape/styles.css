@@ -564,3 +564,108 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 @media(max-width:530px){
  .ambient-description{padding:18px 15px;font-size:13px;line-height:1.85;}
 }
+
+
+/* EP01 storybook polish — side discoveries, scrapbook, cinematic moments.
+   All scenery hotspots stay completely invisible and cursor-neutral. */
+.inventory-slot{position:relative;min-width:0;}
+.inventory-slot>.inventory-item{width:100%;height:79px;padding:8px 8px 17px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;}
+.inventory-slot .inventory-inspect{position:absolute;right:3px;bottom:3px;min-width:25px;min-height:25px;padding:1px 5px;border:1px solid #e3caab54;background:#252c4799;color:#e9d8c8;border-radius:7px;font-size:14px;line-height:1;z-index:2;}
+.inventory-slot .inventory-inspect:hover,.inventory-slot .inventory-inspect:focus-visible{background:#65556c;color:#fff5dc;}
+.inventory-slot .inventory-item[aria-pressed="true"]{outline:1px solid #ffdf9b;outline-offset:1px;}
+.item-detail-icon{width:92px;height:92px;margin:15px auto;border:2px solid #d8b98c;border-radius:22px;display:grid;place-items:center;background:radial-gradient(circle,#655576,#323b60);box-shadow:0 0 22px #e9ca8b27,inset 0 2px #ffffff29;color:#f9deb2;font-size:53px;}
+.combined-item-visual{display:flex;gap:16px;justify-content:center;align-items:center;margin:18px auto;}
+.combined-item-visual span{width:80px;height:80px;display:grid;place-items:center;border:2px solid #cfb08897;border-radius:18px;background:#5a4c67;color:#ffebc6;font-size:42px;}
+.combined-item-visual b{font:900 26px Georgia,serif;color:#f6e0b2;}
+.bell-sheet{position:relative;margin:18px auto 16px;padding:16px 19px;width:min(100%,360px);text-align:center;
+ background:linear-gradient(140deg,#fff2d4,#e2d0ab);border:1px solid #a78968;border-radius:10px;
+ box-shadow:4px 6px 0 #ad8f6975,0 11px 24px #0f152c65;color:#5b4a42;}
+.bell-sheet::before{content:"♫";position:absolute;top:6px;right:12px;font:20px Georgia,serif;color:#ab8b61;}
+.bell-sheet small{display:block;font-size:11px;color:#846954;letter-spacing:1px;}
+.bell-sheet strong{display:block;font-size:23px;letter-spacing:8px;margin:10px auto 2px;color:#684b47;font-family:Georgia,serif;}
+.bell-score{display:flex;justify-content:center;gap:14px;margin:14px auto 6px;border-block:2px solid #977b6977;padding:7px 0;}
+.bell-score span{font:900 25px Georgia,serif;color:#694c48;}
+.bell-keys{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0 10px;}
+.bell-key{min-width:0;min-height:88px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;
+ color:#fff1cc;border:1px solid #f4d499;border-bottom:5px solid #9b755b;border-radius:14px;
+ background:linear-gradient(135deg,#c9a574,#896d62 45%,#514765);
+ box-shadow:inset 0 2px #ffffff59,0 7px 12px #0c132b7b;transition:transform .13s,filter .13s;}
+.bell-key>span{font-size:29px;line-height:1;}
+.bell-key>b{font-size:17px;}
+.bell-key:active{transform:translateY(3px);border-bottom-width:2px;filter:brightness(1.1);}
+.bell-key:hover,.bell-key:focus-visible{filter:brightness(1.13);}
+.bell-progress{display:flex;min-height:37px;justify-content:center;align-items:center;gap:9px;text-align:center;padding:8px;margin:9px auto;color:#d9d5e1;}
+.bell-progress>span:not(.bell-idle){font:800 19px Georgia,serif;border:1px solid #c9b5996e;background:#3a405c;border-radius:8px;padding:4px 9px;color:#f6ddb2;}
+.bell-idle{font-size:12px;}
+.bell-toy-complete{padding:21px;margin:18px auto;border:1px solid #e1c894a6;background:radial-gradient(circle at 50% 0%,#766282,#36455e);border-radius:15px;color:#ffe6bb;text-align:center;font-weight:900;font-size:19px;}
+.bell-toy-complete small{display:block;margin-top:11px;font-size:12px;font-weight:500;color:#dfd5dd;line-height:1.8;}
+.ambient-warmth{border:1px solid #d6a77c91;background:radial-gradient(circle at 30% 20%,#b17b5955,#3d3f59);border-radius:17px;margin:18px 0;padding:20px 14px;text-align:center;color:#ffebd3;}
+.ambient-warmth>span{font-size:44px;display:block;color:#ffc597;text-shadow:0 0 20px #ffd0a06b;}
+.ambient-warmth p{font-size:14px;line-height:1.85;font-weight:700;}
+.ambient-warmth small{color:#ead1c9;font-size:11px;}
+
+/* The journal imitates a hand-bound scrapbook, not a scroll of plain rows. */
+.scrapbook-intro{font-size:12px;color:#d9cde0;line-height:1.8;}
+.scrapbook-folio{position:relative;margin:14px 0;padding:16px 17px 19px;min-height:265px;border:2px solid #bb9b78;border-radius:6px 16px 16px 6px;
+ background:linear-gradient(95deg,#bda27b 0,#ebd8b9 3%,#f7e8cb 12%,#f5e4c9 90%,#d9c09e 100%);
+ color:#453b3f;box-shadow:inset 8px 0 #8c6c575c,4px 7px 0 #91765d8a,0 10px 24px #0b142ba1;}
+.scrapbook-folio::before{content:"";position:absolute;inset:16px auto 16px 10px;width:2px;background:#9f806e90;pointer-events:none;}
+.scrapbook-folio-header{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#856f61;
+ font-size:10px;font-weight:800;letter-spacing:.6px;margin:0 0 13px 7px;padding-bottom:7px;border-bottom:1px solid #bda48d;}
+.scrapbook-paper{position:relative;margin:10px 0 12px 6px;padding:11px 14px 13px 58px;min-height:93px;background:#fff9eec9;border:1px solid #d4bda5;border-radius:3px 11px 11px 3px;box-shadow:0 3px 9px #8a6a5940;animation:scrapPage .35s ease both;animation-delay:calc(var(--page-index,0) * .06s);}
+.scrapbook-paper::before{content:"";position:absolute;top:-5px;left:40%;width:54px;height:14px;background:#e4d0a7a8;transform:rotate(-4deg);border:1px solid #c2a87b4f;}
+.scrapbook-paper-icon{position:absolute;left:10px;top:19px;width:39px;height:44px;display:grid;place-items:center;background:#7d6577;color:#f5e0bc;border-radius:8px;font-size:26px;}
+.scrapbook-paper small{display:block;color:#a17b65;font-size:9px;letter-spacing:.9px;font-weight:900;}
+.scrapbook-paper h3{font-size:14px;color:#57444b;margin:4px 0 6px;font-weight:900;}
+.scrapbook-paper p{font-size:12px;line-height:1.8;color:#604e50;margin:0;white-space:pre-wrap;word-break:keep-all;}
+.scrapbook-blank{display:grid;place-items:center;text-align:center;min-height:182px;color:#9b826e;font-size:12px;}
+.scrapbook-blank>span{display:block;font-size:42px;opacity:.4;}
+.scrapbook-pagination{display:flex;gap:8px;justify-content:space-between;align-items:center;margin:14px 3px 2px;}
+.scrapbook-pagination button{border:1px solid #bfa6897a;border-radius:8px;color:#f5dec0;background:#423d56;padding:9px 12px;font-size:11px;font-weight:800;}
+.scrapbook-pagination button:disabled{opacity:.32;cursor:default;}
+.scrapbook-pagination span{color:#d8c1a4;font-size:12px;font-weight:700;}
+.journal-tabs{flex-wrap:wrap;gap:7px;margin-bottom:6px;}
+.journal-tab{min-width:calc(50% - 5px);border:1px solid #c6ac9159;}
+.journal-tab.selected{background:#e2caa3;color:#41384c;border-color:#fae4bb;}
+@keyframes scrapPage{from{opacity:.45;transform:translateX(8px) rotateY(6deg)}to{opacity:1;transform:translateX(0) rotateY(0deg)}}
+
+/* Character reactions enrich the existing blink and tail animation. */
+.cat-card[data-mood="happy"] .cat-avatar{animation:miroHappy .53s cubic-bezier(.24,.65,.3,1.2) 1;}
+.cat-card[data-mood="startled"] .cat-avatar{animation:miroStartled .4s ease-out 1;}
+.cat-card[data-mood="remembering"] .cat-avatar{filter:drop-shadow(0 0 12px #e9d3aa88);}
+.cat-card[data-mood="remembering"] .cat-dialog{background:#56485f;border-color:#f6ddae59;}
+.cat-card[data-mood="happy"] .cat-dialog{border-color:#ebcf9b6b;}
+.cat-card[data-mood="startled"] .cat-dialog{border-color:#f0af8b78;background:#55455b;}
+@keyframes miroHappy{0%,100%{transform:translateY(0)}42%{transform:translateY(-5px) scale(1.04)}}
+@keyframes miroStartled{0%,100%{transform:rotate(0)}35%{transform:rotate(-6deg)}70%{transform:rotate(5deg)}}
+
+/* Room-wide cinematic overlay never highlights the next puzzle location. */
+.scene-cinematic{position:absolute;z-index:4;inset:0;opacity:0;pointer-events:none;display:grid;place-items:center;overflow:hidden;
+ background:radial-gradient(ellipse at 50% 46%,#ffe9ac00 20%,#fcddaa13 50%,#f1d9b700 90%);}
+.scene-cinematic .cinematic-moon{color:#f8dfaa;font:900 clamp(38px,6vw,65px) Georgia,serif;text-shadow:0 0 20px #ffefc3;transform:scale(.35);opacity:0;}
+.scene-cinematic .cinematic-sparks{position:absolute;left:30%;right:30%;top:35%;text-align:center;letter-spacing:25px;font-size:28px;color:#ffe9ba;opacity:0;}
+.scene-canvas.cinematic-active .scene-cinematic{animation:sceneReveal 1.05s ease-out forwards;}
+.scene-canvas.cinematic-active .cinematic-moon{animation:cinematicSigil .95s ease-out forwards;}
+.scene-canvas.cinematic-active .cinematic-sparks{animation:cinematicSigil .95s .08s ease-out forwards;}
+.scene-canvas.cinematic-active .scene-cinematic[data-kind="final-bell"]{animation:sceneReveal 2.1s ease-out forwards;background:radial-gradient(ellipse,#fff2b828,#b2cee000 66%);}
+.scene-canvas.cinematic-active .scene-cinematic[data-kind="final-bell"] .cinematic-moon{font-size:80px;animation-duration:1.8s;}
+@keyframes sceneReveal{0%{opacity:0}20%{opacity:.85}65%{opacity:.58}100%{opacity:0}}
+@keyframes cinematicSigil{0%{transform:scale(.4);opacity:0}24%{opacity:.94}100%{transform:scale(1.55) rotate(20deg);opacity:0}}
+
+/* Low-amplitude, uniform moonlit atmosphere unrelated to puzzle hitboxes. */
+#sceneCanvas.storybook-ready .storybook-layer::after{content:"";position:absolute;inset:0;pointer-events:none;
+ background:radial-gradient(circle at 16% 30%,#e8e9f71c 0,transparent 16%),
+            radial-gradient(circle at 78% 16%,#f9e6b318 0,transparent 13%),
+            linear-gradient(118deg,transparent 10%,#d6def30c 42%,transparent 76%);
+ mix-blend-mode:screen;animation:storybookAtmosphere 9.5s ease-in-out infinite alternate;}
+#sceneCanvas.storybook-ready[data-room="greenhouse"] .storybook-layer::after{background:linear-gradient(100deg,#b7eed00b,transparent 48%),radial-gradient(circle at 50% 62%,#bed7b51d,transparent 40%);}
+#sceneCanvas.storybook-ready[data-room="foyer"] .storybook-layer::after{background:radial-gradient(circle at 50% 15%,#fff0c51b,transparent 28%),linear-gradient(120deg,#d3d3fa0c,transparent 56%);}
+#sceneCanvas.storybook-ready[data-room="tower"] .storybook-layer::after{background:radial-gradient(circle at 49% 31%,#e5e1bd19,transparent 36%),linear-gradient(120deg,transparent,#bbd4eb0a);}
+@keyframes storybookAtmosphere{from{opacity:.58;filter:brightness(.97)}to{opacity:.94;filter:brightness(1.08)}}
+@media(max-width:530px){.inventory-slot>.inventory-item{height:75px}.bell-keys{gap:6px}.bell-key{min-height:76px}.scrapbook-folio{padding:13px 12px}.scrapbook-paper{padding:10px 10px 11px 49px}.scrapbook-paper-icon{width:32px;height:36px;font-size:21px;left:8px}.scrapbook-paper p{font-size:11px}.scrapbook-pagination button{padding:8px 6px;font-size:10px}}
+@media(prefers-reduced-motion:reduce){
+ .scrapbook-paper,.cat-card[data-mood="happy"] .cat-avatar,.cat-card[data-mood="startled"] .cat-avatar,
+ #sceneCanvas.storybook-ready .storybook-layer::after,.scene-canvas.cinematic-active .scene-cinematic,
+ .scene-canvas.cinematic-active .cinematic-moon,.scene-canvas.cinematic-active .cinematic-sparks{animation:none!important;transition:none!important;}
+ .scene-canvas.cinematic-active .scene-cinematic{opacity:.2;}
+}
