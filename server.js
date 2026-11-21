@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {createMafiaState,publicMafiaState,actMafia,tickMafia} from './mafia-engine.mjs';
 import { readFile, stat } from 'node:fs/promises';
 import { loadDictionary } from './data/load-lexicon.mjs';
 import path from 'node:path';
@@ -46,6 +47,7 @@ const configGames=new Set(['wordchain','omok','yut','doodle','rummikub']);
 const defaults={wordchain:30,omok:30,yut:45,doodle:90,rummikub:60};
 function makeOptions(game,value={}){
  const opts={turnSeconds:configGames.has(game)?defaults[game]:null,wordMode:'wordchain',stoneStyle:'normal'};
+ if(game==='mafia')opts.mafiaMode=value.mafiaMode==='classic'?'classic':'special';
  if(configGames.has(game)&&TURN_SECONDS.includes(Number(value.turnSeconds)))opts.turnSeconds=Number(value.turnSeconds);
  if(game==='wordchain'&&value.wordMode==='kungkungtta')opts.wordMode='kungkungtta';
  if(game==='omok'&&value.stoneStyle==='crazy')opts.stoneStyle='crazy';
@@ -101,9 +103,7 @@ function sanitize(r,sid) {
   const s=r.state;
   if(r.game==='rummikub') {pub.state=sanitizeRummikub(r,sid);
   } else if(r.game==='mafia') {
-    pub.state={...s,roles:undefined,nightActions:undefined,investigations:undefined,
-      role:s.roles[sid],investigation:s.investigations[sid]||null,
-      votes:Object.keys(s.votes).map(v=>v),nightSubmitted:Object.keys(s.nightActions).map(v=>v)};
+    pub.state=publicMafiaState(s,sid,r.status==='finished');
   } else if(r.game==='liar') {
     pub.state={...s,word: s.phase==='result' ? s.word : undefined,
       liar:s.phase==='result' ? s.liar : undefined,
@@ -162,12 +162,7 @@ function start(r) {
       const [topic,word]=pick(liarWords);
       r.state={topic,word,liar:pick(ids),phase:'clue',speaker:ids[0],speakerIndex:0,clues:[],votes:{},guess:'',result:null};break;
     }
-    case 'mafia': {
-      const roles=ids.map((x,i)=>i < (ids.length>=8?2:1)?'마피아':i===(ids.length>=8?2:1)?'의사':i===(ids.length>=6?(ids.length>=8?3:2):-1)?'경찰':'시민');
-      // Unbiased Fisher-Yates shuffle.
-      for(let i=roles.length-1;i>0;i--){const j=randomInt(i+1);[roles[i],roles[j]]=[roles[j],roles[i]];}
-      r.state={roles:Object.fromEntries(ids.map((x,i)=>[x,roles[i]])),alive:[...ids],phase:'night',day:1,nightActions:{},investigations:{},votes:{},chat:[],history:[{text:'첫 번째 밤이 시작되었습니다. 역할을 확인하고 행동하세요.'}],result:null};break;
-    }
+    case 'mafia':r.state=createMafiaState(ids,r.options.mafiaMode);break;
     case 'bell':r.state={cards:Object.fromEntries(ids.map(x=>[x,null])),scores:Object.fromEntries(ids.map(x=>[x,0])),pile:0,draws:0,maxDraws:24,lastDraw:Date.now(),round:1,feedback:'카드가 뒤집힐 때를 기다려요.',deadline:Date.now()+1900};break;
     case 'yut':r.state={turn:ids[0],turnIndex:0,pieces:Object.fromEntries(ids.map(x=>[x,Array.from({length:4},()=>({node:0,route:'outer',index:0,done:false}))])),pending:null,rolls:[],phase:'throw',throwsRemaining:1,rollName:null,history:[],result:null,deadline:Date.now()+r.options.turnSeconds*1000};break;
   }
@@ -197,40 +192,6 @@ function checkOmok(s,bx,by,who) {
     if(/_XXX_/.test(line)||/_XX_X_/.test(line)||/_X_XX_/.test(line))openThrees++;
   }
   return {five,forbidden:openThrees>=2};
-}
-function roleWinner(r) {
-  const s=r.state,alive=s.alive;
-  const mafia=alive.filter(x=>s.roles[x]==='마피아').length;
-  if(mafia===0) {finish(r,'시민 팀 승리! 마피아를 모두 찾아냈습니다.');return true;}
-  if(mafia>=alive.length-mafia){finish(r,'마피아 팀 승리! 도시를 장악했습니다.');return true;}
-  return false;
-}
-function resolveNight(r) {
-  const s=r.state,alive=s.alive,mafia=alive.filter(x=>s.roles[x]==='마피아');
-  const targets=mafia.map(x=>s.nightActions[x]).filter(Boolean);
-  const tallies={};targets.forEach(x=>tallies[x]=(tallies[x]||0)+1);
-  const target=Object.entries(tallies).sort((a,b)=>b[1]-a[1])[0]?.[0];
-  const doc=alive.find(x=>s.roles[x]==='의사');
-  const protectedId=s.nightActions[doc];
-  const detective=alive.find(x=>s.roles[x]==='경찰');
-  if(detective&&s.nightActions[detective]){
-    const t=s.nightActions[detective];s.investigations[detective]=`${player(r,t)?.nick||'대상'}: ${s.roles[t]==='마피아'?'마피아':'마피아가 아님'}`;
-  }
-  if(target&&target!==protectedId){s.alive=s.alive.filter(x=>x!==target);s.history.push({text:`${player(r,target)?.nick}님이 밤에 사망했습니다.`});}
-  else s.history.push({text:'밤사이 아무도 사망하지 않았습니다.'});
-  s.phase='discussion';s.votes={};s.nightActions={};
-  if(!roleWinner(r)) touch(r,`${s.day}일차 아침입니다. 토론해 보세요.`);
-}
-function resolveVote(r) {
-  const s=r.state,votes=Object.values(s.votes);const totals={};
-  votes.forEach(x=>totals[x]=(totals[x]||0)+1);
-  const ranked=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
-  if(ranked.length && ranked[0][1]>(ranked[1]?.[1]||0) && ranked[0][0]!=='skip'){
-    const eliminated=ranked[0][0]; s.alive=s.alive.filter(x=>x!==eliminated);
-    s.history.push({text:`투표 결과 ${player(r,eliminated)?.nick}님이 추방되었습니다. (역할: ${s.roles[eliminated]})`});
-  } else s.history.push({text:'투표 결과 동점 또는 기권으로 추방된 사람이 없습니다.'});
-  if(roleWinner(r))return;
-  s.day++;s.phase='night';s.votes={};s.nightActions={};s.investigations={};touch(r,`${s.day}번째 밤입니다.`);
 }
 function nextDoodle(r) {
   const s=r.state,prev=s.word;
@@ -426,28 +387,9 @@ function act(r,sid,type,data={},transport='http') {
     }
   }
   if(r.game==='mafia'){
-    if(!s.alive.includes(sid))throw err(403,'탈락한 플레이어는 행동할 수 없습니다.');
-    if(type==='night'){
-      if(s.phase!=='night')throw err(400,'밤이 아닙니다.');
-      if(s.roles[sid]==='시민')throw err(403,'시민은 밤에 행동하지 않습니다.');
-      const target=data.target;
-      if(!s.alive.includes(target))throw err(400,'생존자를 선택하세요.');
-      if(s.roles[sid]==='마피아'&&s.roles[target]==='마피아')throw err(400,'같은 마피아를 선택할 수 없습니다.');
-      s.nightActions[sid]=target;
-      const expected=s.alive.filter(x=>s.roles[x]!=='시민');
-      if(expected.every(x=>s.nightActions[x]))resolveNight(r);else touch(r);return;
-    }
-    if(type==='discussionEnd'){
-      if(s.phase!=='discussion'||!host)throw err(403,'방장만 토론을 종료할 수 있습니다.');
-      s.phase='vote';touch(r,'투표가 시작되었습니다.');return;
-    }
-    if(type==='vote'){
-      if(s.phase!=='vote'||s.votes[sid])throw err(400,'지금 투표할 수 없습니다.');
-      const target=data.target;
-      if(target!=='skip'&&!s.alive.includes(target))throw err(400,'생존자를 선택하세요.');
-      s.votes[sid]=target;
-      if(s.alive.every(x=>s.votes[x]))resolveVote(r);else touch(r);return;
-    }
+    const result=actMafia(s,sid,type,data,r.players,r.host);
+    if(result.finish)finish(r,result.finish);else touch(r,result.message);
+    return;
   }
   if(r.game==='bell'){
     if(type!=='ring')throw err(400,'종을 눌러 보세요.');
@@ -486,7 +428,10 @@ function gameTick(){
   for(const r of rooms.values()) {
     if(r.status!=='playing') continue;
     const s=r.state;
-    if(r.game==='wordchain'&&now>s.deadline){
+    if(r.game==='mafia'){
+      const result=tickMafia(s,r.players,now);
+      if(result){if(result.finish)finish(r,result.finish);else touch(r,result.message);}
+    } else if(r.game==='wordchain'&&now>s.deadline){
       const loser=s.turn;
       s.hints={for:loser,words:replies(wordIndex,s.history.at(-1),new Set(s.history),r.options.wordMode,new Set(s.usedEndings[loser]),3)};
       s.hearts[loser]--;s.reason=`${player(r,loser)?.nick}님 시간 초과! 목숨 -1`;
