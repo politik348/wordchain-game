@@ -669,3 +669,31 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
  .scene-canvas.cinematic-active .cinematic-moon,.scene-canvas.cinematic-active .cinematic-sparks{animation:none!important;transition:none!important;}
  .scene-canvas.cinematic-active .scene-cinematic{opacity:.2;}
 }
+
+
+/* Optional investigation details: note flipping and restrained light fixtures. */
+.item-detail-icon.item-turned{transform:rotateY(12deg);filter:saturate(.78);border-color:#bfd0cbaa;}
+#sceneCanvas.storybook-ready[data-room="foyer"] .storybook-layer::before{
+ content:"";position:absolute;left:37%;top:5%;width:27%;height:30%;pointer-events:none;
+ background:radial-gradient(ellipse at 50% 37%,#ffe4a629,transparent 70%);
+ transform-origin:50% 0;animation:chandelierBreath 6.5s ease-in-out infinite alternate;
+}
+#sceneCanvas.storybook-ready[data-room="study"] .storybook-layer::before{
+ content:"";position:absolute;inset:0;pointer-events:none;
+ background:linear-gradient(122deg,#c4ddff09,transparent 48%);
+ animation:storybookAtmosphere 10s ease-in-out infinite alternate;
+}
+#sceneCanvas.storybook-ready[data-room="greenhouse"].flower-awake .storybook-layer::before{
+ content:"";position:absolute;left:34%;top:29%;width:33%;height:48%;pointer-events:none;
+ background:radial-gradient(ellipse,#d3f9c626,transparent 65%);animation:flowerAwake 4.7s ease-in-out infinite alternate;
+}
+#sceneCanvas.storybook-ready[data-room="tower"].tower-awake .storybook-layer::before{
+ content:"";position:absolute;left:47%;top:29%;width:6%;height:45%;pointer-events:none;
+ border-left:2px solid #f4d6a73f;transform-origin:50% 0;animation:pendulumScene 3s ease-in-out infinite alternate;
+}
+@keyframes chandelierBreath{from{transform:rotate(-.65deg);opacity:.55}to{transform:rotate(.65deg);opacity:.95}}
+@keyframes flowerAwake{from{opacity:.33;filter:brightness(.9)}to{opacity:.85;filter:brightness(1.15)}}
+@keyframes pendulumScene{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}
+@media(prefers-reduced-motion:reduce){
+ #sceneCanvas.storybook-ready .storybook-layer::before{animation:none!important;}
+}
