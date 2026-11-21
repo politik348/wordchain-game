@@ -22,7 +22,7 @@ const hints={
  clock:['현관 홀의 기록과 시계 관리인의 기록을 다시 비교해 보세요.','밤 9시에 현관이 잠긴 뒤 분침이 원의 1/4만큼 움직였습니다.','밤 9시 15분으로 시계 바늘을 맞추세요.'],
  pin:['종은 이미 열두 번 울렸습니다. 다음 종을 울리는 버튼을 찾을 필요가 있을까요?','시계의 기어는 움직이려 하지만 아래쪽 추가 움직이지 못합니다.','시계 아래 붉은 고정쇠를 잡아당기세요.']
 };
-const state=()=>({v:21,room:'foyer',visited:['foyer'],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,booksPlaced:[null,null,null,null,null],booksFlipped:{},mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[0,0,0,0],night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
+const state=()=>({v:21,room:'foyer',visited:['foyer'],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[0,0,0,0],night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
 let g=null,modalOpen=false,audio=null,catTurns=0;
 const has=id=>g.inventory.includes(id), done=id=>!!g.flags[id], elapsed=()=>Math.floor((Date.now()-(g?.startedAt||Date.now()))/1000)+(g?.elapsedCarry||0), pretty=s=>{let v=Math.max(0,s);return `${String(Math.floor(v/3600)).padStart(2,'0')}:${String(Math.floor(v%3600/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`};
 function save(){if(!g)return;try{store.setItem(SAVE,JSON.stringify({...g,elapsedCarry:elapsed(),startedAt:null}));}catch(e){}}
@@ -194,10 +194,94 @@ function bookCheck(){
 }
 
 function portrait(){clue('portrait');modal('달빛 서재 · 초상화','희미한 얼굴',`<p class="modal-description">미로와 함께 앉은 어린 소녀가 그려져 있다. 아래 이름은 <b>루나</b>. 금빛 액자 틈이 다른 곳보다 조금 벌어져 있다.</p>${has('film')?'<div class="letter">액자 안쪽은 비어 있다.</div>':'<div class="investigation-actions"><button data-action="portrait-back">액자 뒷면을 살핀다</button></div>'}`)}
-function piano(){g.activePuzzle='piano';if(done('piano')){article('움직이는 피아노','피아노는 이제 짧은 선율을 연주한다. 미로의 눈가가 촉촉하다.');return}if(!has('roll')){article('기계식 피아노','원통이 비어 있고 손잡이만 헛돈다. 여섯 개의 건반에 닿는 구조다.');return}let peg=[1,4,2,1];modal('ROOM 02 · 퍼즐 4','돌기가 남긴 소리',`<p class="modal-description">원통을 끼우고 손잡이를 돌리자 좁은 종이띠에 네 줄의 흔적이 생겼다. 피아노에는 여섯 건반이 있다.</p><div class="roll-sheet"><span class="roll-star">✦</span>${peg.map((pos,row)=>`<div class="roll-row">${Array.from({length:6},(_,i)=>`<span class="${pos===i?'peg':''}">${pos===i?'•':'·'}</span>`).join('')}</div>`).join('')}</div><div class="piano-keys">${Array.from({length:6},(_,i)=>`<button class="piano-key" data-action="key-${i}" aria-label="왼쪽부터 ${i+1}번째 건반"></button>`).join('')}</div><div class="puzzle-counter">${'♪'.repeat(g.pianoInput.length)}${'○'.repeat(4-g.pianoInput.length)}</div><p class="puzzle-helper">원통의 위쪽 작은 별과 손잡이 옆 별 표식이 같은 방향을 가리킨다.</p>`,[['입력 초기화','piano-reset']])}
-function keyPress(index){g.pianoInput.push(index);tone('tap');let target=[1,4,2,1],n=g.pianoInput.length;if(g.pianoInput[n-1]!==target[n-1]){g.pianoInput=[];error('기계가 멈추고 원통이 처음으로 돌아갔다.')}if(g.pianoInput.length===4){g.flags.piano=true;seal('echo');solved('piano','피아노가 짧은 선율을 연주합니다. 미로는 한때 루나의 무릎에서 잠들던 기억을 희미하게 떠올립니다. 소리의 인장을 획득했습니다.');return}piano()}
-function desk(){g.activePuzzle='film';if(done('film')){article('루나의 일기','「미로에게 꼭 돌아갈게.」\n\n마지막 페이지에는 사고 당시 남겨진 자동 기록이 있다.\n「시간 정지 · 21:15 · 경보 12회」');return}const nums=[3,8,6,1,7,2,9,4,5,0,1,8,4,6,3,2],holes=[2,4,11,13];let rotated=holes.map(ix=>{let r=Math.floor(ix/4),c=ix%4;for(let i=0;i<g.filmRotate;i++){let nr=c,nc=3-r;r=nr;c=nc}return r*4+c});modal('ROOM 02 · 선택 퍼즐','별이 새겨진 숫자 표',`<p class="modal-description">서랍 위에 네 줄의 숫자 표가 고정되어 있다. 가장자리에는 작은 별이 있다.</p><div class="film-workspace"><div class="film-board"><span class="board-star">✦</span>${nums.map((n,i)=>`<div class="film-number ${has('film')&&g.filmShift===0?(rotated.includes(i)?'window-number':'covered-number'):''}">${n}</div>`).join('')}${has('film')&&g.filmShift===0?`<span class="film-mark" style="left:${g.filmRotate===0?'0':g.filmRotate===1?'95%':g.filmRotate===2?'95%':'0'};top:${g.filmRotate<2?'0':'95%'}">✦</span>`:''}</div>${has('film')?`<div class="film-controls"><div class="film-state">${g.filmShift===0?'필름이 표 위에 놓여 있다':'필름이 표 옆에 놓여 있다'} · 회전 ${g.filmRotate*90}°</div><button data-action="film-slide">${g.filmShift===0?'필름 옆으로 빼기':'필름 표 위에 놓기'}</button><button data-action="film-turn">필름 돌리기 ↻</button></div>`:'<div class="film-controls">표 위에 맞는 크기의 얇은 테두리 자국이 있다.</div>'}</div><div class="code-display">${g.digits.padEnd(4,'○')}</div><div class="number-pad">${[1,2,3,4,5,6,7,8,9,'⌫',0,'✓'].map(d=>`<button data-action="digit-${d}">${d}</button>`).join('')}</div>`,[['닫기','close']])}
-function inputDigit(s){if(s==='⌫'){g.digits=g.digits.slice(0,-1)}else if(s==='✓'){if(g.digits==='6786'&&has('film')){g.flags.film=true;item('diary');clue('story');solved('film','서랍이 열렸습니다. 그 안에는 루나가 남긴 일기와 자동 사고 기록이 함께 보관되어 있습니다.');return}else{g.digits='';error('숫자가 맞지 않아 걸쇠가 풀리지 않는다.')}}else if(g.digits.length<4)g.digits+=s;desk();save()}
+
+const rollPegs=[3,0,4,3]; // Maker: the engraved calibration notch corresponds to offset 4.
+const noteFrequencies=[261.63,293.66,329.63,349.23,392,440];
+function piano(){
+ g.activePuzzle='piano';
+ if(done('piano')){article('다시 연주하는 피아노','작은 피아노는 이제 루나의 자장가를 연주한다. 미로가 자리를 잡고 웅크린다.');return;}
+ if(!has('roll')){article('기계식 피아노','반쯤 열린 황동 원통 장치는 비어 있다. 여섯 개의 건반 위에는 고정된 연주 손가락들이 매달려 있다.');return;}
+ const offset=g.drumOffset||0;
+ const dial=Array.from({length:6},(_,i)=>'<button class="roll-dial-stop '+(offset===i?'selected':'')+'" data-action="drum-'+i+'" aria-label="원통 눈금 '+(i+1)+'" title="원통 눈금 '+(i+1)+'">'+(i===4?'◇':i===0?'✦':'·')+'</button>').join('');
+ const roll=rollPegs.map((pos,i)=>'<div class="roll-row">'+Array.from({length:6},(_,j)=>'<span class="'+(pos===j?'peg':'')+'">'+(pos===j?'●':'·')+'</span>').join('')+'</div>').join('');
+ modal('ROOM 02 · 퍼즐 4','멈춘 자장가',
+  '<p class="modal-description">나무 건반 위에는 원통을 붙잡는 황동 손가락이 달려 있다. 표면이 닳은 축에는 여섯 개의 걸림점이 있다. 원통의 작은 별과 장치 테두리의 다이아몬드 모양 흠집이 눈에 띈다.</p>'+
+  '<div class="roll-sheet"><span class="roll-star">✦</span>'+roll+'</div>'+
+  '<div class="roll-dial">'+dial+'</div>'+
+  '<div class="puzzle-buttons"><button data-action="drum-play">원통 손잡이 감기 ♪</button></div>'+
+  '<div class="piano-keys">'+Array.from({length:6},(_,i)=>'<button class="piano-key" data-action="key-'+i+'" aria-label="건반 '+(i+1)+'" title="건반 '+(i+1)+'"></button>').join('')+'</div>'+
+  '<div class="puzzle-counter">'+('♪'.repeat(g.pianoInput.length))+('○'.repeat(4-g.pianoInput.length))+'</div>'+
+  '<p class="puzzle-helper">손잡이를 돌리면 황동 손가락들이 네 번 움직인다. 건반 일부에는 오래된 손톱 자국이 남아 있다.</p>',
+  [['건반에서 손 떼기','piano-reset']]
+ );
+}
+function drumSet(i){if(!has('roll')||done('piano'))return;g.drumOffset=i;g.pianoInput=[];tone('tap');save();piano();}
+function drumPlay(){
+ if(!has('roll'))return;
+ const sequence=rollPegs.map(x=>(x+(g.drumOffset||0))%6);
+ // Sound is optional; the roll's teeth and the keys remain visually distinguishable.
+ if(g.sound)try{
+  audio??=new (window.AudioContext||window.webkitAudioContext)();
+  if(audio.state==='suspended')audio.resume();
+  sequence.forEach((note,i)=>{
+   const o=audio.createOscillator(),v=audio.createGain(),start=audio.currentTime+.05+i*.25;
+   o.type='sine';o.frequency.value=noteFrequencies[note];
+   v.gain.setValueAtTime(.0001,start);v.gain.exponentialRampToValueAtTime(.045,start+.015);v.gain.exponentialRampToValueAtTime(.0001,start+.22);
+   o.connect(v);v.connect(audio.destination);o.start(start);o.stop(start+.24);
+  });
+ }catch(e){}
+ notify('네 개의 황동 손가락이 순서대로 움직인다.');g.drumPlayed=true;save();
+}
+function keyPress(index){
+ if(done('piano')||!has('roll')||!Number.isInteger(index)||index<0||index>5)return;
+ g.pianoInput.push(index);tone('tap');
+ if(g.pianoInput.length===4){
+  const candidate=g.pianoInput.join(','),correct=rollPegs.map(x=>(x+4)%6).join(',');
+  if(g.drumOffset===4&&candidate===correct){
+   g.flags.piano=true;seal('echo');solved('piano','황동 손가락이 네 번 움직이고 피아노에서 작은 선율이 흘러나옵니다. 미로는 루나의 무릎 위에서 듣던 자장가를 떠올립니다. 소리의 인장을 획득했습니다.');return;
+  }
+  g.pianoInput=[];error('연주 장치가 흔들리다 멎는다. 원통의 맞물림 소리가 고르지 않다.');
+ }
+ save();piano();
+}
+// Optional paper-film device: a physical overlay, not an exposed four-digit PIN.
+const filmMarks=['◇','⌑','○','☽','✦','◈','✧','▽','☼','♧','♢','✴','◉','△','◐','☆'];
+const filmHoles=[1,6,12,15];
+function filmWindows(){
+ let indices=filmHoles.map(ix=>{
+  let r=Math.floor(ix/4),c=ix%4;
+  for(let t=0;t<g.filmRotate;t++){const nr=c,nc=3-r;r=nr;c=nc;}
+  return r*4+c;
+ });
+ if(g.filmShift===1)indices=indices.map(ix=>(Math.floor(ix/4)*4+((ix%4+1)%4)));
+ return indices;
+}
+function desk(){
+ g.activePuzzle='film';
+ if(done('film')){article('숨겨진 일기','열린 서랍 안에는 「미로에게 꼭 돌아갈게」라는 글과 사고 당시의 자동 기록이 남아 있다.');return;}
+ const hasSheet=has('film'),windows=hasSheet&&g.filmShift!==-1?filmWindows():[];
+ const starCorner=[0,3,15,12][g.filmRotate||0];
+ const cells=filmMarks.map((mark,i)=>'<div class="film-number '+(windows.includes(i)?'window-number':windows.length?'covered-number':'')+'">'+mark+'</div>').join('');
+ modal('ROOM 02 · 선택 퍼즐','서랍 위의 낡은 판',
+  '<p class="modal-description">책상 유리 아래에 서로 다른 작은 무늬들이 새겨져 있다. 오른쪽 아래에는 별 모양이 희미하게 긁혀 있고, 유리 위에는 투명한 판의 가장자리와 비슷한 눌린 자국이 있다.</p>'+
+  '<div class="film-workspace"><div class="film-board">'+cells+
+  (hasSheet&&g.filmShift!==-1?'<span class="film-mark" style="left:'+((starCorner%4)*25+4)+'%;top:'+(Math.floor(starCorner/4)*25+2)+'%">✦</span>':'')+
+  '</div>'+
+  (hasSheet?'<div class="film-controls"><div class="film-state">얇은 투명 필름 · '+(g.filmShift===-1?'책상 옆':g.filmShift===0?'유리 위 중앙':'오른쪽으로 어긋난 위치')+'</div>'+
+  '<button data-action="film-slide">필름 위치 바꾸기</button><button data-action="film-turn">필름 돌리기</button><button data-action="film-check">등불을 비춰 본다</button></div>':
+  '<p class="puzzle-helper">유리 표면의 네 곳에는 유난히 먼지가 적다.</p>')+'</div>',
+  [['돌아가기','close']]
+ );
+}
+function filmCheck(){
+ if(!has('film')||!has('lamp')){article('빛이 닿지 않는 유리','다른 빛이 필요할 것 같다.');return;}
+ if(g.filmRotate===2&&g.filmShift===0){
+  g.flags.film=true;item('diary');clue('story');
+  solved('film','필름의 창을 통과한 빛이 책상 아래 숨은 감광 장치를 건드립니다. 서랍이 열리고 루나의 일기와 사고 기록이 드러났습니다.');return;
+ }
+ error('필름 아래로 엷은 그림자가 생겼지만 서랍에서는 아무 소리도 들리지 않는다.');desk();
+}
+
 function water(){g.activePuzzle='water';if(done('water')){article('정상으로 돌아온 급수관','네 개의 화분에 물이 알맞게 공급된다.');return}let icons=['☀','☾','✦','☁'];modal('ROOM 03 · 퍼즐 6','네 화분의 수위',`<p class="modal-description">네 화분에는 각각 0부터 3까지 조절할 수 있는 급수 밸브가 있다. 창가에는 오래된 수위 흔적이 남아 있다.</p><div class="water-row">${icons.map((ic,i)=>`<div class="water-plant"><div class="plant-icon">${ic}</div><div class="water-meter">${Array.from({length:3},(_,j)=>`<span class="${3-j<=g.waterValues[i]?'on':''}"></span>`).join('')}</div><div class="water-value">${g.waterValues[i]}</div><div class="water-adjust"><button data-action="water-${i}-minus">−</button><button data-action="water-${i}-plus">＋</button></div></div>`).join('')}</div>`,[['급수 시험','water-check',true]])}
 function waterCheck(){if(g.waterValues.join(',')!=='3,1,2,0'){error('어느 한 화분의 수위가 맞지 않는다.');water();return}g.flags.valves=true;solved('water','급수관에서 물이 흘러나오고, 채광 장치의 잠금쇠가 열립니다. 시든 꽃이 조금씩 고개를 듭니다.')}
 function beam(){g.activePuzzle='light';if(done('light')){article('달빛이 도달한 꽃','은면 원판은 아직 받침대에 놓여 있다. 빛이 달빛꽃을 비추고 있다.');return}if(!done('water')){article('잠긴 채광 장치','급수 장치와 연결된 제어부가 잠겨 있다.');return}if(!has('silverDisc')){article('빈 원형 받침대','현관에서 사용하던 원판이 끼워질 것 같다.');return}let names=['—','/','|','\\'];modal('ROOM 03 · 퍼즐 7','달빛은 꺾인다',`<p class="modal-description">왼쪽 창으로 달빛이 들어온다. 중앙 회전 거울 아래에는 원형 받침대가 있다. 현관에서 가져온 은면 원판을 끼웠다.</p><div class="two-mirrors"><div class="moonbeam-graphic"><span>☾ 창문</span><span class="beam-arrow">→</span><span>거울 A</span><b>${names[g.mirrorA]}</b><span class="beam-arrow ${g.mirrorA===3?'beam-ok':''}">${g.mirrorA===3?'↓':'·'}</span><span>거울 B</span><b>${names[g.mirrorB]}</b><span class="beam-arrow ${g.mirrorA===3&&g.mirrorB===1?'beam-ok':''}">${g.mirrorA===3&&g.mirrorB===1?'←':'·'}</span><span>✿ 달빛꽃</span></div></div><div class="puzzle-buttons"><button data-action="beam-a">거울 A 돌리기 ↻</button><button data-action="beam-b">거울 B 돌리기 ↻</button></div>`,[['빛 비추기','beam-check',true]])}
@@ -222,8 +306,8 @@ if(action.startsWith('flip-')){let name=action.slice(5);if(Object.hasOwn(moonBoo
 if(action.startsWith('book-')){let name=action.slice(5);if(name==='reset'){g.booksPlaced=[null,null,null,null,null];save();return books()}if(name==='check')return bookCheck();if(Object.hasOwn(moonBooks,name)&&!g.booksPlaced.includes(name)){let slot=g.booksPlaced.indexOf(null);if(slot>=0){g.booksPlaced[slot]=name;save();}}return books()}
 if(action.startsWith('unbook-')){let slot=Number(action.slice(7));if(Number.isInteger(slot)&&slot>=0&&slot<5){g.booksPlaced[slot]=null;save()}return books()}
 if(action==='portrait-back'){item('film');return modal('FOUND','별 구멍이 난 투명 필름',`<div class="collect-visual">▧</div><p class="modal-description">액자 뒷면에서 투명한 얇은 판이 나옵니다. 네 곳에 작은 구멍이 뚫려 있고 한쪽 모서리에 별이 있습니다.</p>`)}
-if(action.startsWith('key-'))return keyPress(Number(action.slice(4)));if(action==='piano-reset'){g.pianoInput=[];return piano()}
-if(action==='film-turn'){g.filmRotate=(g.filmRotate+1)%4;return desk()}if(action==='film-slide'){g.filmShift=g.filmShift===0?-1:0;return desk()}if(action.startsWith('digit-'))return inputDigit(action.slice(6));
+if(action.startsWith('drum-')&&action!=='drum-play')return drumSet(Number(action.slice(5)));if(action==='drum-play')return drumPlay();if(action.startsWith('key-'))return keyPress(Number(action.slice(4)));if(action==='piano-reset'){g.pianoInput=[];save();return piano()}
+if(action==='film-turn'){g.filmRotate=(g.filmRotate+1)%4;save();return desk()}if(action==='film-slide'){g.filmShift=g.filmShift===-1?0:g.filmShift===0?1:-1;save();return desk()}if(action==='film-check')return filmCheck();
 if(action==='water-check')return waterCheck();if(action.startsWith('water-')){let [_,i,d]=action.split('-');let idx=Number(i);g.waterValues[idx]=(g.waterValues[idx]+(d==='plus'?1:3))%4;return water()}if(action==='water-check')return waterCheck();
 if(action==='beam-a'){g.mirrorA=(g.mirrorA+1)%4;return beam()}if(action==='beam-b'){g.mirrorB=(g.mirrorB+1)%4;return beam()}if(action==='beam-check')return beamCheck();
 if(action.startsWith('clock-')){let p=action.split('-');if(p[1]==='night')g.night=!g.night;else if(p[1]==='hour')g.hour=((g.hour-1+(p[2]==='plus'?1:11))%12)+1;else if(p[1]==='minute')g.minute=(g.minute+(p[2]==='plus'?5:55))%60;else if(p[1]==='check')return clockCheck();return clock()}
