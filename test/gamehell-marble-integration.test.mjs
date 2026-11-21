@@ -19,7 +19,7 @@ test('Game Hell remains a standalone home game and Cat Challenge stays first',()
 test('Marble v3 preserves isolated Cat Challenge entrypoint and multiplayer mode',()=>{
  assert.match(marble,/const catChallenge=new URLSearchParams/);
  assert.ok(marble.includes("mode=catChallenge?'ai':'local'"));
- assert.match(marble,/const selectedBattles=catChallenge/);
+ assert.match(marble,/allowedModes:catChallenge\?\['cat'\]:\['online','local'\]/);
  assert.match(marble,/modeBtn.dataset.mode/);
  assert.match(marble,/mmReturnLink/);
  assert.match(readFileSync(new URL('../public/marble/index.html',import.meta.url),'utf8'),/id="mmReturnLink"/);
