@@ -484,7 +484,7 @@ function injectSocialTags(buffer) {
   return Buffer.from(html.replace(/<\/head>/i, '  ' + SOCIAL_TAGS + '\n</head>'), 'utf8');
 }
 
-const MIME={'.webp':'image/webp','.png':'image/png','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json; charset=utf-8'};
+const MIME={'.avif':'image/avif','.webp':'image/webp','.png':'image/png','.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.ico':'image/x-icon','.json':'application/json; charset=utf-8'};
 const handler=async(req,res)=>{
   const u=new URL(req.url,'http://localhost');const pathname=decodeURIComponent(u.pathname);
   try {
