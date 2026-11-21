@@ -717,3 +717,40 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 @media(max-width:600px), (pointer:coarse){
  .modal-overlay{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(8,16,36,.93);}
 }
+
+
+/* v3.4: tiny, uniform search affordances for all scenery props and puzzle props.
+   Optional; a player's progress only fades a dot, never distinguishes a solution. */
+#sceneCanvas.discovery-markers-on .hotspot:not(.revealed):not(:focus-visible)::before{
+ content:""!important;display:block!important;position:absolute!important;
+ left:50%!important;top:50%!important;
+ width:6px!important;height:6px!important;border-radius:50%!important;
+ transform:translate(-50%,-50%)!important;
+ background:#f5e0bd!important;border:0!important;
+ box-shadow:0 0 5px 2px #f3e1c14d!important;
+ opacity:.38!important;pointer-events:none!important;animation:none!important;
+}
+#sceneCanvas.discovery-markers-on .hotspot.inspected:not(.revealed):not(:focus-visible)::before{
+ width:5px!important;height:5px!important;opacity:.18!important;
+ box-shadow:0 0 3px 1px #f3e1c128!important;
+}
+#sceneCanvas.discovery-markers-on .hotspot:active:not(.revealed):not(:focus-visible)::before{
+ opacity:.78!important;box-shadow:0 0 7px 2px #ffeabca3!important;
+}
+#sceneCanvas .marker-toggle{
+ white-space:nowrap;font-size:10px;letter-spacing:-.15px;
+ background:#494559bb;color:#d7c3a7;border-color:#dac49e69;
+}
+#sceneCanvas .marker-toggle[aria-pressed="true"]{
+ background:#63576eeb;color:#ffe9c7;
+}
+@media(max-width:660px){
+ #sceneCanvas .marker-toggle{font-size:9px;padding:5px 6px;min-width:0;}
+ .camera-controls{max-width:calc(100% - 12px);}
+}
+@media(prefers-reduced-motion:reduce){
+ #sceneCanvas.discovery-markers-on .hotspot::before{transition:none!important;}
+}
+/* A quick display transition prevents the dialog from feeling sluggish. */
+.modal-wrap{animation-duration:.11s;}
+.modal-overlay{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(8,16,36,.90);}
