@@ -31,8 +31,8 @@
     '#sceneCanvas.storybook-ready .hotspot-layer{transform:translateX(var(--storybook-pan,0%)) scale(var(--storybook-zoom,1.025));transform-origin:center;transition:transform .46s cubic-bezier(.22,.61,.36,1);z-index:4}',
     '#sceneCanvas.storybook-ready .hotspot{opacity:1!important;visibility:visible!important}',
     '#sceneCanvas.storybook-ready .camera-controls{z-index:5}',
-    '#sceneCanvas.storybook-ready{cursor:grab;touch-action:pan-y}',
-    '#sceneCanvas.storybook-ready:active{cursor:grabbing}',
+    '#sceneCanvas.storybook-ready{cursor:default;touch-action:pan-y}',
+    '#sceneCanvas.storybook-ready:active{cursor:default}',
     '@media(max-width:600px){#sceneCanvas.storybook-ready{aspect-ratio:1200/650!important;min-height:220px}#sceneCanvas.storybook-ready .scene-floorcaption{display:none}}',
     '@media(prefers-reduced-motion:reduce){#sceneCanvas.storybook-ready .storybook-layer,#sceneCanvas.storybook-ready .hotspot-layer{transition:none!important}}'
   ];
