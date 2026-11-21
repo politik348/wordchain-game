@@ -174,7 +174,7 @@ function sceneMoment(kind='solved'){
  cinematicTimer=setTimeout(()=>{scene.classList.remove('cinematic-active');cinematicTimer=null},kind==='final-bell'?2200:1100);
 }
 
-function solved(key,text){g.flags[key]=true;g.activePuzzle=key;g.catMood=key==='pin'?'remembering':'happy';$('catDialog').textContent=key==='pin'?'아… 저 소리. 루나가 돌아올 거라고 했던 밤이야.':'와! 정말 움직였어. 방 안의 공기가 달라졌어!';tone('gain');save();render();sceneMoment(key==='pin'?'final-bell':key==='light'?'flower':'solved');modal('PUZZLE SOLVED','장치가 움직이기 시작했다',`<div class="collect-visual">✦</div><p class="modal-description">${text}</p>`)}
+function solved(key,text){g.flags[key]=true;g.activePuzzle=key;g.catMood=key==='pin'?'remembering':'happy';$('catDialog').textContent=key==='pin'?'아… 저 소리. 루나가 돌아올 거라고 했던 밤이야.':'와! 정말 움직였어. 방 안의 공기가 달라졌어!';tone('gain');save();render();const focusId=({foot:'cabinet',mirror:'crescent',books:'books',piano:'piano',film:'desk',water:'water',light:'flower',clock:'clock',pin:'pin'})[key];if(focusId)window.MoyeoEscapeCamera?.focusSolvedProp(focusId);sceneMoment(key==='pin'?'final-bell':key==='light'?'flower':'solved');modal('PUZZLE SOLVED','장치가 움직이기 시작했다',`<div class="collect-visual">✦</div><p class="modal-description">${text}</p>`)}
 function error(text='아직 맞지 않는 것 같습니다.'){g.errors++;tone('bad');notify(text);save()}
 function objective(){
  if(g.ending)return '저택의 밤이 지나갔다.';
