@@ -367,7 +367,13 @@ for(const [room,objects] of Object.entries(ambientScenes)){
  }
  hotspots[room]=mixed;
 }
-function inspect(id){if(g.ending){ending(g.ending);return}if(Object.hasOwn(ambientLookup,id))return ambientInspect(id);switch(id){
+function miroLookAt(id){
+ if(!['portrait','flower','piano','clock','foyer-bell','foyer-vase','green-planter'].includes(id))return;
+ const avatar=$('catAvatar');if(!avatar)return;
+ avatar.classList.remove('miro-looking');void avatar.offsetWidth;avatar.classList.add('miro-looking');
+ setTimeout(()=>avatar.classList.remove('miro-looking'),650);
+}
+function inspect(id){if(g.ending){ending(g.ending);return}miroLookAt(id);if(Object.hasOwn(ambientLookup,id))return ambientInspect(id);switch(id){
  case 'cat':talk();break;
  case 'foyer-bell':foyerBell();break;
  case 'invitation':invitation();break;
