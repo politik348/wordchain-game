@@ -47,6 +47,8 @@ test('official escape paths stay protected while demo asset aliases are explicit
  const original=read('public/escape/index.html');
  assert.match(original,/location\.pathname\.startsWith\('\/taste\/escape\/'\)/);
  assert.match(original,/setInterval\(verifyAccess,15000\)/);
+ assert.match(read('public/escape/game.js'),/moyeo\.escape\.ep01\.taste\.save\.v21/);
+ assert.match(read('public/escape/game.js'),/moyeo\.escape\.ep01\.taste\.endings\.v21/);
  const prior=process.env.NODE_ENV;process.env.NODE_ENV='test';
  const {server}=await import('../server.js');
  server.listen(0,'127.0.0.1');await once(server,'listening');
