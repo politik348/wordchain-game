@@ -158,10 +158,11 @@ function glideCamera(target,duration=440){
  cameraFrame=requestAnimationFrame(frame);
 }
 function idleMovement(){
- if(reducedMotion||!webglReady||document.hidden||document.getElementById('gameScreen')?.classList.contains('hidden'))return;
+ if(reducedMotion||!webglReady||document.hidden||container?.classList.contains('storybook-ready')||document.getElementById('gameScreen')?.classList.contains('hidden'))return;
  if(ambientFrame!==null)return;
  const started=performance.now();
  const animate=now=>{
+  if(document.hidden||container?.classList.contains('storybook-ready')){ambientFrame=null;return;}
   const t=Math.min(1,(now-started)/1150);
   ambientPhase=t*Math.PI*2;
   ambientBlink=t>.53&&t<.62;
