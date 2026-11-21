@@ -274,3 +274,12 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
  .miro-tail,.miro-eyes,.cat-mood,.hotspot.revealed::before,.hotspot.revealed::after,
  .scene-canvas.room-entering .room-3d,.scene-canvas.room-entering .scene-artwork{animation:none!important;transition:none!important;}
 }
+
+
+/* Keep the invisible interaction targets aligned with a panned 2D scene. */
+.scene-3d.fallback-2d .hotspot-layer{
+ transform:translateX(var(--fallback-pan,0%)) scale(var(--fallback-zoom,1.06));
+ transform-origin:50% 50%;
+ transition:transform .46s cubic-bezier(.22,.61,.36,1);
+}
+@media(prefers-reduced-motion:reduce){.scene-3d.fallback-2d .hotspot-layer{transition:none;}}
