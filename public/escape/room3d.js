@@ -196,6 +196,21 @@ function init(){container=$('sceneCanvas');canvas=$('room3d');if(!canvas||!conta
  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();webglReady=false;canvas.classList.add('hidden');container.classList.add('fallback-2d');});
  return true;
 }
+// Lightweight 2D panning when WebGL is unavailable, especially on mobile.
+document.addEventListener('click',event=>{
+ const button=event.target.closest?.('[data-camera]');
+ if(!button||webglReady||!container)return;
+ const key=button.dataset.camera;if(key==='discover')return;
+ let pan=Number(container.dataset.pan||0),scale=Number(container.dataset.zoom||1.06);
+ if(key==='left')pan=Math.min(8,pan+4);
+ if(key==='right')pan=Math.max(-8,pan-4);
+ if(key==='reset'){pan=0;scale=1.06;}
+ if(key==='in')scale=Math.min(1.23,scale+.045);
+ if(key==='out')scale=Math.max(1.02,scale-.045);
+ container.dataset.pan=String(pan);container.dataset.zoom=String(scale);
+ container.style.setProperty('--fallback-pan',pan+'%');
+ container.style.setProperty('--fallback-zoom',String(scale));
+});
 window.Moyeo3D={init,setRoom(next){if(!webglReady)return;const changed=next!==room;room=next;if(changed){if(cameraFrame!==null){cancelAnimationFrame(cameraFrame);cameraFrame=null;}if(ambientFrame!==null){cancelAnimationFrame(ambientFrame);ambientFrame=null;}ambientPhase=0;ambientBlink=false;yaw=0;pitch=0;zoom=1;container.dataset.pan='0';container.dataset.zoom='1.06';container.style.setProperty('--fallback-pan','0%');container.style.setProperty('--fallback-zoom','1.06');buildScene()}const resized=size();if(changed||resized||!mvp)redraw();else positionSpots()},refresh(){if(!webglReady)return;if(size()||!mvp)redraw();else positionSpots()},supported(){return webglReady;},mode(){return gl?'webgl':ctx2d?'software-3d':'2d-illustration';}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
