@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#161c36" />
-  <meta name="description" content="모여 방탈출: 13번째 종소리. 단서를 모아 네 개의 공간을 탐험하고, 퍼즐을 풀어 저택의 비밀을 밝혀 보세요." />
-  <title>모여 방탈출 · 13번째 종소리</title>
+  <meta name="description" content="모여 방탈출: 13번째 종소리. 네 개의 방을 순서대로 탈출하며 퍼즐과 엉뚱한 수수께끼를 풀어 저택의 비밀을 밝혀 보세요." />
+  <title>모여 방탈출 3D v2.1 · 13번째 종소리</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -26,10 +26,18 @@
             <text x="300" y="390" text-anchor="middle" fill="#dccfb8" font-size="14" letter-spacing="5">THE THIRTEENTH BELL</text>
           </svg>
           </div>
-          <div class="hero-copy"><div class="eyebrow">미스터리 탈출 어드벤처</div><h1>모여 <em>방탈출</em></h1><p class="hero-subtitle">13번째 종소리</p><p class="hero-summary">멈춰 버린 저택의 시계, 기억을 잃은 고양이.<br />세 개의 인장을 모으고 마지막 문을 여세요.</p><div class="hero-stats"><span>◷ 약 10~20분</span><span>♧ 퍼즐 5종</span><span>✦ 엔딩 3개</span></div></div>
+          <div class="hero-copy"><div class="eyebrow">미스터리 탈출 어드벤처</div><h1>모여 <em>방탈출</em></h1><p class="hero-subtitle">13번째 종소리</p><p class="hero-summary">멈춰 버린 저택의 시계, 기억을 잃은 고양이.<br />방을 하나씩 통과해 세 개의 인장을 모으고 마지막 문을 여세요.</p><div class="hero-stats"><span>◷ 3D 시점 탐험</span><span>♧ 4개의 방 · 10개 퍼즐</span><span>✦ 엔딩 3개</span></div></div>
         </div>
-        <div class="home-bottom"><div class="mode-field"><span class="field-label">난이도 선택</span><div class="mode-options" role="group" aria-label="난이도"><button class="mode-choice selected" data-mode="easy"><strong>초급</strong><small>힌트 무제한</small></button><button class="mode-choice" data-mode="normal"><strong>중급</strong><small>힌트 5회</small></button><button class="mode-choice" data-mode="hard"><strong>고급</strong><small>힌트 2회</small></button></div></div><div class="home-actions"><button id="continueBtn" class="btn btn-ghost hidden">이어서 하기</button><button id="startBtn" class="btn btn-primary btn-xl">모험 시작하기 <span aria-hidden="true">→</span></button></div></div>
-        <div class="home-footnote">혼자 플레이하는 첫 번째 에피소드 · 자동 저장 · 모바일/PC 지원</div>
+        <div class="home-bottom"><div class="home-stage-note"><b>방을 하나씩 탈출!</b><small>하나의 이야기 · 한 방에 2~3개 도전 · 단계별 힌트 제공</small></div><div class="home-actions"><button id="continueBtn" class="btn btn-ghost hidden">이어서 하기</button><button id="startBtn" class="btn btn-primary btn-xl">모험 시작하기 <span aria-hidden="true">→</span></button></div></div>
+        <div class="series-heading"><span>THE MOYEO ESCAPE COLLECTION</span><strong>서로 이어지지 않는 다섯 개의 이야기</strong></div>
+        <div class="episode-strip" aria-label="독립형 방탈출 에피소드 목록">
+          <div class="episode-chip now"><span>EP 01 · PLAYABLE</span><b>13번째 종소리</b><small>달빛 저택의 잃어버린 기억</small></div>
+          <div class="episode-chip"><span>EP 02 · 기획 중</span><b>존재하지 않는 0호실</b><small>없는 객실의 체크인</small></div>
+          <div class="episode-chip"><span>EP 03 · 기획 중</span><b>폐장한 놀이공원</b><small>퇴근하지 못하는 직원들</small></div>
+          <div class="episode-chip"><span>EP 04 · 기획 중</span><b>여섯 번째 승객</b><small>마지막 열차의 거짓말</small></div>
+          <div class="episode-chip"><span>EP 05 · 기획 중</span><b>이상한 분실물 센터</b><small>잃어버린 것은 물건뿐일까?</small></div>
+        </div>
+        <div class="home-footnote">현재 1편 플레이 가능 · 나머지 4편은 스토리 설계 단계 · 모바일/PC 지원</div>
       </div>
     </section>
 
@@ -41,9 +49,9 @@
       </header>
       <main class="game-layout">
         <section class="scene-panel" aria-label="현재 방">
-          <div class="scene-topbar"><div class="scene-info"><span class="location-symbol">⌖</span><div><span class="room-eyebrow">MOONLIT MANOR</span><h2 id="roomTitle">현관 홀</h2></div></div><div class="scene-nav" id="sceneNav"></div></div>
-          <div id="sceneCanvas" class="scene-canvas" role="group" aria-label="탐색할 방"><div id="sceneArtwork" class="scene-artwork"></div><div id="hotspots" class="hotspot-layer"></div><div class="scene-floorcaption" id="sceneCaption"></div></div>
-          <div class="scene-foot"><div class="scene-foot-tip"><span class="pulse-dot"></span><span id="objectiveText">저택의 단서를 찾아보세요.</span></div><button class="mini-btn" id="journalBtn">▤ 탐험 수첩</button></div>
+          <div class="scene-topbar"><div class="scene-info"><span class="location-symbol">⌖</span><div><span id="roomEyebrow" class="room-eyebrow">ROOM 01 / 04</span><h2 id="roomTitle">현관 홀</h2></div></div><div class="scene-nav" id="sceneNav"></div></div>
+          <div id="sceneCanvas" class="scene-canvas scene-3d" role="group" aria-label="탐색할 3D 방"><div id="sceneArtwork" class="scene-artwork"></div><canvas id="room3d" class="room-3d" aria-label="마우스로 드래그해 방을 둘러볼 수 있는 3D 화면"></canvas><div id="hotspots" class="hotspot-layer"></div><div class="scene-floorcaption" id="sceneCaption"></div><div class="camera-controls" aria-label="3D 시점 조작"><button type="button" data-camera="left" aria-label="왼쪽 보기">◀</button><button type="button" data-camera="reset" title="시점 초기화">정면</button><button type="button" data-camera="right" aria-label="오른쪽 보기">▶</button><span></span><button type="button" data-camera="out" aria-label="축소">−</button><button type="button" data-camera="in" aria-label="확대">＋</button></div><span class="camera-help">드래그하여 둘러보기 · 빛나는 단서 클릭</span></div>
+          <div class="scene-foot"><div class="scene-foot-tip"><span class="pulse-dot"></span><span id="objectiveText">저택의 단서를 찾아보세요.</span></div><div class="scene-foot-actions"><button class="mini-btn" id="journalBtn">▤ 탐험 수첩</button><button class="next-room-btn hidden" id="nextRoomBtn">다음 방으로 →</button></div></div>
         </section>
         <aside class="side-panel"><div class="cat-card"><div class="cat-card-top"><div id="catAvatar" class="cat-avatar" aria-hidden="true"></div><div><span class="cat-tag">저택의 안내자</span><h3>미로 <small>고양이</small></h3></div><span class="cat-mood">✦</span></div><div id="catDialog" class="cat-dialog">여긴 자꾸 길을 잃는 집이야. 그렇지만 넌 나갈 수 있을 거야. 아마도!</div><button id="catTalkBtn" class="cat-talk">미로에게 말 걸기 ↗</button></div><div class="inventory-head"><h3>가방 <span id="inventoryNum">0</span></h3><span>아이템을 눌러 선택</span></div><div id="inventory" class="inventory-grid"></div><div class="side-bottom"><div class="progress-heading"><span>저택 조사 진행도</span><strong id="completionText">0%</strong></div><div class="progress-track"><div id="completionFill"></div></div><button class="outline-button" id="cluesBtn">☷ 단서 · 기록 확인하기</button></div></aside>
       </main>
@@ -53,8 +61,8 @@
     <div id="modalOverlay" class="modal-overlay hidden" role="presentation"><div class="modal-wrap" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button id="modalClose" class="modal-close" title="닫기" aria-label="닫기">✕</button><div id="modalContent"></div></div></div>
   </div>
   <script>
-    // The server gates the initial HTML and every asset. Recheck owner approval while
-    // the game stays open so account logout or revoked permission closes the session.
+    // Owner permission is checked on the server before this page or any game asset
+    // is served. Revalidate while playing to honor approval revocations and logout.
     (function(){
       let checking=false;
       async function verifyAccess(){
@@ -64,7 +72,7 @@
           if(!response.ok)return;
           const state=await response.json();
           if(!state.authenticated||!state.approved)location.replace('/escape-access/index.html');
-        }catch(_){/* Temporary network errors are retried; server still guards new loads. */}
+        }catch(_){/* Retry transient connection errors; the server still guards new loads. */}
         finally{checking=false;}
       }
       setInterval(verifyAccess,15000);
@@ -72,6 +80,7 @@
       document.addEventListener('visibilitychange',()=>{if(!document.hidden)verifyAccess();});
     })();
   </script>
+  <script src="room3d.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
