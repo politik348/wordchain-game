@@ -171,7 +171,7 @@ function books(){
     '<div class="rune-book-placeholder"><small>0'+(i+1)+'</small>·</div>')+
   '</div>').join('');
  const options=moonBookNames.map(name=>'<div class="rune-book-card '+(g.booksPlaced.includes(name)?'book-in-shelf':'')+'">'+
-   '<button data-action="book-'+name+'" '+(g.booksPlaced.includes(name)?'disabled':'')+'><b>'+name+'</b><span>'+bookSides(name).join(' → ')+'</span></button>'+
+   '<button draggable="true" data-book="'+name+'" data-action="book-'+name+'" '+(g.booksPlaced.includes(name)?'disabled':'')+'><b>'+name+'</b><span>'+bookSides(name).join(' → ')+'</span></button>'+
    '<button class="rune-flip" data-action="flip-'+name+'" aria-label="'+name+' 책 방향 바꾸기">↻ 뒤집기</button></div>').join('');
  modal('ROOM 02 · 퍼즐 3','서가에 남은 문장',
    '<p class="modal-description">오래된 서가가 텅 비어 있다. 책등에는 제목보다 작은 기호들이 눈에 띈다. 서가 양옆의 황동 장식은 서로 다른 모양으로 닳아 있다.</p>'+
