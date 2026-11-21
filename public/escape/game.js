@@ -17,6 +17,7 @@ const clueText={
  dust:['서가의 황동 문양','서가 양 끝에 별과 초승달이 새겨져 있다. 책등마다 두 개의 문양이 서로 다른 높이에 있다. 한 권의 책에는 거의 먼지가 없다.'],
  roll:['기계식 자동연주 원통','원통에는 여섯 줄의 작은 구멍이 반복된다. 왼쪽 모서리에 별, 축의 다른 쪽에 다이아몬드 자국이 있다.'],
  water:['정원 관리 기록','네 수조 가운데 해 그림 옆에는 세 번째 눈금 높이의 물때가 있고, 구름 수조 바닥에는 진흙이 굳어 있다. 물은 측면 배관으로만 오간다. 이전 그림에서는 별 수조의 수면이 달보다 한 눈금 높다.'],
+ watering:['온실 자동 급수 시계','유리 덮개 아래 마지막 급수 종료 시각 21:10. 시계 바늘은 그 뒤 더 움직이지 않았다.'],
  powder:['달빛꽃 관찰 기록','희게 마른 꽃가루는 밝은 곳에서는 보이지 않지만 창을 가리면 흐릿한 은빛 반점을 남긴다.'],
  clock:['시계 관리인의 메모','현관 자동 잠금과 온실 급수 종료는 밤에 있었다. 급수 장치의 마지막 진동이 멎은 뒤 모래가 완전히 내려가는 데는 다섯 분이 걸렸다.'],
  pin:['시계추 제동 장치','안전용 붉은 고정쇠는 시계추 아래쪽에 있다. 제단에 꽂힌 세 인장에는 길쭉한 홈이 각각 다른 수만큼 파여 있다.'],
@@ -104,7 +105,15 @@ function modal(eyebrow,title,content,actions=[['돌아가기','close',true]]){mo
 function article(t,s,eyebrow='조사 기록'){modal(eyebrow,t,`<div class="letter">${s}</div>`)}
 function solved(key,text){g.flags[key]=true;g.activePuzzle=key;tone('gain');save();render();modal('PUZZLE SOLVED','장치가 움직이기 시작했다',`<div class="collect-visual">✦</div><p class="modal-description">${text}</p>`)}
 function error(text='아직 맞지 않는 것 같습니다.'){g.errors++;tone('bad');notify(text);save()}
-function objective(){const n=rooms.indexOf(g.room);if(g.ending)return '이야기가 완결되었습니다.';if(clearRoom(g.room)&&n<3)return '다음 공간으로 가는 문이 열렸습니다. 선택 수집품은 놓치지 않았나요?';if(g.room==='foyer')return !done('foot')?'양탄자와 수납장을 자세히 살펴보세요.':'반쪽짜리 달 장식이 아직 반응하지 않습니다.';if(g.room==='study')return !done('books')?'서재의 책장을 조사해 보세요.':!done('piano')?'피아노 위 기계에 원통이 빠져 있습니다.':'온실로 향하는 문이 열렸습니다.';if(g.room==='greenhouse')return !done('water')?'화분의 물 높이와 기록을 비교해 보세요.':!done('light')?'빛이 달빛꽃에 닿도록 해 보세요.':'온실의 빛이 돌아왔습니다.';return !done('clock')?'관리 기록과 시계를 비교해 보세요.':!done('pin')?'종소리는 열두 번 울렸지만 시간은 아직 멈춰 있습니다.':'마지막 문이 열렸습니다.'}
+function objective(){
+ if(g.ending)return '저택의 밤이 지나갔다.';
+ const i=rooms.indexOf(g.room);
+ if(clearRoom(g.room)&&i<3)return '다음 공간의 문에서 낮은 금속 소리가 들린다.';
+ if(g.room==='foyer')return !done('foot')?'현관에는 오래된 발자국과 잠긴 수납장이 남아 있다.':'반쪽 달 장식에서 희미한 빛이 새어 나온다.';
+ if(g.room==='study')return !done('books')?'서가의 책들이 제자리를 잃었다.':!done('piano')?'기계식 피아노는 여전히 침묵하고 있다.':'책상 깊숙한 곳에서 금속 장치가 긁히는 소리가 난다.';
+ if(g.room==='greenhouse')return !done('water')?'말라 있는 급수관이 삐걱거린다.':!done('light')?'꽃잎은 여전히 움츠러들어 있다.':'온실에는 작은 은빛 가루가 남아 있다.';
+ return !done('clock')?'시곗바늘과 경보 장치가 움직이지 않는다.':!done('pin')?'시간은 맞춰졌지만 진자가 여전히 멈춰 있다.':'마지막 문에서 새벽빛이 비친다.';
+}
 function render(){if(!g)return;let [name,caption]=meta[g.room],index=rooms.indexOf(g.room);$('roomTitle').textContent=name;$('roomEyebrow').textContent=`ROOM 0${index+1} / 04`;$('sceneCaption').textContent=caption;
  $('sceneNav').innerHTML=rooms.map((r,i)=>`<button data-room="${r}" class="nav-btn ${r===g.room?'current':''} ${!canEnter(r)?'locked':''} ${canEnter(r)&&r!==g.room?'available':''}" ${r===g.room?'disabled aria-current="step"':''} ${!canEnter(r)?'aria-disabled="true"':''}><span class="nav-index">${canEnter(r)?String(i+1).padStart(2,'0'):'♙'}</span><span class="nav-copy"><small>${r===g.room?'현재 탐험 중':!canEnter(r)?'아직 잠긴 공간':'이동 가능한 공간'}</small><b>${meta[r][0]}</b></span><span class="nav-status" aria-hidden="true">${r===g.room?'✦':!canEnter(r)?'⌑':'↗'}</span></button>`).join('');
  $('sealsBar').innerHTML=Object.entries(seals).map(([id,v])=>`<div title="${v[1]}" class="seal ${g.seals.includes(id)?'found':''}">${v[0]}</div>`).join('');
@@ -135,7 +144,7 @@ function inspect(id){if(g.ending){ending(g.ending);return}switch(id){
  case 'piano':piano();break;
  case 'desk':desk();break;
  case 'greenhouse':move('greenhouse');break;
- case 'record':clue('water');clue('powder');article('달빛 온실 재배 기록','네 화분은 수위가 모두 달랐다.\n해의 관에는 세 번째 눈금까지 물때가 남아 있다.\n구름의 관은 막힌 채로 발견되었다.\n오래된 사진 속 별의 수위는 달보다 정확히 한 눈금 높다.\n\n달빛꽃은 낮에 빛을 머금고 어둠에서 가루가 빛난다.');break;
+ case 'record':clue('water');clue('powder');clue('watering');article('달빛 온실 관리판','네 개의 물통을 잇는 황동관에는 새는 곳이 없다.\n해 그림 수조에는 세 번째 눈금 높이의 물때가 남아 있다. 구름 수조의 배출구는 말라 있다.\n서랍 안의 오래된 그림에서는 별 수조의 물이 달보다 딱 한 줄 높다.\n\n자동 급수 시계: 「종료 21:10」. 낡은 꽃가루가 기록지 가장자리에 붙어 있다.');break;
  case 'water':water();break;
  case 'beam':beam();break;
  case 'flower':
@@ -170,8 +179,8 @@ function inspect(id){if(g.ending){ending(g.ending);return}switch(id){
   else article('빈 화분','목걸이가 놓여 있던 흔적만 남았다.');
   break;
  case 'tower':move('tower');break;
- case 'pedestal':article('인장의 제단',g.seals.length===3?'길·소리·빛의 세 인장이 홈에 들어간다. 시계의 동력이 돌아온 듯하다.':`인장은 ${g.seals.length}/3개 모였다. 모두 모아야 시계가 반응한다.`);break;
- case 'keeper':clue('clock');clue('pin');article('관리인의 기록','「현관이 잠긴 뒤, 분침이 사분원만큼 돌아간 밤. 시계는 갑자기 멈췄다.」\n\n「열두 번의 종은 고장 경보다. 진정한 재가동은 시계추가 움직일 때 자동으로 알린다.」\n\n「비상 제동용 붉은 고정쇠는 인장을 복구하고 시간을 맞춘 뒤 풀 것.」');break;
+ case 'pedestal':article('인장의 제단',g.seals.length===3?'세 인장이 제단 안의 원형 홈에 단단히 들어가 있다. 뒷면에는 서로 다른 자국이 남았다.\n\n길의 인장 ❖  ◇◇\n소리의 인장 ♫  ◇\n빛의 인장 ☼  ◇◇◇\n\n제단 아래에서 느릿하게 톱니가 맞물리는 소리가 난다.':`황동 제단의 세 홈 중 ${g.seals.length}곳에서만 미세한 진동이 느껴진다.`);break;
+ case 'keeper':clue('clock');clue('pin');article('시계 관리인의 낡은 장부','첫 번째 줄: 「문이 닫히는 소리를 들었다. 잠시 뒤 온실 쪽 자동 급수관이 멈췄다.」\n\n두 번째 줄: 「급수관의 마지막 떨림이 멎자 모래시계를 뒤집었다. 모래가 완전히 떨어지는 데는 꼭 오 분.」\n\n마지막 줄: 「열두 번의 종은 고장이 남긴 경보다. 시계추가 멈추면 다음 종은 오지 않는다.」');break;
  case 'clock':clock();break;
  case 'pin':pin();break;
  case 'portal':if(done('pin'))finalChoices();else article('움직이지 않는 문','세 인장과 바늘만으로는 부족한 것 같다. 아직 추에 무언가 걸려 있다.');break;
@@ -548,7 +557,7 @@ function hintMore(id){
   level===4?[['닫기','close',true]]:[['닫기','close'],[level===3?'정답과 해설 보기':'다음 단계','hint-'+id,true]]
  );
 }
-function talk(){let lines={foyer:['이 집에는 출입문이 너무 많아. 하지만 난 양탄자가 좋아.','수납장에서는 뭔가 반짝이는 냄새가 나.'],study:['루나는 책등의 무늬로 비밀 이야기를 만들었지.','저 책 중 하나는 내가 혼자 꽂아 둔 거야. 어디더라?'],greenhouse:['꽃이 피면 아주 예쁜 일이 생길 거야.','어두우면 더 잘 보이는 것도 있대.'],tower:['열두 번의 종소리는 늘 무서웠어.','나는 왜 자꾸 누군가를 기다리는 것 같지?']};let a=lines[g.room];$('catDialog').textContent=a[(catTurns++)%a.length];tone()}
+function talk(){let lines={foyer:['이 집에는 출입문이 너무 많아. 하지만 난 양탄자가 좋아.','수납장에서는 뭔가 반짝이는 냄새가 나.'],study:['루나는 책등의 무늬로 비밀 이야기를 만들었지.','저 책 중 하나는 내가 혼자 꽂아 둔 거야. 어디더라?'],greenhouse:['난 예전에 여기서 발이 늘 젖었어.','꽃가루가 털에 묻으면 루나가 날 안아 줬지.'],tower:['열두 번의 종소리는 늘 무서웠어.','나는 왜 자꾸 누군가를 기다리는 것 같지?']};let a=lines[g.room];$('catDialog').textContent=a[(catTurns++)%a.length];tone()}
 function menu(){modal('PAUSE','탐험 메뉴',`<p class="modal-description">진행 내용은 자동 저장됩니다. 실시간 플레이 기록: ${pretty(elapsed())}</p>`,[['계속 탐험','close',true],['시작 화면','home']])}
 function handle(action){if(action==='close')return hide();if(action==='home')return home();if(action==='really-new')return begin();if(action==='new-confirm')return modal('NEW GAME','처음부터 시작할까요?',`<p class="modal-description">이번 버전의 진행 데이터가 초기화됩니다.</p>`,[['취소','close'],['새로 시작','really-new',true]]);
 if(action==='pollen-rub'){if(done('light')&&g.flags.curtain){g.flags.blackout=true;clue('powder');save();return modal('GREENHOUSE · 관찰','희미한 발자국',`<p class="modal-description">은빛 가루를 쓸어내자 작고 둥근 발자국들이 선명해진다. 발자국은 꽃줄기 뒤편의 오래된 유리 용기 부근에서 끊겨 있다.</p>`,[['돌아가기','close',true]])}return}if(action.startsWith('step-'))return step(action.slice(5));if(action==='rug-pocket'){if(!has('photo'))item('photo');return modal('FOUND','오래된 사진',`<div class="collect-visual">▧</div><div class="letter">어린 미로와 루나가 함께 찍혀 있다.\n\n「우린 언제나 함께야」</div>`)}
