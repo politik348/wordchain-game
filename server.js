@@ -493,7 +493,10 @@ const ESCAPE_TASTE_ASSETS=new Map([
  ['/taste/escape/game.js','escape/game.js'],
  ['/taste/escape/room3d.js','escape/room3d.js'],
  ['/taste/escape/storybook.js','escape/storybook.js'],
- ['/taste/escape/foyer-scene.avif','escape/foyer-scene.avif']
+ ['/taste/escape/foyer-scene.avif','escape/foyer-scene.avif'],
+ ['/taste/escape/study-scene.avif','escape/study-scene.avif'],
+ ['/taste/escape/greenhouse-scene.avif','escape/greenhouse-scene.avif'],
+ ['/taste/escape/tower-scene.avif','escape/tower-scene.avif']
 ]);
 const handler=async(req,res)=>{
   const u=new URL(req.url,'http://localhost');const pathname=decodeURIComponent(u.pathname);
