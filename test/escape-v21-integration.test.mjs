@@ -46,7 +46,7 @@ test('home gallery advertises the upgraded puzzle count and owner gate',()=>{
  assert.match(app,/id:'escape',name:'모여 방탈출'/);
  assert.match(app,/퍼즐 10종/);
  assert.match(app,/escape-access\/index\.html/);
- assert.match(home,/app\.js\?v=20261121escape21/);
+ assert.match(home,/app\.js\?v=20261121taste1/);
 });
 
 test('unauthenticated HTTP cannot request 3D renderer directly',async()=>{
