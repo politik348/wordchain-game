@@ -479,7 +479,7 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
   padding:0!important;border:0!important;border-radius:8px!important;
   background:transparent!important;color:transparent!important;
   box-shadow:none!important;animation:none!important;
-  opacity:1!important;visibility:visible;cursor:pointer;
+  opacity:1!important;visibility:visible;cursor:default!important;
   transform:translate(-50%,-50%)!important;touch-action:manipulation;
   -webkit-tap-highlight-color:transparent;
 }
@@ -498,8 +498,8 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
   background:none!important;border:0!important;
   box-shadow:none!important;animation:none!important;
 }
-/* Feedback happens only during intentional hover, keyboard focus or the Discover action. */
-#sceneCanvas .hotspot:is(:hover,:focus-visible,.revealed)::before{
+/* Pointer scanning must reveal nothing. Only keyboard focus or explicit Explore reveals labels. */
+#sceneCanvas .hotspot:is(:focus-visible,.revealed)::before{
   content:""!important;display:block!important;opacity:.8!important;
   position:absolute;inset:0;pointer-events:none;border:0!important;border-radius:8px!important;
   background:radial-gradient(ellipse at center,#f9e6b54d 0%,#efdc9f18 48%,transparent 80%)!important;
@@ -513,9 +513,22 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
   opacity:0!important;visibility:hidden!important;pointer-events:none!important;
   transition:opacity .16s ease,transform .16s ease!important;
 }
-#sceneCanvas .hotspot:is(:hover,:focus-visible,.revealed) span{
+#sceneCanvas .hotspot:is(:focus-visible,.revealed) span{
   opacity:1!important;visibility:visible!important;
   transform:translateX(-50%) translateY(0)!important;
+}
+/* Entire exploration canvas uses the same neutral cursor, whether over scenery, a
+   hidden hotspot, or a draggable fallback/illustrated scene. Buttons outside the scene
+   (navigation, camera, hint) remain normally identifiable interactive controls. */
+#sceneCanvas,
+#sceneCanvas:active,
+#sceneCanvas .room-3d,
+#sceneCanvas .room-3d:active,
+#sceneCanvas .hotspot,
+#sceneCanvas .hotspot:hover,
+#sceneCanvas .hotspot:active,
+#sceneCanvas .hotspot:focus{
+  cursor:default!important;
 }
 /* A single brief soft emphasis from Explore, without a circular ripple. */
 @keyframes ambientExploreReveal{
