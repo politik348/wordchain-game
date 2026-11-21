@@ -11,6 +11,7 @@ import {createMembershipUI} from './auth-ui.mjs?v=20261120statusrefresh1';
 import {renderPregame} from './pregame-lobbies.mjs?v=20261120catIcon2';
 import {renderOnlineWaiting} from './waiting-room.mjs?v=20261120catlevels1';
 const GAMES=[
+ {id:'escape',name:'모여 방탈출',genre:'미스터리 · 스토리',players:'1명',emoji:'🔐',color:'#e2e8fa',badge:'주인장 승인',desc:'13번째 종소리 · 달빛 저택에서 고양이 미로와 기억을 되찾는 방탈출. 주인장의 플레이 허가가 필요합니다.',rules:[['별도 출입 허가','회원가입·로그인한 뒤 주인장에게 방탈출 플레이 승인을 받아야 합니다.'],['퍼즐 해결','현관·서재·온실·시계탑의 다섯 퍼즐을 해결합니다.'],['3가지 결말','힌트와 단서를 모으고 선택에 따라 다른 결말을 발견합니다.']]},
  {id:'gamehell',name:'모여게임지옥',genre:'아케이드 · 13종',players:'1명',emoji:'😼',color:'#e8dffd',badge:'기록·업적·상점',desc:'개인 최고기록에 도전하고, 별조각과 업적 보상으로 고양이 캐릭터 8종을 수집해요.',rules:[['13종 게임','낙하·점프·로켓·얼음 등 13가지 원터치 게임을 선택합니다.'],['기록 도전','최고 점수와 별조각은 현재 브라우저에 저장됩니다.'],['개인 기록 도전','다른 이용자와 대전하는 게임이 아니라 나의 최고기록을 갱신하는 아케이드입니다.']]},
  {id:'tetris',name:'모여 테트리스',genre:'퍼즐 · 블록',players:'1명',emoji:'🧩',color:'#f3e1c4',badge:'고전 퍼즐',desc:'클래식 테트리스! 블록을 회전·이동해 줄을 지우고 최고 점수에 도전해요.',rules:[['조작','방향키로 이동, 위쪽 방향키로 회전, 스페이스로 하드 드롭합니다.'],['점수','가로줄을 채우면 지워지며, 연속으로 지울수록 높은 점수를 얻습니다.'],['기록','최고 점수는 이 브라우저에 저장됩니다.']]},
  {id:'logic',name:'모여로직',genre:'두뇌 · 노노그램',players:'1명',emoji:'🧠',color:'#e5efff',badge:'그림 퍼즐',desc:'가로·세로 숫자를 따라 칸을 색칠하면 귀여운 그림이 나타나는 노노그램!',rules:[['힌트 숫자','숫자는 이어서 색칠할 칸 수를 나타냅니다.'],['표시','색칠·X 표시·지우기를 선택해 퍼즐을 풉니다.'],['그림 도감','퍼즐을 완성하면 그림과 진행 기록이 브라우저에 저장됩니다.']]},
@@ -907,7 +908,7 @@ document.addEventListener('click',async e=>{
   gamePrefs[selection][key]=key==='turnSeconds'?Number(value):value;
   persistPregamePrefs();render();return;
  }
- const g=e.target.closest('[data-game]');if(g){if(g.dataset.game==='marble'){location.href='/marble/index.html';return;}if(g.dataset.game==='gamehell'){location.href='/gamehell/index.html';return;}if(g.dataset.game==='tetris'){location.href='/tetris/index.html';return;}if(g.dataset.game==='logic'){location.href='/logic/index.html';return;}selection=g.dataset.game;view='detail';await refreshRooms(selection);render();window.scrollTo(0,0);return;}
+ const g=e.target.closest('[data-game]');if(g){if(g.dataset.game==='escape'){location.href='/escape-access/index.html';return;}if(g.dataset.game==='marble'){location.href='/marble/index.html';return;}if(g.dataset.game==='gamehell'){location.href='/gamehell/index.html';return;}if(g.dataset.game==='tetris'){location.href='/tetris/index.html';return;}if(g.dataset.game==='logic'){location.href='/logic/index.html';return;}selection=g.dataset.game;view='detail';await refreshRooms(selection);render();window.scrollTo(0,0);return;}
  const join=e.target.closest('[data-join]');if(join){await joinRoom(join.dataset.join);return;}
  const b=e.target.closest('[data-action]');if(!b)return;
  const pregameMode=view==='catSetup'?'cat':pregameModesFor(selection).includes(pregameModes[selection])?pregameModes[selection]:pregameModesFor(selection)[0];
@@ -1051,7 +1052,7 @@ membership=createMembershipUI({
  },
  afterLogin(){
   const params=new URLSearchParams(location.search),next=params.get('next');
-  if(next&&/^\/(?:marble\/index\.html)(?:\?[^#]*)?(?:#.*)?$/.test(next)){location.href=next;return;}
+  if(next&&/^\/(?:marble\/index\.html|escape-access\/index\.html)(?:\?[^#]*)?(?:#.*)?$/.test(next)){location.href=next;return;}
   refreshRooms(view==='detail'?selection:'').then(()=>render());
  }
 });

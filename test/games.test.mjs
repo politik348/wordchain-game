@@ -108,7 +108,7 @@ test('Mafia role visibility, night actions, day discussion and win',async()=>{
  for(let i=0;i<4;i++){assert.ok(['마피아','의사','경찰','시민'].includes(views[i].state.role));assert.equal(views[i].state.roles,undefined);}
  const roles=views.map(v=>v.state.role),maf=roles.indexOf('마피아');
  for(let i=0;i<4;i++)if(roles[i]==='마피아'||roles[i]==='의사'||roles[i]==='경찰'){
-   await action(a,i,'night',{target:a.players[roles[i]==='마피아'?(i+1)%4:0].sid});
+   await action(a,i,'night',{target:a.players[roles[i]==='마피아'||roles[i]==='경찰'?(i+1)%4:0].sid});
  }
  let st=(await state(a)).state;
  assert.ok(['discussion','result'].includes(st.phase)||st.result);

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#161c36" />
+  <meta name="description" content="모여 방탈출: 13번째 종소리. 단서를 모아 네 개의 공간을 탐험하고, 퍼즐을 풀어 저택의 비밀을 밝혀 보세요." />
+  <title>모여 방탈출 · 13번째 종소리</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <section id="homeScreen" class="home-screen" aria-label="시작 화면">
+      <div class="home-ambience" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+      <div class="home-card">
+        <div class="home-topline"><span class="brand">✦ MOYEO GAMES</span><span class="chapter-pill">EPISODE 01</span></div>
+        <div class="home-hero">
+          <div class="hero-illustration" aria-hidden="true">
+            <svg viewBox="0 0 600 410" role="img"><defs><linearGradient id="hero-bg" x2="0" y2="1"><stop stop-color="#393964"/><stop offset="1" stop-color="#171f3e"/></linearGradient><radialGradient id="hero-moon"><stop stop-color="#fffbe2"/><stop offset=".7" stop-color="#ffe9aa"/><stop offset="1" stop-color="#e4b974"/></radialGradient></defs>
+            <rect width="600" height="410" rx="32" fill="url(#hero-bg)"/><circle cx="460" cy="96" r="54" fill="url(#hero-moon)"/><circle cx="447" cy="80" r="60" fill="#ffe3a9" opacity=".13"/>
+            <g fill="#f8db9b" opacity=".8"><path d="M95 55l3 9 9 3-9 3-3 9-3-9-9-3 9-3z"/><path d="M513 225l3 9 9 3-9 3-3 9-3-9-9-3z"/><circle cx="180" cy="98" r="3"/><circle cx="385" cy="56" r="3"/></g>
+            <path d="M74 345V164l60-37 54 37V95h40v51l84-73 120 96v176z" fill="#253251" stroke="#d7af75" stroke-width="5"/><path d="M140 344V176h132v168" fill="#293a62"/><path d="M157 331V199h98v132" fill="#455377" stroke="#caa66c" stroke-width="5"/><path d="M171 213h71v111h-71z" fill="#25253e"/>
+            <path d="M298 344V183h111v161" fill="#354468"/><path d="M322 202h64v78h-64z" fill="#f7cb78" opacity=".85"/><path d="M352 203v78M322 240h64" stroke="#54435d" stroke-width="5"/><path d="M72 345h376" stroke="#d5ac78" stroke-width="5"/>
+            <path d="M0 346h600v64H0z" fill="#182239"/><ellipse cx="300" cy="380" rx="225" ry="19" fill="#03091e" opacity=".3"/>
+            <g transform="translate(390 260)"><path d="M18 65Q-6 32 13 14L21 27 35 14 53 26 70 14Q88 38 68 67Z" fill="#f7e8ce" stroke="#5f5471" stroke-width="4"/><path d="M20 29 27 10 39 24M55 25 69 9 73 36" fill="#f7e8ce" stroke="#5f5471" stroke-width="4"/><ellipse cx="34" cy="45" rx="4" ry="5" fill="#4e4c68"/><ellipse cx="60" cy="45" rx="4" ry="5" fill="#4e4c68"/><path d="M44 53l4 3 4-3" fill="none" stroke="#d18c97" stroke-width="3" stroke-linecap="round"/><path d="M65 74q26 2 24-18" fill="none" stroke="#f7e8ce" stroke-width="11" stroke-linecap="round"/><path d="M18 67h52v31H18z" fill="#f7e8ce"/><path d="M30 93h14m14 0h12" stroke="#5f5471" stroke-width="4" stroke-linecap="round"/><path d="M30 71h27l-6 13H36z" fill="#e9ae79"/></g>
+            <text x="300" y="390" text-anchor="middle" fill="#dccfb8" font-size="14" letter-spacing="5">THE THIRTEENTH BELL</text>
+          </svg>
+          </div>
+          <div class="hero-copy"><div class="eyebrow">미스터리 탈출 어드벤처</div><h1>모여 <em>방탈출</em></h1><p class="hero-subtitle">13번째 종소리</p><p class="hero-summary">멈춰 버린 저택의 시계, 기억을 잃은 고양이.<br />세 개의 인장을 모으고 마지막 문을 여세요.</p><div class="hero-stats"><span>◷ 약 10~20분</span><span>♧ 퍼즐 5종</span><span>✦ 엔딩 3개</span></div></div>
+        </div>
+        <div class="home-bottom"><div class="mode-field"><span class="field-label">난이도 선택</span><div class="mode-options" role="group" aria-label="난이도"><button class="mode-choice selected" data-mode="easy"><strong>초급</strong><small>힌트 무제한</small></button><button class="mode-choice" data-mode="normal"><strong>중급</strong><small>힌트 5회</small></button><button class="mode-choice" data-mode="hard"><strong>고급</strong><small>힌트 2회</small></button></div></div><div class="home-actions"><button id="continueBtn" class="btn btn-ghost hidden">이어서 하기</button><button id="startBtn" class="btn btn-primary btn-xl">모험 시작하기 <span aria-hidden="true">→</span></button></div></div>
+        <div class="home-footnote">혼자 플레이하는 첫 번째 에피소드 · 자동 저장 · 모바일/PC 지원</div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="game-screen hidden" aria-label="방탈출 게임">
+      <header class="game-header">
+        <div class="header-brand"><button id="homeBtn" class="icon-button" title="시작 화면으로" aria-label="시작 화면으로">⌂</button><div><span class="small-brand">MOYEO ESCAPE</span><strong>13번째 종소리</strong></div></div>
+        <div class="header-progress"><span class="header-progress-label">인장</span><div id="sealsBar" class="seals-bar"></div></div>
+        <div class="header-actions"><span class="timer" id="timerDisplay">00:00</span><button id="soundBtn" class="icon-button" aria-label="소리 켜기 또는 끄기" title="소리 켜기 또는 끄기">♫</button><button id="hintBtn" class="text-button">✧ 힌트 <span id="hintCount"></span></button><button id="menuBtn" class="icon-button" title="메뉴" aria-label="메뉴">☷</button></div>
+      </header>
+      <main class="game-layout">
+        <section class="scene-panel" aria-label="현재 방">
+          <div class="scene-topbar"><div class="scene-info"><span class="location-symbol">⌖</span><div><span class="room-eyebrow">MOONLIT MANOR</span><h2 id="roomTitle">현관 홀</h2></div></div><div class="scene-nav" id="sceneNav"></div></div>
+          <div id="sceneCanvas" class="scene-canvas" role="group" aria-label="탐색할 방"><div id="sceneArtwork" class="scene-artwork"></div><div id="hotspots" class="hotspot-layer"></div><div class="scene-floorcaption" id="sceneCaption"></div></div>
+          <div class="scene-foot"><div class="scene-foot-tip"><span class="pulse-dot"></span><span id="objectiveText">저택의 단서를 찾아보세요.</span></div><button class="mini-btn" id="journalBtn">▤ 탐험 수첩</button></div>
+        </section>
+        <aside class="side-panel"><div class="cat-card"><div class="cat-card-top"><div id="catAvatar" class="cat-avatar" aria-hidden="true"></div><div><span class="cat-tag">저택의 안내자</span><h3>미로 <small>고양이</small></h3></div><span class="cat-mood">✦</span></div><div id="catDialog" class="cat-dialog">여긴 자꾸 길을 잃는 집이야. 그렇지만 넌 나갈 수 있을 거야. 아마도!</div><button id="catTalkBtn" class="cat-talk">미로에게 말 걸기 ↗</button></div><div class="inventory-head"><h3>가방 <span id="inventoryNum">0</span></h3><span>아이템을 눌러 선택</span></div><div id="inventory" class="inventory-grid"></div><div class="side-bottom"><div class="progress-heading"><span>저택 조사 진행도</span><strong id="completionText">0%</strong></div><div class="progress-track"><div id="completionFill"></div></div><button class="outline-button" id="cluesBtn">☷ 단서 · 기록 확인하기</button></div></aside>
+      </main>
+      <div class="toast-region" id="toastRegion" aria-live="polite"></div>
+    </section>
+
+    <div id="modalOverlay" class="modal-overlay hidden" role="presentation"><div class="modal-wrap" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><button id="modalClose" class="modal-close" title="닫기" aria-label="닫기">✕</button><div id="modalContent"></div></div></div>
+  </div>
+  <script>
+    // The server gates the initial HTML and every asset. Recheck owner approval while
+    // the game stays open so account logout or revoked permission closes the session.
+    (function(){
+      let checking=false;
+      async function verifyAccess(){
+        if(checking)return;checking=true;
+        try{
+          const response=await fetch('/api/escape/access',{credentials:'same-origin',cache:'no-store'});
+          if(!response.ok)return;
+          const state=await response.json();
+          if(!state.authenticated||!state.approved)location.replace('/escape-access/index.html');
+        }catch(_){/* Temporary network errors are retried; server still guards new loads. */}
+        finally{checking=false;}
+      }
+      setInterval(verifyAccess,15000);
+      window.addEventListener('focus',verifyAccess);
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden)verifyAccess();});
+    })();
+  </script>
+  <script src="game.js"></script>
+</body>
+</html>

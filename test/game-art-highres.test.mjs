@@ -29,5 +29,5 @@ test('six public-game cards use corresponding diverse-animal scenes, not enlarge
 test('new game gallery CSS and JS are cache-busted together',()=>{
  const html=read('public/index.html');
  assert.match(html,/styles\.css\?v=20261121highresAnimals2/);
- assert.match(html,/app\.js\?v=20261121highresAnimals2/);
+ assert.match(html,/app\.js\?v=20261121escape1/);
 });

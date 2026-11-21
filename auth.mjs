@@ -11,7 +11,7 @@ const maxBody=12_000;
 const sessionAge=7*24*60*60*1000;
 const inviteAge=14*24*60*60*1000;
 const verifyAge=10*60*1000;
-const initial=()=>({accounts:[],invites:[],sessions:[]});
+const initial=()=>({accounts:[],invites:[],sessions:[],escapeGrants:[]});
 const pending=new Map(),attempts=new Map();
 let queue=Promise.resolve(),pool=null;
 const error=(status,message)=>Object.assign(new Error(message),{status});
@@ -97,6 +97,20 @@ export async function multiplayerAccount(req,claimedSid=null){
  if(claimedSid!=null)assertIdentity(account,claimedSid);
  return account;
 }
+// Escape Room access is approved by the owner separately from ordinary membership.
+// All game HTML, scripts and styles check the durable approval on every HTTP request.
+export async function escapeAccessStatus(req){
+ const account=await getAuthenticatedAccount(req);
+ if(!account)return {authenticated:false,approved:false,account:null,storageConfigured:accountStorageReady()};
+ const approved=await readOrWrite(data=>(data.escapeGrants||[]).some(g=>g.accountId===account.id&&g.approved===true));
+ return {authenticated:true,approved,account,storageConfigured:accountStorageReady()};
+}
+export async function requireEscapeAccess(req){
+ const status=await escapeAccessStatus(req);
+ if(!status.authenticated)throw error(401,'방탈출을 플레이하려면 회원가입·로그인이 필요합니다.');
+ if(!status.approved)throw error(403,'주인장의 방탈출 플레이 승인이 필요합니다.');
+ return status.account;
+}
 export function assertIdentity(account,sid){
  if(sid!==account.id)throw error(403,'로그인한 계정의 게임 참가 정보가 아닙니다.');
 }
@@ -125,13 +139,40 @@ function adminCheck(req){
  if(!given||!hexEqual(hash(given),hash(wanted)))throw error(403,'관리자 인증이 필요합니다.');
 }
 export async function handleAccountRequest(req,res,pathname){
- if(!pathname.startsWith('/api/auth/')&&!pathname.startsWith('/api/admin/invites'))return false;
+ if(!pathname.startsWith('/api/auth/')&&!pathname.startsWith('/api/admin/invites')&&pathname!=='/api/escape/access'&&pathname!=='/api/admin/escape-access')return false;
  try{
   if(pathname==='/api/auth/me'&&req.method==='GET'){
    const account=await getAuthenticatedAccount(req);
    respond(res,200,{authenticated:Boolean(account),account,storageConfigured:readyStore(),invitesEnabled:accountStorageReady()});return true;
   }
+  if(pathname==='/api/escape/access'&&req.method==='GET'){
+   respond(res,200,await escapeAccessStatus(req));return true;
+  }
   if(!accountStorageReady())throw error(503,'회원가입을 위해 영구 저장소와 관리자 인증키 설정이 필요합니다.');
+  if(pathname==='/api/admin/escape-access'&&req.method==='GET'){
+   adminCheck(req);throttle(req,'adminEscapeList',100);
+   const entries=await readOrWrite(data=>data.accounts.map(account=>{
+    const grant=(data.escapeGrants||[]).find(g=>g.accountId===account.id);
+    return {username:account.username,dripNickname:account.dripNickname,approved:Boolean(grant?.approved),updatedAt:grant?.updatedAt||null};
+   }));
+   respond(res,200,{members:entries});return true;
+  }
+  if(pathname==='/api/admin/escape-access'&&req.method==='POST'){
+   adminCheck(req);throttle(req,'adminEscapeApproval',60);
+   const input=await json(req),name=String(input.dripNickname||'').normalize('NFC').trim(),username=String(input.username||'').toLowerCase().trim();
+   if(!name&&!username)throw error(400,'대상 회원의 드립대학 닉네임이나 아이디를 입력하세요.');
+   if(typeof input.approve!=='boolean')throw error(400,'승인 또는 해제 여부를 지정하세요.');
+   const result=await readOrWrite(data=>{
+    const matches=data.accounts.filter(account=>(!name||account.nickKey===nickKey(name))&&(!username||account.username===username));
+    if(matches.length!==1)throw error(404,'일치하는 가입 회원을 찾을 수 없습니다. 해당 회원의 가입 여부를 확인하세요.');
+    const account=matches[0];data.escapeGrants??=[];
+    let grant=data.escapeGrants.find(g=>g.accountId===account.id);
+    if(!grant){grant={accountId:account.id,approved:false,updatedAt:null};data.escapeGrants.push(grant);}
+    grant.approved=input.approve;grant.updatedAt=Date.now();
+    return {account:publicAccount(account),approved:grant.approved,updatedAt:grant.updatedAt};
+   },true);
+   respond(res,200,result);return true;
+  }
   if(pathname==='/api/admin/invites'&&req.method==='POST'){
    adminCheck(req);throttle(req,'adminIssue',50);
    const input=await json(req),name=nickname(input.dripNickname),key=nickKey(name);validNick(name);

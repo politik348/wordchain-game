@@ -18,7 +18,7 @@ test('Tetris and Logic are separate standalone games and home shows twelve',()=>
  assert.match(app,/id:'tetris'/);
  assert.match(app,/id:'logic'/);
  assert.match(app,/id:'gamehell'/);
- assert.equal([...app.matchAll(/\{id:'[^']+',name:/g)].length,12);
+ assert.equal([...app.matchAll(/\{id:'[^']+',name:/g)].length,13);
  assert.match(app,/\$\{GAMES\.length\} GAMES/);
  assert.match(app,/\$\{GAMES\.length\}가지 게임/);
  assert.match(app,/\/tetris\/index\.html/);

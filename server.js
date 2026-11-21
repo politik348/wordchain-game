@@ -9,7 +9,7 @@ import {acceptWebSocket} from './websocket-lite.mjs';
 import {applyYutMove,legalYutMoves,yutSelectedSteps,usableYutRolls} from './public/yut-solo-engine.mjs';
 import {startRummikub, sanitizeRummikub, actRummikub, tickRummikub, labelRummikub} from './rummikub/multiplayer.mjs';
 import {handleMarbleRequest} from './marble-server.mjs';
-import {handleAccountRequest,multiplayerAccount} from './auth.mjs';
+import {handleAccountRequest,multiplayerAccount,requireEscapeAccess} from './auth.mjs';
 import {TURN_SECONDS, dictionaryIndex, replies, validReply} from './public/chain-utils.mjs';
 import { words as starterWords, startingWords, drawingWords, liarWords } from './data/words.js';
 // An imported full dictionary overrides the starter lexicon for multiplayer.
@@ -551,6 +551,8 @@ const handler=async(req,res)=>{
       req.on('close',()=>{clearInterval(ping);connections.get(sid)?.delete(res);});return;
     }
     if(req.method==='GET'&&!pathname.startsWith('/api/')){
+      const protectedEscape=pathname==='/escape'||pathname.startsWith('/escape/');
+      if(protectedEscape)await requireEscapeAccess(req);
       let file=pathname==='/'?'index.html':pathname.replace(/^\//,'');
       const absolute=path.resolve(PUBLIC,file);
       if(!absolute.startsWith(PUBLIC+path.sep)&&absolute!==path.join(PUBLIC,'index.html'))throw err(403,'허용되지 않은 경로입니다.');
@@ -558,7 +560,7 @@ const handler=async(req,res)=>{
       if(!s.isFile())throw err(404,'파일이 없습니다.');
       let data=await readFile(absolute);
       if(file==='index.html') data=injectSocialTags(data);
-      res.writeHead(200,{'Content-Type':MIME[path.extname(file)]||'application/octet-stream','Cache-Control':path.extname(file)==='.html'?'no-cache':'public, max-age=300'});
+      res.writeHead(200,{'Content-Type':MIME[path.extname(file)]||'application/octet-stream','Cache-Control':protectedEscape?'private, no-store':path.extname(file)==='.html'?'no-cache':'public, max-age=300'});
       return res.end(data);
     }
     throw err(404,'요청을 찾지 못했습니다.');
