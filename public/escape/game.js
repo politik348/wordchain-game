@@ -9,18 +9,80 @@ const rooms=['foyer','study','greenhouse','tower'];
 const meta={foyer:['현관 홀','발자국과 낡은 거울이 숨긴 첫 번째 길'],study:['달빛 서재','먼지 낀 책과 오래된 피아노가 남긴 선율'],greenhouse:['유리 온실','빛을 기다리는 꽃과 네 개의 급수관'],tower:['시계탑','마지막 종을 기다리는 멈춘 시계']};
 const items={brassKey:['🗝','황동 열쇠','서재 문을 여는 열쇠. 달 문양이 새겨져 있다.'],silverDisc:['◐','은면 원판','빛을 반사하는 은빛 원판. 현관의 받침대에 맞을 것 같다.'],lamp:['✧','작은 등불','옆면에 달 모양 구멍이 있어 빛이 새어 나온다.'],roll:['♫','원통 악보','돌기들이 일정한 간격으로 나 있다. 피아노에 맞는 규격이다.'],film:['▧','별 구멍 필름','네 군데가 뚫려 있는 투명 필름. 모서리에 별 하나가 있다.'],photo:['▧','오래된 사진','어린 미로와 루나. 뒷면: 「우린 언제나 함께야」'],diary:['▤','루나의 일기','「미로를 꼭 데리러 올게」. 마지막 페이지에는 사고 시각이 기록되어 있다.'],collar:['◇','은빛 목걸이','안쪽에는 「미로, 나의 영원한 가족 — 루나」라고 새겨져 있다.']};
 const seals={path:['❖','길의 인장'],echo:['♫','소리의 인장'],light:['☼','빛의 인장']};
-const clueText={invitation:['익명의 편지','달빛 저택으로 와 주세요. 사라진 기억을 찾아주세요. 발신인은 표시되어 있지 않다.'],lock9:['현관 관리 기록','출입문은 매일 밤 9시에 자동으로 잠긴다. 날짜는 사건 당일로 기록되어 있다.'],track:['양탄자 아래의 발자국','작은 침대에서 종이 놓인 타일까지, 작은 고양이 발자국이 끊기지 않고 이어진다.'],portrait:['서재 초상화','옛 사진과 같은 소녀가 서 있다. 액자 뒷면은 분리할 수 있다.'],dust:['서재 책장의 오래된 문양','서가 왼쪽 끝에는 별, 오른쪽 끝에는 초승달이 새겨져 있다. 책등의 두 끝에도 서로 다른 문양이 있으며 책 한 권에는 먼지가 거의 없다.'],roll:['기계식 자동연주 장치','원통의 돌기 자국은 여섯 건반의 위치와 대응한다. 어느 쪽이 시작인지 작은 별 표시가 알려 준다.'],water:['정원 관리 기록','네 화분의 수위는 서로 다르다. 해의 흔적은 세 번째 눈금, 구름의 급수관은 막혔다. 옛 사진에서 별은 달보다 한 눈금 높다.'],powder:['달빛꽃 관찰 노트','달빛꽃 꽃가루는 밝을 때 빛을 머금고, 어두워지면 은은하게 빛난다.'],clock:['시계 관리인의 기록','밤에 현관이 잠긴 뒤 분침이 사분원 움직일 무렵 시계가 멈췄다. 열두 번의 종은 고장 경보다.'],pin:['고정쇠의 표식','빨간 쇠고리는 비상 제동용이다. 안전 인장과 시각 복원 후에만 해제할 수 있다.'],story:['루나가 남긴 약속','루나는 고장 이전에 저택 밖 관리실로 나갔으며, 안팎의 시간은 다르게 흘렀다.']};
+const clueText={
+ invitation:['발신인 없는 편지','달빛 저택에 와 주세요. 멈춘 시계가 다시 움직이기 전에 사라진 기억을 찾아 주세요. 봉투의 금속 인장에는 발신인 이름이 없다.'],
+ lock9:['현관 출입 기록','현관문이 닫히는 자동 시각은 매일 밤 9시다. 기록지 마지막 줄에 당일의 날짜가 남아 있다.'],
+ track:['양탄자 아래의 발자국','침대에서 시작된 작은 발자국과 커다란 신발 자국이 오래된 타일 위에 서로 겹쳐 있다.'],
+ portrait:['서재의 초상화','미로와 한 어린 소녀가 함께 앉아 있다. 금빛 액자 아래쪽에 작은 흠집이 보인다.'],
+ dust:['서가의 황동 문양','서가 양 끝에 별과 초승달이 새겨져 있다. 책등마다 두 개의 문양이 서로 다른 높이에 있다. 한 권의 책에는 거의 먼지가 없다.'],
+ roll:['기계식 자동연주 원통','원통에는 여섯 줄의 작은 구멍이 반복된다. 왼쪽 모서리에 별, 축의 다른 쪽에 다이아몬드 자국이 있다.'],
+ water:['정원 관리 기록','네 수조 가운데 해 그림 옆에는 세 번째 눈금 높이의 물때가 있고, 구름 수조 바닥에는 진흙이 굳어 있다. 물은 측면 배관으로만 오간다. 이전 그림에서는 별 수조의 수면이 달보다 한 눈금 높다.'],
+ powder:['달빛꽃 관찰 기록','희게 마른 꽃가루는 밝은 곳에서는 보이지 않지만 창을 가리면 흐릿한 은빛 반점을 남긴다.'],
+ clock:['시계 관리인의 메모','현관 자동 잠금과 온실 급수 종료는 밤에 있었다. 급수 장치의 마지막 진동이 멎은 뒤 모래가 완전히 내려가는 데는 다섯 분이 걸렸다.'],
+ pin:['시계추 제동 장치','안전용 붉은 고정쇠는 시계추 아래쪽에 있다. 제단에 꽂힌 세 인장에는 길쭉한 홈이 각각 다른 수만큼 파여 있다.'],
+ story:['루나의 마지막 편지','루나가 고장 전에 관리실로 향했다는 기록이 있다. 저택의 시간은 바깥과 다르게 흘렀다.']
+};
 const hints={
- foot:['고양이가 자주 눕던 곳과 양탄자를 조사해 보세요.','작은 발자국은 침대에서 시작해 종이 놓인 타일에서 끝납니다.','작은 발자국의 이동 방향은 오른쪽 → 아래 → 오른쪽 → 아래입니다.'],
- mirror:['벽 장식의 황동 선로에는 빛이 지나갈 만한 다섯 개의 은색 받침이 있다.','빛은 은빛 면에 닿으면 꺾인다. 빛이 어디에서 끊기는지 보고 다음 받침을 만져 보세요.','은면의 방향은 A / · B / · C \\ · D \\ · E / 입니다. 등불을 켠 채 맞춰 보세요.'],
- books:['책장 양 끝에 새겨진 기호와 책등 양쪽의 문양을 비교해 보세요.','한쪽 방향으로 읽히지 않는 책은 뒤집어서 살펴보세요. 닮은 책이 모두 원래 이 서재의 책인 것은 아닙니다.','왼쪽부터 가을 → 여름(뒤집기) → 겨울 → 자정(뒤집기) → 봄 순서입니다. 미로의 책은 남겨둡니다.'],
- piano:['책장에서 나온 원통과 피아노 위의 기계를 살펴보세요.','원통의 돌기 자국을 건반의 위치와 겹쳐 생각해 보세요.','왼쪽부터 2, 5, 3, 2번 건반을 연주하세요.'],
- film:['서재 초상화 뒷면과 책상 위 숫자 표를 조사해 보세요.','투명 필름과 숫자 표에는 같은 별 표식이 있습니다.','필름의 별을 표의 왼쪽 위 별에 맞춘 후 위에서 아래로 6786을 읽으세요.'],
- water:['네 화분과 오래된 정원 관리 기록을 대조해 보세요.','구름과 해의 수위가 확정되면 남은 두 눈금의 순서를 결정할 수 있습니다.','해 3 · 달 1 · 별 2 · 구름 0입니다.'],
- light:['현관에서 사용했던 물건을 온실에서 다시 쓸 수 있습니다.','달빛의 경로를 두 번 꺾어야 꽃까지 닿습니다.','은면 원판을 끼우고 첫 번째 거울은 \\, 두 번째는 / 방향으로 돌리세요.'],
- blackout:['달빛꽃 주변의 바닥과 정원 관찰 노트를 조사해 보세요.','희미한 꽃가루가 밝은 곳에서는 잘 보이지 않습니다.','채광창을 닫아 온실을 어둡게 만들고 화분을 살펴보세요.'],
- clock:['현관 홀의 기록과 시계 관리인의 기록을 다시 비교해 보세요.','밤 9시에 현관이 잠긴 뒤 분침이 원의 1/4만큼 움직였습니다.','밤 9시 15분으로 시계 바늘을 맞추세요.'],
- pin:['종은 이미 열두 번 울렸습니다. 다음 종을 울리는 버튼을 찾을 필요가 있을까요?','시계의 기어는 움직이려 하지만 아래쪽 추가 움직이지 못합니다.','시계 아래 붉은 고정쇠를 잡아당기세요.']
+ foot:[
+  '미로가 잠들던 자리 가까이에 오래된 바닥 흔적이 남아 있습니다.',
+  '작은 발자국과 큰 신발 자국이 섞여 있습니다. 수납장의 손잡이 모양도 살펴보세요.',
+  '작은 발자국의 출발점과 도착점을 찾고, 그 사이 이동 방향만 읽어 보세요.',
+  '정답: 오른쪽 → 아래 → 오른쪽 → 아래(RDRD). 작은 고양이 발자국이 침대에서 종까지 이어지는 순서입니다.'
+ ],
+ mirror:[
+  '황동 벽 장식의 표면은 은면을 댈 만한 곳이 여러 군데 있습니다.',
+  '등불을 켜고 빛이 꺾여 나가는 위치를 관찰해 보세요. 은면마다 면이 두 방향으로 놓입니다.',
+  '반사된 빛이 다음 은면으로 이어지도록 회전 각도를 바꿔 보세요. 길이 끊어지는 은면을 먼저 조사해 보세요.',
+  '정답: A(/), B(/), C(＼), D(＼), E(/)입니다. 등불을 켜면 다섯 반사면을 지나 벽 위 반쪽 달에 도달합니다.'
+ ],
+ books:[
+  '서가 양 끝에 새겨진 문양과 책등의 양 끝을 비교해 보세요.',
+  '한 책을 뒤집으면 왼쪽과 오른쪽 문양의 순서가 달라집니다. 모든 책에 오래된 먼지가 쌓인 것은 아닙니다.',
+  '서가의 한쪽 끝에서 시작해 기호가 끊기지 않는 연결을 찾아보세요. 첫 기호와 마지막 기호도 정해져 있습니다.',
+  '정답: 가을 → 여름(뒤집기) → 겨울 → 자정(뒤집기) → 봄. 미로의 책은 제외합니다. 문양은 ✦-◆-✿-◈-❖-☾로 이어집니다.'
+ ],
+ piano:[
+  '책장 뒤에서 나온 원통의 돌기와 피아노 위 황동 축의 흔적을 관찰해 보세요.',
+  '여섯 걸림점과 작은 별, 다이아몬드 모양의 흠집이 서로 다른 위치에 있습니다.',
+  '원통을 축에 끼우는 방향이 바뀌면 손가락이 건드리는 건반도 달라집니다. 짧은 선율을 듣고 연주해 보세요.',
+  '정답: 원통의 다섯 번째 걸림점(◇ 표시)에 맞춘 뒤 왼쪽부터 2·5·3·2번째 건반을 누릅니다.'
+ ],
+ film:[
+  '서재 초상화의 액자와 책상 유리에는 닮은 크기의 흠집이 있습니다.',
+  '필름의 별 문양과 유리 오른쪽 아래의 오래된 별 흠집이 서로 닮았습니다.',
+  '필름을 회전하고 유리 위에 놓은 뒤 등불을 비춰 보세요. 밀착된 위치와 방향이 모두 중요합니다.',
+  '정답: 필름을 180도 회전하고 유리 중앙에 놓은 뒤 등불을 비춥니다. 서랍 아래의 감광 장치가 반응합니다.'
+ ],
+ water:[
+  '정원 기록에는 네 수조의 물때가 남아 있습니다. 직접 물을 버릴 만한 배수구는 없습니다.',
+  '해와 구름 수조의 오래된 흔적, 그리고 별과 달 수면의 높이 차이에 주목해 보세요.',
+  '수문은 양옆 수조 사이에서만 움직입니다. 네 수조에 든 물의 총량은 바뀌지 않습니다.',
+  '정답: 해 3, 달 1, 별 2, 구름 0. 예: 구름→별 두 번, 별→달 한 번, 달→해 두 번으로 조작합니다.'
+ ],
+ light:[
+  '꽃잎을 자세히 살펴보면 다른 부분보다 빛이 잘 통과하는 곳이 있습니다.',
+  '얇은 유리판 A와 B의 구멍은 조금씩 다릅니다. 꽃 위에는 겹쳐진 빛의 무늬가 나타납니다.',
+  '회전과 좌우 이동으로 두 유리판의 투명 부분을 겹쳐 보세요. 꽃잎에 남은 다섯 점과 비교해 보세요.',
+  '정답: 유리판 A와 B를 모두 회전 0°, 좌우 위치 0(중앙)에 놓으면 다섯 점의 무늬가 일치합니다.'
+ ],
+ blackout:[
+  '꽃이 피어난 뒤에도 꽃가루는 바닥에 남아 있습니다.',
+  '밝은 달빛 아래에서는 꽃가루의 흔적이 뚜렷하지 않습니다.',
+  '채광창이 어두워진 상태에서 꽃술을 다시 살펴보고, 작은 흔적을 따라가 보세요.',
+  '정답: 꽃이 핀 뒤 채광창을 닫고 꽃술의 가루를 조사하면 발자국이 드러납니다. 오래된 유리 화분에서 목걸이를 얻습니다.'
+ ],
+ clock:[
+  '현관 관리 기록과 온실의 자동 급수 기록을 다시 살펴보세요.',
+  '시계탑 관리인의 메모에는 마지막 진동과 모래가 떨어진 시간이 함께 적혀 있습니다.',
+  '온실의 마지막 자동 급수 이후 경과한 시간을 시계탑 기록과 연결해 보세요. 낮과 밤도 구별해야 합니다.',
+  '정답: 밤 9시 15분(21:15). 온실 급수 종료 21:10에서 5분 후이고, 현관은 이미 21시에 잠겼습니다.'
+ ],
+ pin:[
+  '시계 아래의 고정쇠 위에는 세 인장과 맞물린 황동 바퀴가 있습니다.',
+  '제단에 놓인 인장을 뒤집어 보면 홈의 개수가 서로 다릅니다.',
+  '세 바퀴의 홈이 해당 인장의 실제 홈 수와 일치하도록 돌린 뒤 고정쇠를 살펴보세요.',
+  '정답: 길 2칸, 소리 1칸, 빛 3칸으로 바퀴를 맞물린 뒤 붉은 고정쇠를 풀면 됩니다.'
+ ]
 };
 const state=()=>({v:21,room:'foyer',visited:['foyer'],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[1,2,1,2],glassA:{r:1,x:-1},glassB:{r:2,x:1},pinLevels:[0,0,0],pinReady:false,night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
 let g=null,modalOpen=false,audio=null,catTurns=0;
@@ -457,8 +519,35 @@ const endings={normal:['혼자 맞는 새벽','당신은 문을 열고 혼자 �
 function finish(id){if(id==='true'&&!['photo','diary','collar'].every(has)){error('기억의 물건이 부족합니다.');return}g.ending=id;try{let o=JSON.parse(store.getItem(HISTORY)||'[]');if(!o.includes(id))o.push(id);store.setItem(HISTORY,JSON.stringify(o))}catch(e){}tone('bell');save();ending(id)}
 function ending(id){let [title,copy]=endings[id];modal('EPISODE 01 · COMPLETE',title,`<div class="ending-crown">${id==='normal'?'☀':id==='true'?'✦':'☾'}</div><p class="ending-copy">${copy}</p><div class="result-stats"><div><small>플레이 시간</small><b>${pretty(elapsed())}</b></div><div><small>힌트</small><b>${g.hintsUsed}회</b></div><div><small>기억의 물건</small><b>${['photo','diary','collar'].filter(has).length}/3</b></div></div>`,[['시작 화면','home'],['새로 시작','really-new',true]])}
 function journal(tab='clues'){let html=tab==='clues'?g.clues.map(id=>`<div class="journal-row"><div><b>${clueText[id][0]}</b><p>${clueText[id][1]}</p></div></div>`).join(''):tab==='items'?g.inventory.map(id=>`<div class="journal-row"><div><b>${items[id][1]}</b><p>${items[id][2]}</p></div></div>`).join(''):Object.keys(hints).map(id=>`<div class="journal-row"><div><b>${id} — ${done(id)?'해결':'미해결'}</b></div></div>`).join('');modal('EXPLORER’S JOURNAL','탐험 수첩',`<div class="journal-tabs">${[['clues','기록'],['items','아이템'],['progress','진행']].map(([id,n])=>`<button class="journal-tab ${id===tab?'selected':''}" data-action="journal-${id}">${n}</button>`).join('')}</div><div class="journal-list">${html||'아직 발견하지 못했다.'}</div>`)}
-function hint(){let id=g.activePuzzle;if(done(id))id=({foyer:!done('foot')?'foot':'mirror',study:!done('books')?'books':!done('piano')?'piano':'film',greenhouse:!done('water')?'water':!done('light')?'light':'blackout',tower:!done('clock')?'clock':'pin'})[g.room];let used=g.hintLevels[id]||0;modal('MIRO’S HELP','미로의 힌트',`<p class="modal-description">${id} 퍼즐의 힌트 · ${used}/3단계 열람</p>${used?`<div class="hint-card">${hints[id][used-1]}</div>`:''}`,used>=3?[['닫기','close',true]]:[['돌아가기','close'],['다음 힌트 보기','hint-'+id,true]])}
-function hintMore(id){g.hintLevels[id]=Math.min(3,(g.hintLevels[id]||0)+1);g.hintsUsed++;save();modal('HINT '+g.hintLevels[id]+'/3','미로의 조언',`<div class="hint-card">${hints[id][g.hintLevels[id]-1]}</div>`,g.hintLevels[id]===3?[['닫기','close',true]]:[['닫기','close'],['다음 단계','hint-'+id,true]])}
+const hintNames={foot:'네 번의 걸음',mirror:'빛이 잊은 길',books:'서가에 남은 문장',piano:'멈춘 자장가',film:'서랍 위의 낡은 판',water:'녹슨 수문',light:'꽃에 내려앉은 그림자',blackout:'흔적을 남기는 꽃가루',clock:'멈춘 밤의 분침',pin:'마지막 고정쇠'};
+function currentHintId(){
+ let id=g.activePuzzle||'foot';
+ if(done(id))id=({
+  foyer:!done('foot')?'foot':'mirror',
+  study:!done('books')?'books':!done('piano')?'piano':'film',
+  greenhouse:!done('water')?'water':!done('light')?'light':'blackout',
+  tower:!done('clock')?'clock':'pin'
+ })[g.room]||'foot';
+ return id;
+}
+function hint(){
+ const id=currentHintId(),used=Math.min(4,g.hintLevels[id]||0);
+ modal('MIRO’S HELP','미로의 힌트',
+  '<p class="modal-description">'+hintNames[id]+' · '+used+'/4단계 열람</p>'+
+  (used?'<div class="hint-card">'+hints[id][used-1]+'</div>':'<p class="modal-description">찾아보지 못한 것이 있나요? 원할 때만 단서를 조금씩 알려드립니다.</p>'),
+  used>=4?[['돌아가기','close',true]]:
+  [['돌아가기','close'],[used===3?'정답과 해설 보기':used===0?'관찰 힌트 보기':'다음 힌트 보기','hint-'+id,true]]
+ );
+}
+function hintMore(id){
+ if(!Object.hasOwn(hints,id))return;
+ const level=Math.min(4,(g.hintLevels[id]||0)+1);
+ if(level>(g.hintLevels[id]||0)){g.hintLevels[id]=level;g.hintsUsed++;save();}
+ modal('HINT '+level+'/4',level===4?'정답과 해설':'미로의 조언',
+  '<div class="hint-card">'+hints[id][level-1]+'</div>',
+  level===4?[['닫기','close',true]]:[['닫기','close'],[level===3?'정답과 해설 보기':'다음 단계','hint-'+id,true]]
+ );
+}
 function talk(){let lines={foyer:['이 집에는 출입문이 너무 많아. 하지만 난 양탄자가 좋아.','수납장에서는 뭔가 반짝이는 냄새가 나.'],study:['루나는 책등의 무늬로 비밀 이야기를 만들었지.','저 책 중 하나는 내가 혼자 꽂아 둔 거야. 어디더라?'],greenhouse:['꽃이 피면 아주 예쁜 일이 생길 거야.','어두우면 더 잘 보이는 것도 있대.'],tower:['열두 번의 종소리는 늘 무서웠어.','나는 왜 자꾸 누군가를 기다리는 것 같지?']};let a=lines[g.room];$('catDialog').textContent=a[(catTurns++)%a.length];tone()}
 function menu(){modal('PAUSE','탐험 메뉴',`<p class="modal-description">진행 내용은 자동 저장됩니다. 실시간 플레이 기록: ${pretty(elapsed())}</p>`,[['계속 탐험','close',true],['시작 화면','home']])}
 function handle(action){if(action==='close')return hide();if(action==='home')return home();if(action==='really-new')return begin();if(action==='new-confirm')return modal('NEW GAME','처음부터 시작할까요?',`<p class="modal-description">이번 버전의 진행 데이터가 초기화됩니다.</p>`,[['취소','close'],['새로 시작','really-new',true]]);
