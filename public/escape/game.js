@@ -1,4 +1,4 @@
-/* 모여 방탈출 EP01 13번째 종소리 · 퍼즐 리뉴얼 v2.1
+/* 모여 방탈출 EP01 13번째 종소리 · 퍼즐 리뉴얼 v3.0
    독립 실행, 로컬 저장, 기존 3D 룸 모듈 호환. */
 (()=>{'use strict';
 const $=id=>document.getElementById(id);
