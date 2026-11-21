@@ -13,11 +13,63 @@
   };
   // Screen percentages match the painted prop locations, not the old WebGL coordinates.
   // All original puzzle IDs, progression flags, and actions remain unchanged.
+  // Manual anchors measured against the four 1382×749 AVIF paintings.
+  // The dots sit at the actual part to operate: door handle, drawer grip,
+  // bell, lamp, leaf, glass cover, control wheel, or notebook—not the object center.
+  // Illustration dimensions match the 1200:650 scene aspect ratio.
   const spotPositions={
-    foyer:{invitation:[29.1,48.8],catbed:[9.6,83],rug:[47.9,89.5],cabinet:[73.6,63.8],crescent:[49.6,36.9],study:[18,62],cat:[92.8,84.1]},
-    study:{books:[23,38],portrait:[49.5,20],piano:[88,63],desk:[31,66],greenhouse:[94,34],cat:[76,82]},
-    greenhouse:{record:[90,40],water:[12,70],beam:[72,44],flower:[91,76],shutter:[55,12],pot:[73,76],tower:[97,16]},
-    tower:{pedestal:[19,79],clock:[51,27],keeper:[39,76],pin:[70,55],portal:[91,37],hall:[91,79]}
+    foyer:{
+      invitation:[29.1,52.2],catbed:[8,81],rug:[48.5,91],
+      cabinet:[76.1,69.8],crescent:[49.7,35.7],
+      study:[24.9,59.1], // LEFT PURPLE DOOR: brass handle, not panel center
+      cat:[93.3,82.6],
+      'foyer-bell':[77.4,56.9], // bell on reception counter
+      'foyer-main-door':[55.6,58.2], // CENTRAL DOOR: right-side handle
+      'foyer-vase':[4.3,65.5],
+      'foyer-chandelier':[49.8,10.8],
+      'foyer-sconce':[8.1,32.9],
+      'foyer-banner':[64.9,27.6],
+      'foyer-window':[2.5,44]
+    },
+    study:{
+      books:[24,35],portrait:[95.1,22.7],piano:[88.7,57.7],
+      desk:[35,76.4], // desk drawer's brass fitting
+      greenhouse:[94,34],cat:[76,82],
+      'study-globe':[56.8,52.2],
+      'study-ladder':[41.3,45.6],
+      'study-bouquet':[78.1,47.6],
+      'study-candles':[89.6,23.5],
+      'study-rug':[61.5,86]
+    },
+    greenhouse:{
+      record:[94,36.1],water:[53.5,50.8],beam:[41.5,25.4],
+      flower:[92.3,71.1],shutter:[51.3,11],pot:[92.8,85],
+      tower:[97,16],
+      'green-fountain':[50.1,67.5],
+      'green-teacup':[21.5,62.8],
+      'green-vines':[31.4,10.5],
+      'green-chair':[27,69.4],
+      'green-planter':[79.6,73.6]
+    },
+    tower:{
+      pedestal:[69.1,69.5],clock:[52.5,18.5],
+      keeper:[30.6,77.1],pin:[70.3,58.2],
+      portal:[91,35],hall:[91.5,72],
+      'tower-globe':[13.7,58.7],
+      'tower-scroll':[19.5,82.5],
+      'tower-banner':[18.1,26.5],
+      'tower-stairs':[92.4,54.2],
+      'tower-lantern':[23.4,71.5]
+    }
+  };
+  // These interactions are available from room navigation / the Miro chat card,
+  // but the corresponding objects are NOT depicted in the illustration.
+  // Don't place misleading decorative dots on unrelated scenery.
+  const unpaintedHotspots={
+    foyer:new Set(['catbed']),
+    study:new Set(['greenhouse','cat']),
+    greenhouse:new Set(['tower']),
+    tower:new Set([])
   };
   const loaded=new Map();
   const art=document.createElement('div');
@@ -38,6 +90,10 @@
   ];
   for(const [room,spots] of Object.entries(spotPositions)){
     for(const [object,[x,y]] of Object.entries(spots)){
+      if(unpaintedHotspots[room]?.has(object)){
+        css.push('#sceneCanvas.storybook-ready[data-room="'+room+'"] .hotspot[data-object="'+object+'"]{display:none!important;}');
+        continue;
+      }
       css.push('#sceneCanvas.storybook-ready[data-room="'+room+'"] .hotspot[data-object="'+object+'"]{left:'+x+'%!important;top:'+y+'%!important;display:grid!important;}');
     }
   }
