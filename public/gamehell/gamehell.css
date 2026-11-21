@@ -63,3 +63,9 @@
 @media(max-width:1190px){.side-panel{grid-template-columns:repeat(2,minmax(0,1fr))}.side-panel>.tip{grid-column:1/-1}}
 @media(max-width:720px){.side-panel{grid-template-columns:repeat(2,minmax(0,1fr))}.side-panel>.tip{grid-column:1/-1}.personal-symbol{height:78px}.personal-symbol span{font-size:52px}.progress-stats{grid-template-columns:1fr}.progress-stats>div{flex-direction:row;justify-content:space-between;padding:8px}.progress-stats b{font-size:12px}}
 @media(max-width:480px){.side-panel{grid-template-columns:1fr}.side-panel>.tip{grid-column:auto}.progress-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.progress-stats>div{flex-direction:column}}
+
+/* Cat Challenge taste route: short arcade trial with no shop access. */
+.gamehell-trial .gamehell-trial-back{display:inline-flex;align-items:center;margin:0 0 16px;padding:8px 14px;border:1px solid #d1bad9;border-radius:999px;color:#f7daf7;background:#312746;font-size:12px;font-weight:850;text-decoration:none;transition:background .15s}
+.gamehell-trial .gamehell-trial-back:hover{background:#4b3864}
+.gamehell-trial .shop-header-btn,.gamehell-trial .wardrobe,.gamehell-trial .achievements{display:none!important}
+.gamehell-trial .duration[data-duration="90"],.gamehell-trial .duration[data-duration="0"]{display:none!important}
