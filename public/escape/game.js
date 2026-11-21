@@ -93,6 +93,43 @@ function notify(s){const t=document.createElement('div');t.className='toast';t.t
 function tone(kind='tap'){if(!g?.sound)return;try{audio??=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();let seq=kind==='gain'?[523,659,784]:kind==='bad'?[250,188]:kind==='bell'?[440,550,659,880]:[550];seq.forEach((hz,i)=>{let o=audio.createOscillator(),v=audio.createGain();o.type='sine';o.frequency.value=hz;v.gain.setValueAtTime(.0001,audio.currentTime+i*.13);v.gain.exponentialRampToValueAtTime(.06,audio.currentTime+i*.13+.025);v.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+i*.13+.33);o.connect(v);v.connect(audio.destination);o.start(audio.currentTime+i*.13);o.stop(audio.currentTime+i*.13+.35)})}catch(e){}}
 function item(id){if(has(id))return;g.inventory.push(id);notify('아이템 획득 · '+items[id][1]);tone('gain');save();render()}
 function clue(id){if(!g.clues.includes(id)){g.clues.push(id);save()}}
+
+/* Inspecting and pairing found objects never consumes mandatory puzzle inventory. */
+const combinationNotes={
+ 'lamp+silverDisc':['은면 위의 작은 달','등불을 원판 가장자리에 비추니 얇은 은빛 선이 겹쳐진다. 원판을 살짝 돌리자 벽에 짧은 반사광이 흔들린다.'],
+ 'film+lamp':['빛을 통과한 작은 구멍','등불을 투명 필름 뒤에 놓자 종이 위에 작은 점 네 개가 맺혔다. 필름의 방향을 바꿀 때마다 점들이 이동한다.'],
+ 'diary+photo':['겹쳐지는 필체','사진 뒷면의 글씨와 일기의 마지막 줄에 남은 글씨가 닮았다. 종이의 색은 서로 다르지만 같은 사람의 손길이 느껴진다.'],
+ 'collar+photo':['목걸이를 기억하는 사진','사진 속 미로의 목에 아주 작은 리본 자국이 있다. 은빛 목걸이를 옆에 두니 오래된 장면이 조금 가까워진 듯하다.'],
+ 'collar+diary':['일기장 속 작은 발자국','일기장 마지막 장의 여백에 고양이 발 모양으로 눌린 자국이 있다. 목걸이 안쪽의 작은 흠집과 비슷하다.']
+};
+function combineItems(a,b){
+ if(!g||!has(a)||!has(b)||a===b)return;
+ const ids=[a,b].sort(),key=ids.join('+'),note=combinationNotes[key];
+ g.selected=null;
+ if(note){
+  g.combinedFindings??=[];
+  const first=!g.combinedFindings.includes(key);
+  if(first)g.combinedFindings.push(key);
+  save();render();
+  return modal('가방 · 아이템 조합',note[0],
+   '<div class="combined-item-visual"><span>'+items[a][0]+'</span><b>+</b><span>'+items[b][0]+'</span></div>'+
+   '<div class="letter">'+note[1]+'</div>'+
+   '<p class="puzzle-helper">'+(first?'새로운 관찰이 탐험 수첩에 남았다.':'이미 살펴본 조합이다.')+'</p>',
+   [['다른 아이템 보기','close',true],['조합 기록 열기','journal-moments']]);
+ }
+ save();render();
+ notify('두 물건을 함께 살펴봤지만 특별한 변화는 없었다.');
+}
+function itemDetail(id){
+ if(!has(id)||!Object.hasOwn(items,id))return;
+ const entry=items[id];
+ return modal('가방 · 아이템 관찰',entry[1],
+  '<div class="item-detail-icon" aria-hidden="true">'+entry[0]+'</div>'+
+  '<div class="letter">'+entry[2]+'</div>'+
+  '<p class="puzzle-helper">가방에서 다른 물건을 차례로 선택하면 함께 살펴볼 수 있다.</p>',
+  [['가방으로 돌아가기','close',true]]);
+}
+
 function seal(id){if(g.seals.includes(id))return;g.seals.push(id);notify('인장 획득 · '+seals[id][1]);tone('gain');save();render()}
 function clearRoom(id){return ({foyer:()=>done('foot')&&done('mirror')&&has('brassKey'),study:()=>done('books')&&done('piano'),greenhouse:()=>done('water')&&done('light'),tower:()=>done('clock')&&done('pin')})[id]();}
 function canEnter(id){let n=rooms.indexOf(id);return n===0||n>0&&rooms.slice(0,n).every(clearRoom)}
@@ -119,7 +156,7 @@ function render(){if(!g)return;let [name,caption]=meta[g.room],index=rooms.index
  $('sealsBar').innerHTML=Object.entries(seals).map(([id,v])=>`<div title="${v[1]}" class="seal ${g.seals.includes(id)?'found':''}">${v[0]}</div>`).join('');
  $('sceneArtwork').innerHTML=drawScene(g.room);$('sceneCanvas').dataset.room=g.room;window.Moyeo3D?.setRoom(g.room);
  $('hotspots').innerHTML=hotspots[g.room].map(x=>`<button type="button" class="hotspot ${x.ok?.()?'done':''}" data-object="${x.id}" style="left:${x.x}%;top:${x.y}%" aria-label="${x.name}"><span>${x.name}</span></button>`).join('');window.Moyeo3D?.refresh();
- $('inventoryNum').textContent=g.inventory.length;$('inventory').innerHTML=g.inventory.length?g.inventory.map(id=>`<button class="inventory-item ${g.selected===id?'selected':''}" data-item="${id}" title="${items[id][2]}"><span class="item-icon">${items[id][0]}</span><span class="item-name">${items[id][1]}</span></button>`).join(''):'<div class="inventory-empty"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M14 25h36l-3.5 27h-29L14 25Z" fill="#d8c5a8" fill-opacity=".13" stroke="#e4cfac" stroke-width="2.6" stroke-linejoin="round"/><path d="M24 25v-6a8 8 0 0 1 16 0v6" stroke="#e4cfac" stroke-width="2.6" stroke-linecap="round"/><path d="m27 38 4 4 7-8" stroke="#ddc29c" stroke-opacity=".5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>아직 획득한 아이템이 없어요.</span><small>저택을 살펴보고 단서를 찾아보세요.</small></div>';
+ $('inventoryNum').textContent=g.inventory.length;$('inventory').innerHTML=g.inventory.length?g.inventory.map(id=>`<div class="inventory-slot"><button class="inventory-item ${g.selected===id?'selected':''}" data-item="${id}" aria-pressed="${g.selected===id}" aria-label="${items[id][1]} 선택"><span class="item-icon">${items[id][0]}</span><span class="item-name">${items[id][1]}</span></button><button type="button" class="inventory-inspect" data-item-view="${id}" aria-label="${items[id][1]} 자세히 보기">⌕</button></div>`).join(''):'<div class="inventory-empty"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M14 25h36l-3.5 27h-29L14 25Z" fill="#d8c5a8" fill-opacity=".13" stroke="#e4cfac" stroke-width="2.6" stroke-linejoin="round"/><path d="M24 25v-6a8 8 0 0 1 16 0v6" stroke="#e4cfac" stroke-width="2.6" stroke-linecap="round"/><path d="m27 38 4 4 7-8" stroke="#ddc29c" stroke-opacity=".5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>아직 획득한 아이템이 없어요.</span><small>저택을 살펴보고 단서를 찾아보세요.</small></div>';
  let val=['foot','mirror','books','piano','film','water','light','blackout','clock','pin'].filter(done).length;$('completionText').textContent=val+'/10';$('completionFill').style.width=(val*10)+'%';$('objectiveText').textContent=objective();$('soundBtn').textContent=g.sound?'♫':'♪̸';
  let next=rooms[index+1];$('nextRoomBtn').classList.toggle('hidden',!next||!clearRoom(g.room));if(next)$('nextRoomBtn').textContent=`${meta[next][0]}으로 이동 →`;
  $('catAvatar').innerHTML=catSvg();save()}
@@ -823,7 +860,7 @@ $('hotspots').addEventListener('click',e=>{
  inspect(choice.dataset.object);
 });
 $('sceneNav').addEventListener('click',e=>{let b=e.target.closest('[data-room]');if(b)move(b.dataset.room)});
-$('inventory').addEventListener('click',e=>{let b=e.target.closest('[data-item]');if(!b)return;g.selected=g.selected===b.dataset.item?null:b.dataset.item;$('catDialog').textContent=g.selected?items[g.selected][2]:'아이템 선택이 해제되었어.';render()});
+$('inventory').addEventListener('click',e=>{const detail=e.target.closest('[data-item-view]');if(detail)return itemDetail(detail.dataset.itemView);let b=e.target.closest('[data-item]');if(!b)return;const id=b.dataset.item;if(g.selected&&g.selected!==id)return combineItems(g.selected,id);g.selected=g.selected===id?null:id;$('catDialog').textContent=g.selected?items[g.selected][2]:'아이템 선택이 해제되었어.';render()});
 $('modalContent').addEventListener('click',e=>{let b=e.target.closest('[data-action]');if(b)handle(b.dataset.action)});
 let dragged=null;
 $('modalContent').addEventListener('dragstart',e=>{const b=e.target.closest('[data-book]');if(b){dragged=b.dataset.book;e.dataTransfer?.setData('text/plain',dragged)}});
