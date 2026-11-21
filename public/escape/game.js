@@ -728,7 +728,45 @@ function finalChoices(){if(!done('pin'))return;let n=['photo','diary','collar'].
 const endings={normal:['혼자 맞는 새벽','당신은 문을 열고 혼자 밖으로 나옵니다. 뒤를 돌아보면 저택의 창가에 작은 미로의 실루엣이 보입니다. 새벽은 왔지만 그 약속은 완성되지 못했습니다.'],true:['함께 맞는 새벽','당신은 사진과 일기, 은빛 목걸이를 미로에게 보여줍니다. "루나는 널 버리지 않았어." 미로는 루나와 함께 지내던 날들을 기억해 냅니다. 밖에서 오랜 시간이 흘러 어른이 된 루나가 문 앞에 서 있습니다. 둘은 마침내 다시 만납니다.'],stay:['영원한 밤의 친구','당신은 열린 문을 조용히 닫습니다. 시간은 다시 흘러가지만 저택에서 밤을 보내기로 합니다. 미로가 곁에 웅크립니다. 두 사람은 더 이상 혼자가 아닙니다.']};
 function finish(id){if(id==='true'&&!['photo','diary','collar'].every(has)){error('기억의 물건이 부족합니다.');return}g.ending=id;try{let o=JSON.parse(store.getItem(HISTORY)||'[]');if(!o.includes(id))o.push(id);store.setItem(HISTORY,JSON.stringify(o))}catch(e){}tone('bell');save();ending(id)}
 function ending(id){let [title,copy]=endings[id];modal('EPISODE 01 · COMPLETE',title,`<div class="ending-crown">${id==='normal'?'☀':id==='true'?'✦':'☾'}</div><p class="ending-copy">${copy}</p><div class="result-stats"><div><small>탐험 시간</small><b>${pretty(elapsed())}</b></div><div><small>힌트</small><b>${g.hintsUsed}회</b></div><div><small>기억의 물건</small><b>${['photo','diary','collar'].filter(has).length}/3</b></div></div>`,[['시작 화면','home'],['새로 시작','really-new',true]])}
-function journal(tab='clues'){let html=tab==='clues'?g.clues.map(id=>`<div class="journal-row"><div><b>${clueText[id][0]}</b><p>${clueText[id][1]}</p></div></div>`).join(''):tab==='items'?g.inventory.map(id=>`<div class="journal-row"><div><b>${items[id][1]}</b><p>${items[id][2]}</p></div></div>`).join(''):Object.keys(hints).map(id=>`<div class="journal-row"><div><b>${id} — ${done(id)?'해결':'미해결'}</b></div></div>`).join('');modal('EXPLORER’S JOURNAL','탐험 수첩',`<div class="journal-tabs">${[['clues','기록'],['items','아이템'],['progress','진행']].map(([id,n])=>`<button class="journal-tab ${id===tab?'selected':''}" data-action="journal-${id}">${n}</button>`).join('')}</div><div class="journal-list">${html||'아직 발견하지 못했다.'}</div>`)}
+
+const scrapbookIcons={invitation:'✉',lock9:'◷',track:'♣',portrait:'▧',dust:'▤',roll:'♫',water:'♧',watering:'◷',powder:'✿',clock:'◷',pin:'❖',story:'☾'};
+function journal(tab='clues',page=0){
+ if(!g)return;
+ const supported=['clues','items','moments','progress'];
+ if(!supported.includes(tab))tab='clues';
+ let records=[];
+ if(tab==='clues')records=g.clues.map((id,i)=>({icon:scrapbookIcons[id]||'✦',title:clueText[id]?.[0]||'기록',text:clueText[id]?.[1]||'',stamp:'단서 '+String(i+1).padStart(2,'0')}));
+ if(tab==='items')records=g.inventory.map((id,i)=>({icon:items[id]?.[0]||'◇',title:items[id]?.[1]||'아이템',text:items[id]?.[2]||'',stamp:'소지품 '+String(i+1).padStart(2,'0')}));
+ if(tab==='moments'){
+  const names={...combinationNotes};
+  records=(g.combinedFindings||[]).filter(id=>names[id]).map((id,i)=>({icon:'✧',title:names[id][0],text:names[id][1],stamp:'관찰 '+String(i+1).padStart(2,'0')}));
+  if(g.sideGames?.bell)records.unshift({icon:'♫',title:'현관의 작은 음악회',text:'종 네 개의 짧은 연주를 마쳤다. 미로는 한참 동안 귀를 쫑긋 세웠다.',stamp:'작은 발견'});
+ }
+ if(tab==='progress'){
+  const entries=[['foot','현관'],['mirror','달'],['books','서재'],['piano','소리'],['film','일기'],['water','온실'],['light','꽃'],['blackout','흔적'],['clock','시간'],['pin','종']];
+  records=entries.filter(([id])=>done(id)).map(([id,title],i)=>({icon:'❖',title:title+'의 기록',text:'저택의 장치가 반응하고 주변 풍경이 조금 달라졌다.',stamp:'진행 '+String(i+1).padStart(2,'0')}));
+ }
+ const size=2,totalPages=Math.max(1,Math.ceil(records.length/size)),current=Math.max(0,Math.min(totalPages-1,Number(page)||0));
+ const title={clues:'발견한 단서',items:'모아 둔 소지품',moments:'작은 발견',progress:'저택의 변화'}[tab];
+ const articles=records.slice(current*size,(current+1)*size).map((entry,i)=>
+  '<article class="scrapbook-paper" style="--page-index:'+i+'"><div class="scrapbook-paper-icon" aria-hidden="true">'+entry.icon+'</div>'+
+  '<small>'+entry.stamp+'</small><h3>'+entry.title+'</h3><p>'+entry.text+'</p></article>'
+ ).join('');
+ modal('EXPLORER’S SCRAPBOOK','달빛 저택 탐험 수첩',
+  '<p class="scrapbook-intro">직접 발견한 흔적을 모아 놓았다. 필요한 기록은 언제든 다시 읽을 수 있다.</p>'+
+  '<div class="journal-tabs">'+[['clues','단서'],['items','소지품'],['moments','작은 발견'],['progress','여정']].map(([id,n])=>
+  '<button class="journal-tab '+(id===tab?'selected':'')+'" data-action="journal-'+id+'" aria-pressed="'+(id===tab)+'">'+n+'</button>').join('')+'</div>'+
+  '<div class="scrapbook-folio"><div class="scrapbook-folio-header"><span>MOYEO · '+title+'</span><span>PAGE '+(current+1)+' / '+totalPages+'</span></div>'+
+  (articles||'<div class="scrapbook-blank"><span aria-hidden="true">✦</span><p>아직 이 페이지에 적을 기록이 없다.</p></div>')+
+  '</div>'+
+  '<nav class="scrapbook-pagination" aria-label="수첩 페이지 넘기기">'+
+  '<button data-action="journal-page-'+tab+'-'+(current-1)+'" '+(current===0?'disabled':'')+'>← 이전 페이지</button>'+
+  '<span>'+(current+1)+' / '+totalPages+'</span>'+
+  '<button data-action="journal-page-'+tab+'-'+(current+1)+'" '+(current>=totalPages-1?'disabled':'')+'>다음 페이지 →</button>'+
+  '</nav>',
+  [['저택으로 돌아가기','close',true]]);
+}
+
 const hintNames={foot:'네 번의 걸음',mirror:'빛이 잊은 길',books:'서가에 남은 문장',piano:'멈춘 자장가',film:'서랍 위의 낡은 판',water:'녹슨 수문',light:'꽃에 내려앉은 그림자',blackout:'흔적을 남기는 꽃가루',clock:'멈춘 밤의 분침',pin:'마지막 고정쇠'};
 function currentHintId(){
  let id=g.activePuzzle||'foot';
@@ -772,7 +810,7 @@ if(action==='film-turn'){g.filmRotate=(g.filmRotate+1)%4;save();return desk()}if
 if(action==='water-check')return waterCheck();if(action.startsWith('sluice-')){const p=action.split('-');return sluiceMove(Number(p[1]),p[2])}
 if(action.startsWith('glass-')){const p=action.split('-');return glassMove(p[1],p[2])}if(action==='beam-check')return beamCheck();
 if(action.startsWith('clock-')){let p=action.split('-');if(p[1]==='night')g.night=!g.night;else if(p[1]==='hour')g.hour=((g.hour-1+(p[2]==='plus'?1:11))%12)+1;else if(p[1]==='minute')g.minute=(g.minute+(p[2]==='plus'?5:55))%60;else if(p[1]==='check')return clockCheck();return clock()}
-if(action.startsWith('pin-turn-'))return pinTurn(Number(action.slice(9)));if(action==='pin-check')return pinCheck();if(action==='pin-pull')return pinPull();if(action.startsWith('ending-'))return finish(action.slice(7));if(action.startsWith('journal-'))return journal(action.slice(8));if(action.startsWith('hint-'))return hintMore(action.slice(5));}
+if(action.startsWith('pin-turn-'))return pinTurn(Number(action.slice(9)));if(action==='pin-check')return pinCheck();if(action==='pin-pull')return pinPull();if(action.startsWith('ending-'))return finish(action.slice(7));if(action.startsWith('journal-page-')){const parts=action.slice(13).split('-');return journal(parts[0],Number(parts[1]));}if(action.startsWith('journal-'))return journal(action.slice(8));if(action.startsWith('hint-'))return hintMore(action.slice(5));}
 function catSvg(){return `<svg class="miro-portrait" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="미로"><defs><radialGradient id="miro-halo"><stop stop-color="#8c81b4" stop-opacity=".8"/><stop offset="1" stop-color="#303653" stop-opacity=".25"/></radialGradient><linearGradient id="miro-fur" x1="0" x2=".8" y2="1"><stop stop-color="#fff2df"/><stop offset=".65" stop-color="#e9ddd0"/><stop offset="1" stop-color="#c7c9d0"/></linearGradient></defs><circle cx="60" cy="60" r="56" fill="url(#miro-halo)"/><circle cx="92" cy="25" r="3" fill="#e8ca95"/><path d="m26 21 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="#e9c895" opacity=".8"/><g class="miro-tail"><path d="M90 88c21-3 25-23 15-26-9-3-15 5-14 10" fill="none" stroke="#cacbd2" stroke-width="13" stroke-linecap="round"/><path d="M103 63c-4-1-8 1-10 4" fill="none" stroke="#a6aaba" stroke-width="3" stroke-linecap="round"/></g><path d="M27 110c-3-18 11-29 33-29s37 12 34 29" fill="#f3e6d6" stroke="#807a8e" stroke-width="2"/><path d="m20 55-2-35c0-7 6-9 11-5l18 17a45 45 0 0 1 25 0l18-17c5-4 11-2 11 5l-2 35c3 29-15 45-40 45S17 84 20 55Z" fill="url(#miro-fur)" stroke="#7e7a8a" stroke-width="2.8" stroke-linejoin="round"/><path d="m24 26 2 24 19-12Z" fill="#dba9aa" opacity=".75"/><path d="m96 26-2 24-19-12Z" fill="#dba9aa" opacity=".75"/><path d="M30 45c10-7 19-9 30-8 11-1 20 1 30 8" fill="none" stroke="#ffffff" stroke-opacity=".75" stroke-width="4" stroke-linecap="round"/><g class="miro-eyes"><ellipse cx="42" cy="67" rx="10" ry="12" fill="#fff9ee"/><ellipse cx="77" cy="67" rx="10" ry="12" fill="#fff9ee"/><ellipse cx="43" cy="67" rx="5.5" ry="8.5" fill="#4b4b62"/><ellipse cx="77" cy="67" rx="5.5" ry="8.5" fill="#4b4b62"/><circle cx="45" cy="64" r="2.1" fill="#fff"/></g><ellipse cx="29" cy="79" rx="8" ry="4" fill="#e8a6aa" opacity=".5"/><ellipse cx="91" cy="79" rx="8" ry="4" fill="#e8a6aa" opacity=".5"/><path d="m55 78 5 4 5-4Z" fill="#ca9299"/><path d="M60 82c-2 6-5 7-9 4m9-4c2 6 5 7 9 4" fill="none" stroke="#99777e" stroke-width="2.3" stroke-linecap="round"/><path d="m33 82-16-2m17 6-14 3m67-7 16-2m-17 6 14 3" stroke="#b0a4a5" stroke-width="1.5" stroke-linecap="round"/><path d="M42 94c11 8 26 8 36 0l-6 14H49Z" fill="#bca3bc"/><path d="m51 98 9 7 9-7" stroke="#e5cc92" stroke-width="2" fill="none"/><circle cx="60" cy="105" r="3.5" fill="#f0d393"/></svg>`}
 
 // Room artwork from the existing v2.0 3D/2D edition.
