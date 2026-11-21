@@ -188,12 +188,15 @@ function exploreSuggestion(){
 const scene=$('sceneCanvas');
 scene.addEventListener('pointermove',e=>{
  if(e.pointerType==='touch'||!g)return;
+ const area=scene.getBoundingClientRect();
+ scene.style.setProperty('--ambient-x',((e.clientX-area.left)/area.width-.5)*9+'px');
+ scene.style.setProperty('--ambient-y',((e.clientY-area.top)/area.height-.5)*6+'px');
  const all=[...$('hotspots').querySelectorAll('.hotspot')].filter(el=>getComputedStyle(el).display!=='none');
  let nearest=null,dist=72;
  for(const el of all){const rect=el.getBoundingClientRect();const d=Math.hypot(e.clientX-(rect.left+rect.width/2),e.clientY-(rect.top+rect.height/2));if(d<dist){dist=d;nearest=el;}}
  all.forEach(el=>el.classList.toggle('near',el===nearest));
 });
-scene.addEventListener('pointerleave',()=>{$('hotspots').querySelectorAll('.near').forEach(el=>el.classList.remove('near'))});
+scene.addEventListener('pointerleave',()=>{scene.style.setProperty('--ambient-x','0px');scene.style.setProperty('--ambient-y','0px');$('hotspots').querySelectorAll('.near').forEach(el=>el.classList.remove('near'))});
 document.querySelector('[data-camera="discover"]')?.addEventListener('click',exploreSuggestion);
 
 // Dynamic UI events, touch and mouse support.
