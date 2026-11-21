@@ -923,14 +923,28 @@ function exploreSuggestion(){
  setTimeout(()=>{if(el.isConnected)el.classList.remove('revealed')},1600);
 }
 const scene=$('sceneCanvas');
+// Batch continuous pointer movement into at most one visual update per animation frame.
+// No hover hitbox lookup or hidden-clue highlighting occurs.
+let ambientMoveFrame=0,ambientPointer=null;
 scene.addEventListener('pointermove',e=>{
- if(e.pointerType==='touch'||!g)return;
- const area=scene.getBoundingClientRect();
- scene.style.setProperty('--ambient-x',((e.clientX-area.left)/area.width-.5)*9+'px');
- scene.style.setProperty('--ambient-y',((e.clientY-area.top)/area.height-.5)*6+'px');
- // No proximity-based highlighting: a nearby puzzle target must never glow automatically.
+ if(e.pointerType==='touch'||!g||modalOpen)return;
+ ambientPointer={x:e.clientX,y:e.clientY};
+ if(ambientMoveFrame)return;
+ ambientMoveFrame=requestAnimationFrame(()=>{
+  ambientMoveFrame=0;
+  const pointer=ambientPointer;if(!pointer)return;
+  const area=scene.getBoundingClientRect();
+  if(!area.width||!area.height)return;
+  scene.style.setProperty('--ambient-x',((pointer.x-area.left)/area.width-.5)*9+'px');
+  scene.style.setProperty('--ambient-y',((pointer.y-area.top)/area.height-.5)*6+'px');
+ });
 });
-scene.addEventListener('pointerleave',()=>{scene.style.setProperty('--ambient-x','0px');scene.style.setProperty('--ambient-y','0px')});
+scene.addEventListener('pointerleave',()=>{
+ ambientPointer=null;
+ if(ambientMoveFrame){cancelAnimationFrame(ambientMoveFrame);ambientMoveFrame=0;}
+ scene.style.setProperty('--ambient-x','0px');
+ scene.style.setProperty('--ambient-y','0px');
+});
 document.querySelector('[data-camera="discover"]')?.addEventListener('click',exploreSuggestion);
 
 // Dynamic UI events, touch and mouse support.
