@@ -22,7 +22,7 @@ const hints={
  clock:['현관 홀의 기록과 시계 관리인의 기록을 다시 비교해 보세요.','밤 9시에 현관이 잠긴 뒤 분침이 원의 1/4만큼 움직였습니다.','밤 9시 15분으로 시계 바늘을 맞추세요.'],
  pin:['종은 이미 열두 번 울렸습니다. 다음 종을 울리는 버튼을 찾을 필요가 있을까요?','시계의 기어는 움직이려 하지만 아래쪽 추가 움직이지 못합니다.','시계 아래 붉은 고정쇠를 잡아당기세요.']
 };
-const state=()=>({v:21,room:'foyer',visited:['foyer'],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[1,2,1,2],glassA:{r:1,x:-1},glassB:{r:2,x:1},night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
+const state=()=>({v:21,room:'foyer',visited:['foyer'],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[1,2,1,2],glassA:{r:1,x:-1},glassB:{r:2,x:1},pinLevels:[0,0,0],pinReady:false,night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
 let g=null,modalOpen=false,audio=null,catTurns=0;
 const has=id=>g.inventory.includes(id), done=id=>!!g.flags[id], elapsed=()=>Math.floor((Date.now()-(g?.startedAt||Date.now()))/1000)+(g?.elapsedCarry||0), pretty=s=>{let v=Math.max(0,s);return `${String(Math.floor(v/3600)).padStart(2,'0')}:${String(Math.floor(v%3600/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`};
 function save(){if(!g)return;try{store.setItem(SAVE,JSON.stringify({...g,elapsedCarry:elapsed(),startedAt:null}));}catch(e){}}
@@ -76,9 +76,37 @@ function inspect(id){if(g.ending){ending(g.ending);return}switch(id){
  case 'record':clue('water');clue('powder');article('달빛 온실 재배 기록','네 화분은 수위가 모두 달랐다.\n해의 관에는 세 번째 눈금까지 물때가 남아 있다.\n구름의 관은 막힌 채로 발견되었다.\n오래된 사진 속 별의 수위는 달보다 정확히 한 눈금 높다.\n\n달빛꽃은 낮에 빛을 머금고 어둠에서 가루가 빛난다.');break;
  case 'water':water();break;
  case 'beam':beam();break;
- case 'flower':article('달빛꽃',done('light')?'꽃잎이 빛나고 있다. 미로가 조용히 얼굴을 비빈다.\n「이 꽃도… 그 사람이 키웠던 걸까?」':'꽃은 물과 빛을 기다리는 듯 고개를 숙이고 있다.');break;
- case 'shutter':if(!done('light')){article('채광창','지금 채광창을 닫으면 달빛꽃에 빛을 보낼 수 없다. 먼저 빛을 돌려놓아야 할 것 같다.');break}g.flags.curtain=!g.flags.curtain;if(g.flags.curtain){g.flags.blackout=true;notify('온실이 어두워졌다. 바닥의 희미한 발자국이 반짝인다.')}else notify('채광창을 다시 열었다.');save();render();article('채광창',g.flags.curtain?'온실을 어둡게 하자 꽃가루가 고양이 발자국 모양으로 희미하게 빛난다. 발자국은 오래된 유리 화분으로 이어진다.':'창을 열자 달빛이 다시 방 안으로 들어온다.');break;
- case 'pot':if(!done('blackout')&&!g.flags.curtain){article('오래된 유리 화분','먼지가 두껍게 내려앉아 안쪽이 잘 보이지 않는다.');break}if(!has('collar')){g.flags.blackout=true;item('collar');modal('FOUND','은빛 목걸이',`<div class="collect-visual">◇</div><div class="letter">「미로, 나의 영원한 가족 — 루나」</div><p class="modal-description">이 물건은 미로가 버림받은 것이 아니라는 중요한 증거일지도 모른다.</p>`)}else article('빈 화분','목걸이가 놓여 있던 흔적만 남았다.');break;
+ case 'flower':
+  if(done('light')&&g.flags.curtain&&!done('blackout')){
+   modal('유리 온실 · 관찰','꽃술에 남은 은빛 흔적',
+    '<p class="modal-description">어둠 속에서 꽃술을 살펴보니 꽃가루가 작게 모여 있다. 바닥에도 비슷한 점들이 희미하게 이어져 있다.</p>'+
+    '<div class="pollen-tracks" aria-hidden="true"><span>✧ · ✧ · ✧</span><span>· ✧ ✧ ·</span><span>✧ · · ✧</span></div>',
+    [['꽃가루를 가까이 살핀다','pollen-rub',true],['그대로 두기','close']]
+   );
+  }else if(!done('light')){
+   g.flags.flowerObserved=true;save();
+   modal('유리 온실 · 관찰','시든 달빛꽃',
+    '<p class="modal-description">다섯 곳의 꽃잎만 다른 부분보다 얇고 반투명하다. 자세히 보니 꽃잎에 남은 밝은 점들의 간격이 일정하지 않다.</p>'+
+    glassGrid(glassPatterns.target,'flower-imprint'),
+    [['다시 둘러보기','close',true]]
+   );
+  }else article('달빛꽃','달빛을 받은 꽃잎이 펼쳐졌다. 미로가 잠시 움직임을 멈추고 꽃향기를 맡는다.');
+  break;
+ case 'shutter':
+  if(!done('light')){article('채광창','달빛이 스며드는 창틀을 움직이려 하자 아래쪽의 황동 걸쇠가 걸린다.');break;}
+  g.flags.curtain=!g.flags.curtain;
+  notify(g.flags.curtain?'유리창 덮개가 닫히고 꽃술 근처의 먼지가 빛나기 시작한다.':'채광창이 열리고 꽃잎이 다시 달빛을 받는다.');
+  save();render();
+  article('채광창',g.flags.curtain?'실내가 어두워지자 흰 꽃가루가 바닥에 작은 점들을 남긴다.':'창이 열리자 흰 가루가 다시 평범한 먼지처럼 보인다.');
+  break;
+ case 'pot':
+  if(!done('blackout')){
+   article('오래된 유리 화분',g.flags.curtain?'유리 표면에는 안쪽을 긁은 듯한 가는 선이 있다.':'먼지가 두껍게 쌓여 안쪽을 볼 수 없다.');
+   break;
+  }
+  if(!has('collar')){item('collar');modal('FOUND','은빛 목걸이',`<div class="collect-visual">◇</div><div class="letter">「미로, 나의 영원한 가족 — 루나」</div><p class="modal-description">목걸이 안쪽에는 작게 긁힌 고양이 발톱 자국이 남아 있다.</p>`);}
+  else article('빈 화분','목걸이가 놓여 있던 흔적만 남았다.');
+  break;
  case 'tower':move('tower');break;
  case 'pedestal':article('인장의 제단',g.seals.length===3?'길·소리·빛의 세 인장이 홈에 들어간다. 시계의 동력이 돌아온 듯하다.':`인장은 ${g.seals.length}/3개 모였다. 모두 모아야 시계가 반응한다.`);break;
  case 'keeper':clue('clock');clue('pin');article('관리인의 기록','「현관이 잠긴 뒤, 분침이 사분원만큼 돌아간 밤. 시계는 갑자기 멈췄다.」\n\n「열두 번의 종은 고장 경보다. 진정한 재가동은 시계추가 움직일 때 자동으로 알린다.」\n\n「비상 제동용 붉은 고정쇠는 인장을 복구하고 시간을 맞춘 뒤 풀 것.」');break;
@@ -370,10 +398,60 @@ function beamCheck(){
  solved('light','겹쳐진 두 유리판 사이로 다섯 갈래의 달빛이 꽃잎에 내려앉습니다. 꽃이 피어나고 빛의 인장을 획득했습니다. 흔들린 꽃술에서 작은 은빛 가루가 떨어집니다.');
 }
 
-function clock(){g.activePuzzle='clock';if(done('clock')){article('시계가 맞춰졌다','바늘은 9시 15분을 가리킨다. 제어부의 열두 표시등이 모두 켜졌지만 추는 여전히 멈춰 있다.');return}let minuteRot=g.minute*6,hourRot=g.hour*30+g.minute*.5;modal('ROOM 04 · 퍼즐 9','시계를 되돌릴 시각',`<p class="modal-description">세 인장을 제단에 끼우자 큰 시계의 바늘을 움직일 수 있게 되었다. 시계 바늘은 5분 간격으로 조정된다.</p><div class="clock-visual"><span class="clock-numeral n12">12</span><span class="clock-numeral n3">3</span><span class="clock-numeral n6">6</span><span class="clock-numeral n9">9</span><div class="clock-hand hour" style="transform:rotate(${hourRot}deg)"></div><div class="clock-hand minute" style="transform:rotate(${minuteRot}deg)"></div><div class="clock-pin"></div></div><div class="clock-controls"><div><label>시침</label><button class="small-adjust" data-action="clock-hour-minus">−</button><strong>${g.hour}</strong><button class="small-adjust" data-action="clock-hour-plus">＋</button></div><div><label>분침</label><button class="small-adjust" data-action="clock-minute-minus">−</button><strong>${String(g.minute).padStart(2,'0')}</strong><button class="small-adjust" data-action="clock-minute-plus">＋</button></div></div><div class="night-switch"><button class="${g.night?'active':''}" data-action="clock-night">${g.night?'☾ 밤':'☀ 낮'}</button></div>`,[['시계 고정하기','clock-check',true]])}
-function clockCheck(){if(g.hour!==9||g.minute!==15||!g.night){error('시계 내부에서 톱니가 걸리는 소리가 난다.');clock();return}g.flags.clock=true;solved('clock','바늘이 밤 9시 15분에서 멈춥니다. 열두 개의 경보등이 켜지지만 시계추는 아직 움직이지 않습니다.')}
-function pin(){g.activePuzzle='pin';if(done('pin')){article('해제된 비상 고정쇠','이제 시계 추가 일정한 속도로 흔들린다. 열세 번째 종소리가 이미 울렸다.');return}if(!done('clock')){article('붉은 고정쇠','고정쇠는 잠겨 있다. 제단에는 세 인장을 끼울 수 있지만 시계 바늘이 아직 정확한 곳에 놓이지 않았다.');return}modal('ROOM 04 · 퍼즐 10','마지막으로 남은 장애물',`<p class="modal-description">열두 개의 표시등이 차례로 켜졌지만 종소리는 멈췄다. 제어반의 버튼을 눌러도 반응이 없다.</p><div class="pendulum"><div class="pendulum-rod"></div><div class="pendulum-weight"></div><div class="pendulum-lock">붉은 비상 고정쇠</div></div><div class="puzzle-buttons"><button data-action="pin-push">종 울리기 버튼 누르기</button><button data-action="pin-pull">붉은 고정쇠 잡아당기기</button></div>`)}
-function pinPull(){g.flags.pin=true;clue('story');tone('bell');solved('pin','붉은 고정쇠를 뺀 순간 시계추가 움직입니다. 열세 번째 종이 울리고 저택의 창문이 환하게 빛납니다. 이것은 고장 경보가 아니라 시간을 다시 흐르게 한 첫 번째 정상 종소리였습니다. 탑 아래의 비상 우편 장치가 자동으로 보낸 초대장이 발신인 없는 편지였다는 사실도 밝혀집니다.')}
+
+function clock(){
+ g.activePuzzle='clock';
+ if(done('clock')){article('복원된 시각','세 인장을 통과한 동력이 돌아온다. 바늘은 마지막 기록이 남겨진 시각에 고정되어 있지만 시계추만 움직이지 않는다.');return;}
+ const minuteRot=g.minute*6,hourRot=g.hour*30+g.minute*.5;
+ modal('ROOM 04 · 퍼즐 9','멈춘 밤의 분침',
+  '<p class="modal-description">제단 안쪽의 동력이 시침과 분침으로 연결되어 있다. 수동 손잡이에는 오래된 기름때가 남아 있다. 황동판에는 작은 화분과 닫힌 문의 그림, 반쯤 지워진 경보 기록이 함께 새겨져 있다.</p>'+
+  '<div class="clock-visual"><span class="clock-numeral n12">12</span><span class="clock-numeral n3">3</span><span class="clock-numeral n6">6</span><span class="clock-numeral n9">9</span>'+
+  '<div class="clock-hand hour" style="transform:rotate('+hourRot+'deg)"></div>'+
+  '<div class="clock-hand minute" style="transform:rotate('+minuteRot+'deg)"></div><div class="clock-pin"></div></div>'+
+  '<div class="clock-controls"><div><label>시침</label><button class="small-adjust" data-action="clock-hour-minus">−</button><strong>'+g.hour+'</strong><button class="small-adjust" data-action="clock-hour-plus">＋</button></div>'+
+  '<div><label>분침</label><button class="small-adjust" data-action="clock-minute-minus">−</button><strong>'+String(g.minute).padStart(2,'0')+'</strong><button class="small-adjust" data-action="clock-minute-plus">＋</button></div></div>'+
+  '<div class="night-switch"><button class="'+(g.night?'active':'')+'" data-action="clock-night">'+(g.night?'☾':'☀')+'</button></div>',
+  [['시계 장치 걸어 보기','clock-check',true]]
+ );
+}
+function clockCheck(){
+ if(g.hour!==9||g.minute!==15||!g.night){error('시계의 경보 바퀴가 잠깐 흔들리고 멈춘다.');clock();return;}
+ g.flags.clock=true;solved('clock','시곗바늘이 황동 기록과 같은 위치에서 멈추자 열두 개의 작은 경보등이 켜집니다. 그런데 추의 아래쪽은 여전히 무언가에 단단히 고정되어 있습니다.');
+}
+const pendulumSeals=[['path','❖'],['echo','♫'],['light','☼']];
+function pin(){
+ g.activePuzzle='pin';
+ if(done('pin')){article('움직이는 시계추','이제 진자가 일정한 속도로 흔들린다. 열세 번째 종소리의 여운이 탑 전체에 남아 있다.');return;}
+ if(!done('clock')){article('붉은 고정쇠','붉은 금속 고리가 시계추 아래를 잡고 있다. 위쪽에는 아직 멈춘 세 개의 황동 바퀴가 있다.');return;}
+ if(g.seals.length<3){article('세 개의 빈 바퀴','황동 바퀴에는 작은 홈이 비어 있다.');return;}
+ if(!Array.isArray(g.pinLevels)||g.pinLevels.length!==3)g.pinLevels=[0,0,0];
+ const wheels=pendulumSeals.map(([id,glyph],i)=>'<div class="pin-wheel"><div class="pin-wheel-title">'+glyph+' <small>'+seals[id][1]+'</small></div>'+
+  '<div class="pin-wheel-glyphs">'+Array.from({length:3},(_,k)=>'<span class="'+(k<g.pinLevels[i]?'active':'')+'">▮</span>').join('')+'</div>'+
+  '<button data-action="pin-turn-'+i+'">황동 바퀴 회전 ↻</button></div>').join('');
+ modal('ROOM 04 · 퍼즐 10','마지막 고정쇠',
+  '<p class="modal-description">진자 아래에 안전용 붉은 고정쇠가 끼워져 있다. 그 위의 세 바퀴는 각 인장과 맞물린 상태다. 바퀴의 톱니에는 서로 다른 수의 홈이 있고, 시계추는 한쪽으로 기울어져 있다.</p>'+
+  '<div class="pin-wheel-row">'+wheels+'</div>'+
+  '<div class="pendulum '+(g.pinReady?'pendulum-released':'')+'"><div class="pendulum-rod"></div><div class="pendulum-weight"></div><div class="pendulum-lock">붉은 고정쇠</div></div>'+
+  '<p class="puzzle-helper">'+(g.pinReady?'고정쇠를 붙잡은 금속 장력이 사라졌다.':'시계추 옆의 먼지가 아주 조금씩 떨어진다.')+'</p>',
+  g.pinReady?[['붉은 고정쇠 풀어 보기','pin-pull',true]]:[['맞물림 시험','pin-check',true]]
+ );
+}
+function pinTurn(index){
+ if(done('pin')||!Number.isInteger(index)||index<0||index>2)return;
+ g.pinLevels[index]=(g.pinLevels[index]+1)%4;g.pinReady=false;tone('tap');save();pin();
+}
+function pinCheck(){
+ if(g.pinLevels.join(',')!=='2,1,3'){
+  error('황동 바퀴들이 서로 밀려나고 붉은 고리가 더 단단해진다.');pin();return;
+ }
+ g.pinReady=true;tone('gain');notify('세 바퀴의 맞물림 소리가 고르게 바뀌었다.');save();pin();
+}
+function pinPull(){
+ if(!g.pinReady||!done('clock')||g.seals.length<3){error('고정쇠가 아직 팽팽하게 당겨져 있다.');return;}
+ g.flags.pin=true;clue('story');tone('bell');
+ solved('pin','붉은 고정쇠를 빼자 거대한 시계추가 움직이고 열세 번째 종이 울립니다. 멈춰 있던 창문들이 하나둘 밝아집니다. 탑 아래 비상 우편 장치에서 낡은 편지의 봉인이 떨어져 나오고, 그 편지가 저택 바깥으로 자동 발송되었다는 사실이 드러납니다.');
+}
+
 function finalChoices(){if(!done('pin'))return;let n=['photo','diary','collar'].filter(has).length;modal('THE FINAL DOOR','마지막 선택',`<p class="modal-description">새벽의 빛이 문틈 사이로 들어옵니다. 미로는 문을 바라보다 조심스럽게 묻습니다.</p><p class="story-voice">“나, 정말 이 문 밖으로 나가도 되는 걸까?”</p><div class="ending-choices"><button class="ending-choice" data-action="ending-normal"><div><strong>혼자 새벽을 맞는다</strong><span>저택을 혼자 떠난다.</span></div>→</button><button class="ending-choice" data-action="ending-true" ${n<3?'disabled':''}><div><strong>미로에게 잊힌 약속을 알려준다</strong><span>${n===3?'사진·일기·목걸이가 모두 모였다.':'기억의 물건 '+n+'/3 · 사진, 일기, 목걸이'}</span></div>✦</button><button class="ending-choice" data-action="ending-stay"><div><strong>미로와 저택에 남는다</strong><span>열린 문을 닫고 이곳에서 함께 지낸다.</span></div>☾</button></div>`,[['아직 조사하기','close']])}
 const endings={normal:['혼자 맞는 새벽','당신은 문을 열고 혼자 밖으로 나옵니다. 뒤를 돌아보면 저택의 창가에 작은 미로의 실루엣이 보입니다. 새벽은 왔지만 그 약속은 완성되지 못했습니다.'],true:['함께 맞는 새벽','당신은 사진과 일기, 은빛 목걸이를 미로에게 보여줍니다. "루나는 널 버리지 않았어." 미로는 루나와 함께 지내던 날들을 기억해 냅니다. 밖에서 오랜 시간이 흘러 어른이 된 루나가 문 앞에 서 있습니다. 둘은 마침내 다시 만납니다.'],stay:['영원한 밤의 친구','당신은 열린 문을 조용히 닫습니다. 시간은 다시 흘러가지만 저택에서 밤을 보내기로 합니다. 미로가 곁에 웅크립니다. 두 사람은 더 이상 혼자가 아닙니다.']};
 function finish(id){if(id==='true'&&!['photo','diary','collar'].every(has)){error('기억의 물건이 부족합니다.');return}g.ending=id;try{let o=JSON.parse(store.getItem(HISTORY)||'[]');if(!o.includes(id))o.push(id);store.setItem(HISTORY,JSON.stringify(o))}catch(e){}tone('bell');save();ending(id)}
@@ -384,7 +462,7 @@ function hintMore(id){g.hintLevels[id]=Math.min(3,(g.hintLevels[id]||0)+1);g.hin
 function talk(){let lines={foyer:['이 집에는 출입문이 너무 많아. 하지만 난 양탄자가 좋아.','수납장에서는 뭔가 반짝이는 냄새가 나.'],study:['루나는 책등의 무늬로 비밀 이야기를 만들었지.','저 책 중 하나는 내가 혼자 꽂아 둔 거야. 어디더라?'],greenhouse:['꽃이 피면 아주 예쁜 일이 생길 거야.','어두우면 더 잘 보이는 것도 있대.'],tower:['열두 번의 종소리는 늘 무서웠어.','나는 왜 자꾸 누군가를 기다리는 것 같지?']};let a=lines[g.room];$('catDialog').textContent=a[(catTurns++)%a.length];tone()}
 function menu(){modal('PAUSE','탐험 메뉴',`<p class="modal-description">진행 내용은 자동 저장됩니다. 실시간 플레이 기록: ${pretty(elapsed())}</p>`,[['계속 탐험','close',true],['시작 화면','home']])}
 function handle(action){if(action==='close')return hide();if(action==='home')return home();if(action==='really-new')return begin();if(action==='new-confirm')return modal('NEW GAME','처음부터 시작할까요?',`<p class="modal-description">이번 버전의 진행 데이터가 초기화됩니다.</p>`,[['취소','close'],['새로 시작','really-new',true]]);
-if(action.startsWith('step-'))return step(action.slice(5));if(action==='rug-pocket'){if(!has('photo'))item('photo');return modal('FOUND','오래된 사진',`<div class="collect-visual">▧</div><div class="letter">어린 미로와 루나가 함께 찍혀 있다.\n\n「우린 언제나 함께야」</div>`)}
+if(action==='pollen-rub'){if(done('light')&&g.flags.curtain){g.flags.blackout=true;clue('powder');save();return modal('GREENHOUSE · 관찰','희미한 발자국',`<p class="modal-description">은빛 가루를 쓸어내자 작고 둥근 발자국들이 선명해진다. 발자국은 꽃줄기 뒤편의 오래된 유리 용기 부근에서 끊겨 있다.</p>`,[['돌아가기','close',true]])}return}if(action.startsWith('step-'))return step(action.slice(5));if(action==='rug-pocket'){if(!has('photo'))item('photo');return modal('FOUND','오래된 사진',`<div class="collect-visual">▧</div><div class="letter">어린 미로와 루나가 함께 찍혀 있다.\n\n「우린 언제나 함께야」</div>`)}
 if(action.startsWith('mirror-turn-'))return mirrorTurn(action.slice(12));if(action==='mirror-switch')return mirrorSwitch();
 if(action.startsWith('flip-')){let name=action.slice(5);if(Object.hasOwn(moonBooks,name)){g.booksFlipped??={};g.booksFlipped[name]=!g.booksFlipped[name];save();return books()}}
 if(action.startsWith('book-')){let name=action.slice(5);if(name==='reset'){g.booksPlaced=[null,null,null,null,null];save();return books()}if(name==='check')return bookCheck();if(Object.hasOwn(moonBooks,name)&&!g.booksPlaced.includes(name)){let slot=g.booksPlaced.indexOf(null);if(slot>=0){g.booksPlaced[slot]=name;save();}}return books()}
@@ -395,7 +473,7 @@ if(action==='film-turn'){g.filmRotate=(g.filmRotate+1)%4;save();return desk()}if
 if(action==='water-check')return waterCheck();if(action.startsWith('sluice-')){const p=action.split('-');return sluiceMove(Number(p[1]),p[2])}
 if(action.startsWith('glass-')){const p=action.split('-');return glassMove(p[1],p[2])}if(action==='beam-check')return beamCheck();
 if(action.startsWith('clock-')){let p=action.split('-');if(p[1]==='night')g.night=!g.night;else if(p[1]==='hour')g.hour=((g.hour-1+(p[2]==='plus'?1:11))%12)+1;else if(p[1]==='minute')g.minute=(g.minute+(p[2]==='plus'?5:55))%60;else if(p[1]==='check')return clockCheck();return clock()}
-if(action==='pin-push'){error('버튼을 눌러도 시계추는 움직이지 않는다.');return pin()}if(action==='pin-pull')return pinPull();if(action.startsWith('ending-'))return finish(action.slice(7));if(action.startsWith('journal-'))return journal(action.slice(8));if(action.startsWith('hint-'))return hintMore(action.slice(5));}
+if(action.startsWith('pin-turn-'))return pinTurn(Number(action.slice(9)));if(action==='pin-check')return pinCheck();if(action==='pin-pull')return pinPull();if(action.startsWith('ending-'))return finish(action.slice(7));if(action.startsWith('journal-'))return journal(action.slice(8));if(action.startsWith('hint-'))return hintMore(action.slice(5));}
 function catSvg(){return `<svg class="miro-portrait" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="미로"><defs><radialGradient id="miro-halo"><stop stop-color="#8c81b4" stop-opacity=".8"/><stop offset="1" stop-color="#303653" stop-opacity=".25"/></radialGradient><linearGradient id="miro-fur" x1="0" x2=".8" y2="1"><stop stop-color="#fff2df"/><stop offset=".65" stop-color="#e9ddd0"/><stop offset="1" stop-color="#c7c9d0"/></linearGradient></defs><circle cx="60" cy="60" r="56" fill="url(#miro-halo)"/><circle cx="92" cy="25" r="3" fill="#e8ca95"/><path d="m26 21 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z" fill="#e9c895" opacity=".8"/><g class="miro-tail"><path d="M90 88c21-3 25-23 15-26-9-3-15 5-14 10" fill="none" stroke="#cacbd2" stroke-width="13" stroke-linecap="round"/><path d="M103 63c-4-1-8 1-10 4" fill="none" stroke="#a6aaba" stroke-width="3" stroke-linecap="round"/></g><path d="M27 110c-3-18 11-29 33-29s37 12 34 29" fill="#f3e6d6" stroke="#807a8e" stroke-width="2"/><path d="m20 55-2-35c0-7 6-9 11-5l18 17a45 45 0 0 1 25 0l18-17c5-4 11-2 11 5l-2 35c3 29-15 45-40 45S17 84 20 55Z" fill="url(#miro-fur)" stroke="#7e7a8a" stroke-width="2.8" stroke-linejoin="round"/><path d="m24 26 2 24 19-12Z" fill="#dba9aa" opacity=".75"/><path d="m96 26-2 24-19-12Z" fill="#dba9aa" opacity=".75"/><path d="M30 45c10-7 19-9 30-8 11-1 20 1 30 8" fill="none" stroke="#ffffff" stroke-opacity=".75" stroke-width="4" stroke-linecap="round"/><g class="miro-eyes"><ellipse cx="42" cy="67" rx="10" ry="12" fill="#fff9ee"/><ellipse cx="77" cy="67" rx="10" ry="12" fill="#fff9ee"/><ellipse cx="43" cy="67" rx="5.5" ry="8.5" fill="#4b4b62"/><ellipse cx="77" cy="67" rx="5.5" ry="8.5" fill="#4b4b62"/><circle cx="45" cy="64" r="2.1" fill="#fff"/></g><ellipse cx="29" cy="79" rx="8" ry="4" fill="#e8a6aa" opacity=".5"/><ellipse cx="91" cy="79" rx="8" ry="4" fill="#e8a6aa" opacity=".5"/><path d="m55 78 5 4 5-4Z" fill="#ca9299"/><path d="M60 82c-2 6-5 7-9 4m9-4c2 6 5 7 9 4" fill="none" stroke="#99777e" stroke-width="2.3" stroke-linecap="round"/><path d="m33 82-16-2m17 6-14 3m67-7 16-2m-17 6 14 3" stroke="#b0a4a5" stroke-width="1.5" stroke-linecap="round"/><path d="M42 94c11 8 26 8 36 0l-6 14H49Z" fill="#bca3bc"/><path d="m51 98 9 7 9-7" stroke="#e5cc92" stroke-width="2" fill="none"/><circle cx="60" cy="105" r="3.5" fill="#f0d393"/></svg>`}
 
 // Room artwork from the existing v2.0 3D/2D edition.
