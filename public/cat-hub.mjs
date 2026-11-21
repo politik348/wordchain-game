@@ -37,7 +37,7 @@ export function renderCatHub(games) {
     '<div class="cat-choice-grid">'+games.map((g,index)=>{
       const id=escapeHtml(g.id),name=escapeHtml(g.name),icon=escapeHtml(g.emoji);
       return '<button type="button" class="cat-choice-card cat-choice-'+id+'" data-action="catChoose" data-cat-game="'+id+'">'+
-        '<span class="cat-choice-icon" aria-hidden="true">'+icon+'</span>'+
+        '<span class="cat-choice-illustration cat-choice-art-'+id+'" aria-hidden="true"><span class="cat-choice-art-fallback">'+icon+'</span></span>'+
         '<span class="cat-choice-copy"><span class="cat-choice-number">CHALLENGE '+String(index+1).padStart(2,'0')+'</span>'+
         '<strong>'+name+'</strong><small>'+escapeHtml(catDetails[g.id]||g.desc)+'</small></span>'+
         '<span class="cat-choice-arrow" aria-hidden="true">↗</span></button>';
