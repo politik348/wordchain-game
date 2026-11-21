@@ -85,7 +85,7 @@ const hints={
   '정답: 길 2칸, 소리 1칸, 빛 3칸으로 바퀴를 맞물린 뒤 붉은 고정쇠를 풀면 됩니다.'
  ]
 };
-const state=()=>({v:21,room:'foyer',visited:['foyer'],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,ambientSteps:{},ambientFlags:{},sideGames:{bell:false},bellInput:[],combinedFindings:[],itemSides:{},discMounted:false,catMood:'curious',booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[1,2,1,2],glassA:{r:1,x:-1},glassB:{r:2,x:1},pinLevels:[0,0,0],pinReady:false,night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
+const state=()=>({v:21,room:'foyer',visited:['foyer'],showMarkers:true,inspectedObjects:[],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,ambientSteps:{},ambientFlags:{},sideGames:{bell:false},bellInput:[],combinedFindings:[],itemSides:{},discMounted:false,catMood:'curious',booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[1,2,1,2],glassA:{r:1,x:-1},glassB:{r:2,x:1},pinLevels:[0,0,0],pinReady:false,night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
 let g=null,modalOpen=false,audio=null,catTurns=0;
 const has=id=>g.inventory.includes(id), done=id=>!!g.flags[id], elapsed=()=>Math.floor((Date.now()-(g?.startedAt||Date.now()))/1000)+(g?.elapsedCarry||0), pretty=s=>{let v=Math.max(0,s);return `${String(Math.floor(v/3600)).padStart(2,'0')}:${String(Math.floor(v%3600/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`};
 function save(){if(!g)return;try{store.setItem(SAVE,JSON.stringify({...g,elapsedCarry:elapsed(),startedAt:null}));}catch(e){}}
@@ -156,11 +156,11 @@ function seal(id){if(g.seals.includes(id))return;g.seals.push(id);notify('인장
 function clearRoom(id){return ({foyer:()=>done('foot')&&done('mirror')&&has('brassKey'),study:()=>done('books')&&done('piano'),greenhouse:()=>done('water')&&done('light'),tower:()=>done('clock')&&done('pin')})[id]();}
 function canEnter(id){let n=rooms.indexOf(id);return n===0||n>0&&rooms.slice(0,n).every(clearRoom)}
 function begin(){g=state();save();showGame();modal('PROLOGUE','13번째 종소리',`<div class="letter">달빛 저택으로 와 주세요.\n멈춘 시계가 다시 움직이기 전에, 사라진 기억을 찾아 주셨으면 합니다.\n\n— 발신인 미상</div><p class="modal-description">눈을 떠보니 현관문이 잠겨 있습니다. 고양이 미로가 마치 오래 기다렸다는 듯 말을 겁니다.</p><p class="story-voice">"여기 나가려면 인장 세 개를 찾아야 해. 근데… 내가 기다리던 사람이 누구였더라?"</p>`,[['현관 조사 시작','close',true]])}
-function resume(){try{let s=JSON.parse(store.getItem(SAVE));if(!s||s.v!==21||!s.flags)throw Error('version');g={...state(),...s,flags:{...state().flags,...s.flags},mirrorTiles:{...state().mirrorTiles,...s.mirrorTiles},booksFlipped:{...s.booksFlipped},ambientSteps:{...(s.ambientSteps||{})},ambientFlags:{...(s.ambientFlags||{})},sideGames:{bell:false,...(s.sideGames||{})},bellInput:Array.isArray(s.bellInput)?s.bellInput:[],combinedFindings:Array.isArray(s.combinedFindings)?s.combinedFindings:[],itemSides:{...(s.itemSides||{})}};if(!Array.isArray(g.booksPlaced)||g.booksPlaced.length!==5)g.booksPlaced=[null,null,null,null,null];g.elapsedCarry=Number(s.elapsedCarry)||0;g.startedAt=Date.now();if(!canEnter(g.room))g.room='foyer';showGame();if(g.ending)ending(g.ending)}catch(e){store.removeItem(SAVE);notify('저장 기록을 읽지 못했습니다. 새로 시작해 주세요.') }}
+function resume(){try{let s=JSON.parse(store.getItem(SAVE));if(!s||s.v!==21||!s.flags)throw Error('version');g={...state(),...s,flags:{...state().flags,...s.flags},mirrorTiles:{...state().mirrorTiles,...s.mirrorTiles},booksFlipped:{...s.booksFlipped},ambientSteps:{...(s.ambientSteps||{})},ambientFlags:{...(s.ambientFlags||{})},sideGames:{bell:false,...(s.sideGames||{})},bellInput:Array.isArray(s.bellInput)?s.bellInput:[],combinedFindings:Array.isArray(s.combinedFindings)?s.combinedFindings:[],itemSides:{...(s.itemSides||{})},showMarkers:typeof s.showMarkers==='boolean'?s.showMarkers:true,inspectedObjects:Array.isArray(s.inspectedObjects)?s.inspectedObjects:[]};if(!Array.isArray(g.booksPlaced)||g.booksPlaced.length!==5)g.booksPlaced=[null,null,null,null,null];g.elapsedCarry=Number(s.elapsedCarry)||0;g.startedAt=Date.now();if(!canEnter(g.room))g.room='foyer';showGame();if(g.ending)ending(g.ending)}catch(e){store.removeItem(SAVE);notify('저장 기록을 읽지 못했습니다. 새로 시작해 주세요.') }}
 function showGame(){$('homeScreen').classList.add('hidden');$('gameScreen').classList.remove('hidden');hide();render();tick()}
 function home(){save();hide();$('gameScreen').classList.add('hidden');$('homeScreen').classList.remove('hidden');$('continueBtn').classList.toggle('hidden',!store.getItem(SAVE))}
 function hide(){modalOpen=false;$('modalOverlay').classList.add('hidden')}
-function modal(eyebrow,title,content,actions=[['돌아가기','close',true]]){modalOpen=true;$('modalOverlay').classList.remove('hidden');$('modalContent').innerHTML=`<div class="modal-eyebrow">${eyebrow}</div><h2 id="modalTitle" class="modal-title">${title}</h2>${content}<div class="modal-actions">${actions.map(([name,action,primary,disabled])=>`<button class="modal-btn ${primary?'primary':''}" data-action="${action}" ${disabled?'disabled':''}>${name}</button>`).join('')}</div>`;}
+function modal(eyebrow,title,content,actions=[['돌아가기','close',true]]){modalOpen=true;$('modalContent').innerHTML=`<div class="modal-eyebrow">${eyebrow}</div><h2 id="modalTitle" class="modal-title">${title}</h2>${content}<div class="modal-actions">${actions.map(([name,action,primary,disabled])=>`<button class="modal-btn ${primary?'primary':''}" data-action="${action}" ${disabled?'disabled':''}>${name}</button>`).join('')}</div>`;$('modalOverlay').classList.remove('hidden');}
 function article(t,s,eyebrow='조사 기록'){modal(eyebrow,t,`<div class="letter">${s}</div>`)}
 
 let cinematicTimer=null;
@@ -186,6 +186,26 @@ function objective(){
  return !done('clock')?'시곗바늘과 경보 장치가 움직이지 않는다.':!done('pin')?'시간은 맞춰졌지만 진자가 여전히 멈춰 있다.':'마지막 문에서 새벽빛이 비친다.';
 }
 let uiSceneGame=null,uiSceneRoom=null,uiNavState=null,uiSealsState=null,uiInventoryState=null,uiHotspotState=null;
+function syncMarkerDisplay(){
+ if(!g)return;
+ const on=g.showMarkers!==false,scene=$('sceneCanvas'),button=$('markerToggleBtn');
+ scene?.classList.toggle('discovery-markers-on',on);
+ if(button){
+  button.textContent=on?'점 숨기기':'점 표시';
+  button.setAttribute('aria-pressed',String(on));
+  button.setAttribute('aria-label',on?'조사 위치 점 표시 끄기':'조사 위치 점 표시 켜기');
+ }
+}
+function rememberInspection(id){
+ if(!g||!id)return;
+ g.inspectedObjects??=[];
+ if(g.inspectedObjects.includes(id))return;
+ g.inspectedObjects.push(id);
+ const target=$('hotspots')?.querySelector('.hotspot[data-object="'+id+'"]');
+ target?.classList.add('inspected');
+ // The inspection dialog renders immediately; persist the cosmetic marker after the event.
+ setTimeout(save,0);
+}
 function render(){if(!g)return;
  const sceneChanged=uiSceneGame!==g||uiSceneRoom!==g.room;
  const navState=g.room+'|'+rooms.map(r=>Number(canEnter(r))).join('')+'|'+rooms.map(r=>Number(clearRoom(r))).join('');
@@ -195,13 +215,13 @@ function render(){if(!g)return;
  if(uiNavState!==navState){$('sceneNav').innerHTML=rooms.map((r,i)=>`<button data-room="${r}" class="nav-btn ${r===g.room?'current':''} ${!canEnter(r)?'locked':''} ${canEnter(r)&&r!==g.room?'available':''}" ${r===g.room?'disabled aria-current="step"':''} ${!canEnter(r)?'aria-disabled="true"':''}><span class="nav-index">${canEnter(r)?String(i+1).padStart(2,'0'):'♙'}</span><span class="nav-copy"><small>${r===g.room?'현재 탐험 중':!canEnter(r)?'아직 잠긴 공간':'이동 가능한 공간'}</small><b>${meta[r][0]}</b></span><span class="nav-status" aria-hidden="true">${r===g.room?'✦':!canEnter(r)?'⌑':'↗'}</span></button>`).join('');uiNavState=navState;}
  if(uiSealsState!==sealsState){$('sealsBar').innerHTML=Object.entries(seals).map(([id,v])=>`<div title="${v[1]}" class="seal ${g.seals.includes(id)?'found':''}">${v[0]}</div>`).join('');uiSealsState=sealsState;}
  if(sceneChanged){$('sceneArtwork').innerHTML=drawScene(g.room);$('sceneCanvas').dataset.room=g.room;window.Moyeo3D?.setRoom(g.room);
- $('hotspots').innerHTML=hotspots[g.room].map(x=>`<button type="button" class="hotspot ${x.ok?.()?'done':''}" data-object="${x.id}" style="left:${x.x}%;top:${x.y}%" aria-label="${x.name}"><span>${x.name}</span></button>`).join('');window.Moyeo3D?.refresh();uiSceneGame=g;uiSceneRoom=g.room;
+ $('hotspots').innerHTML=hotspots[g.room].map(x=>`<button type="button" class="hotspot ${x.ok?.()?'done':''} ${g.inspectedObjects?.includes(x.id)?'inspected':''}" data-object="${x.id}" style="left:${x.x}%;top:${x.y}%" aria-label="${x.name}"><span>${x.name}</span></button>`).join('');window.Moyeo3D?.refresh();uiSceneGame=g;uiSceneRoom=g.room;
  }else if(uiHotspotState!==hotspotState){$('hotspots').querySelectorAll('.hotspot').forEach((el,i)=>el.classList.toggle('done',hotspotState[i]==='1'));}
  uiHotspotState=hotspotState;
  if(uiInventoryState!==inventoryState){$('inventoryNum').textContent=g.inventory.length;$('inventory').innerHTML=g.inventory.length?g.inventory.map(id=>`<div class="inventory-slot"><button class="inventory-item ${g.selected===id?'selected':''}" data-item="${id}" aria-pressed="${g.selected===id}" aria-label="${items[id][1]} 선택"><span class="item-icon">${items[id][0]}</span><span class="item-name">${items[id][1]}</span></button><button type="button" class="inventory-inspect" data-item-view="${id}" aria-label="${items[id][1]} 자세히 보기">⌕</button></div>`).join(''):'<div class="inventory-empty"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M14 25h36l-3.5 27h-29L14 25Z" fill="#d8c5a8" fill-opacity=".13" stroke="#e4cfac" stroke-width="2.6" stroke-linejoin="round"/><path d="M24 25v-6a8 8 0 0 1 16 0v6" stroke="#e4cfac" stroke-width="2.6" stroke-linecap="round"/><path d="m27 38 4 4 7-8" stroke="#ddc29c" stroke-opacity=".5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>아직 획득한 아이템이 없어요.</span><small>저택을 살펴보고 단서를 찾아보세요.</small></div>';uiInventoryState=inventoryState;}
  let val=['foot','mirror','books','piano','film','water','light','blackout','clock','pin'].filter(done).length;$('completionText').textContent=val+'/10';$('completionFill').style.width=(val*10)+'%';$('objectiveText').textContent=objective();$('soundBtn').textContent=g.sound?'♫':'♪̸';
  let next=rooms[index+1];$('nextRoomBtn').classList.toggle('hidden',!next||!clearRoom(g.room));if(next)$('nextRoomBtn').textContent=`${meta[next][0]}으로 이동 →`;
- if(sceneChanged)$('catAvatar').innerHTML=catSvg();const catCard=document.querySelector('.cat-card');if(catCard)catCard.dataset.mood=g.catMood||'curious';const catMood=document.querySelector('.cat-mood');if(catMood)catMood.textContent=({happy:'✧',remembering:'☾',startled:'!',curious:'✦'})[g.catMood]||'✦';$('sceneCanvas').classList.toggle('tower-awake',g.room==='tower'&&done('pin'));$('sceneCanvas').classList.toggle('flower-awake',g.room==='greenhouse'&&done('light'));save()}
+ if(sceneChanged)$('catAvatar').innerHTML=catSvg();const catCard=document.querySelector('.cat-card');if(catCard)catCard.dataset.mood=g.catMood||'curious';const catMood=document.querySelector('.cat-mood');if(catMood)catMood.textContent=({happy:'✧',remembering:'☾',startled:'!',curious:'✦'})[g.catMood]||'✦';$('sceneCanvas').classList.toggle('tower-awake',g.room==='tower'&&done('pin'));$('sceneCanvas').classList.toggle('flower-awake',g.room==='greenhouse'&&done('light'));syncMarkerDisplay();save()}
 function tick(){if(g)$('timerDisplay').textContent=pretty(elapsed())}
 function move(r){if(!canEnter(r)){article('잠긴 문','이전 방의 필수 퍼즐을 마쳐야 합니다.');return}const prior=g.room;g.room=r;g.selected=null;if(prior!==r){const panel=$('sceneCanvas');panel.classList.remove('room-entering');void panel.offsetWidth;panel.classList.add('room-entering');}if(!g.visited.includes(r)){g.visited.push(r);notify('새 공간 · '+meta[r][0]);tone('gain');sceneMoment('room')}let lines={foyer:'사진 속 인물은 누구였지?',study:'이 멜로디는 왜 이렇게 그리울까…',greenhouse:'꽃 향기가 익숙해. 누가 여기서 날 안고 있었어.',tower:'열두 번 울렸어… 열세 번째는 누가 울릴까?'};$('catDialog').textContent=lines[r];g.catMood=(r==='tower'?'remembering':'curious');render()}
 
@@ -383,7 +403,7 @@ function miroLookAt(id){
  avatar.classList.remove('miro-looking');void avatar.offsetWidth;avatar.classList.add('miro-looking');
  setTimeout(()=>avatar.classList.remove('miro-looking'),650);
 }
-function inspect(id){if(g.ending){ending(g.ending);return}miroLookAt(id);if(Object.hasOwn(ambientLookup,id))return ambientInspect(id);switch(id){
+function inspect(id){if(g.ending){ending(g.ending);return}rememberInspection(id);miroLookAt(id);if(Object.hasOwn(ambientLookup,id))return ambientInspect(id);switch(id){
  case 'cat':talk();break;
  case 'foyer-bell':foyerBell();break;
  case 'invitation':invitation();break;
@@ -955,10 +975,16 @@ $('hotspots').addEventListener('click',e=>{
  if(e.detail===0||!Number.isFinite(e.clientX)||!Number.isFinite(e.clientY)){
   inspect(tapped.dataset.object);return; // keyboard/screen reader clicks
  }
+ // Use the browser's hit-test stack instead of measuring every room object.
+ // Most clicks need no geometry reads; only genuinely overlapping hitboxes do.
+ const candidates=typeof document.elementsFromPoint==='function'
+  ?document.elementsFromPoint(e.clientX,e.clientY).filter(el=>el.classList?.contains('hotspot'))
+  :[tapped];
+ if(candidates.length<2){inspect(tapped.dataset.object);return;}
  let choice=tapped,shortest=Infinity;
- for(const candidate of $('hotspots').querySelectorAll('.hotspot')){
+ for(const candidate of candidates){
   const rect=candidate.getBoundingClientRect();
-  if(!rect.width||!rect.height||e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)continue;
+  if(!rect.width||!rect.height)continue;
   const dist=(e.clientX-(rect.left+rect.right)/2)**2+(e.clientY-(rect.top+rect.bottom)/2)**2;
   if(dist<shortest){shortest=dist;choice=candidate;}
  }
@@ -974,6 +1000,7 @@ $('modalContent').addEventListener('drop',e=>{let b=e.target.closest('[data-slot
 $('startBtn').addEventListener('click',()=>store.getItem(SAVE)?handle('new-confirm'):begin());
 $('continueBtn').addEventListener('click',resume);
 $('homeBtn').addEventListener('click',home);
+$('markerToggleBtn')?.addEventListener('click',()=>{if(!g)return;g.showMarkers=!g.showMarkers;syncMarkerDisplay();save();});
 $('hintBtn').addEventListener('click',hint);
 $('menuBtn').addEventListener('click',menu);
 $('journalBtn').addEventListener('click',()=>journal());
