@@ -85,7 +85,7 @@ const hints={
   '정답: 길 2칸, 소리 1칸, 빛 3칸으로 바퀴를 맞물린 뒤 붉은 고정쇠를 풀면 됩니다.'
  ]
 };
-const state=()=>({v:21,room:'foyer',visited:['foyer'],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,ambientSteps:{},booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[1,2,1,2],glassA:{r:1,x:-1},glassB:{r:2,x:1},pinLevels:[0,0,0],pinReady:false,night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
+const state=()=>({v:21,room:'foyer',visited:['foyer'],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,ambientSteps:{},ambientFlags:{},sideGames:{bell:false},bellInput:[],combinedFindings:[],booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[1,2,1,2],glassA:{r:1,x:-1},glassB:{r:2,x:1},pinLevels:[0,0,0],pinReady:false,night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
 let g=null,modalOpen=false,audio=null,catTurns=0;
 const has=id=>g.inventory.includes(id), done=id=>!!g.flags[id], elapsed=()=>Math.floor((Date.now()-(g?.startedAt||Date.now()))/1000)+(g?.elapsedCarry||0), pretty=s=>{let v=Math.max(0,s);return `${String(Math.floor(v/3600)).padStart(2,'0')}:${String(Math.floor(v%3600/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`};
 function save(){if(!g)return;try{store.setItem(SAVE,JSON.stringify({...g,elapsedCarry:elapsed(),startedAt:null}));}catch(e){}}
@@ -97,7 +97,7 @@ function seal(id){if(g.seals.includes(id))return;g.seals.push(id);notify('인장
 function clearRoom(id){return ({foyer:()=>done('foot')&&done('mirror')&&has('brassKey'),study:()=>done('books')&&done('piano'),greenhouse:()=>done('water')&&done('light'),tower:()=>done('clock')&&done('pin')})[id]();}
 function canEnter(id){let n=rooms.indexOf(id);return n===0||n>0&&rooms.slice(0,n).every(clearRoom)}
 function begin(){g=state();save();showGame();modal('PROLOGUE','13번째 종소리',`<div class="letter">달빛 저택으로 와 주세요.\n멈춘 시계가 다시 움직이기 전에, 사라진 기억을 찾아 주셨으면 합니다.\n\n— 발신인 미상</div><p class="modal-description">눈을 떠보니 현관문이 잠겨 있습니다. 고양이 미로가 마치 오래 기다렸다는 듯 말을 겁니다.</p><p class="story-voice">"여기 나가려면 인장 세 개를 찾아야 해. 근데… 내가 기다리던 사람이 누구였더라?"</p>`,[['현관 조사 시작','close',true]])}
-function resume(){try{let s=JSON.parse(store.getItem(SAVE));if(!s||s.v!==21||!s.flags)throw Error('version');g={...state(),...s,flags:{...state().flags,...s.flags},mirrorTiles:{...state().mirrorTiles,...s.mirrorTiles},booksFlipped:{...s.booksFlipped},ambientSteps:{...(s.ambientSteps||{})}};if(!Array.isArray(g.booksPlaced)||g.booksPlaced.length!==5)g.booksPlaced=[null,null,null,null,null];g.elapsedCarry=Number(s.elapsedCarry)||0;g.startedAt=Date.now();if(!canEnter(g.room))g.room='foyer';showGame();if(g.ending)ending(g.ending)}catch(e){store.removeItem(SAVE);notify('저장 기록을 읽지 못했습니다. 새로 시작해 주세요.') }}
+function resume(){try{let s=JSON.parse(store.getItem(SAVE));if(!s||s.v!==21||!s.flags)throw Error('version');g={...state(),...s,flags:{...state().flags,...s.flags},mirrorTiles:{...state().mirrorTiles,...s.mirrorTiles},booksFlipped:{...s.booksFlipped},ambientSteps:{...(s.ambientSteps||{})},ambientFlags:{...(s.ambientFlags||{})},sideGames:{bell:false,...(s.sideGames||{})},bellInput:Array.isArray(s.bellInput)?s.bellInput:[],combinedFindings:Array.isArray(s.combinedFindings)?s.combinedFindings:[]};if(!Array.isArray(g.booksPlaced)||g.booksPlaced.length!==5)g.booksPlaced=[null,null,null,null,null];g.elapsedCarry=Number(s.elapsedCarry)||0;g.startedAt=Date.now();if(!canEnter(g.room))g.room='foyer';showGame();if(g.ending)ending(g.ending)}catch(e){store.removeItem(SAVE);notify('저장 기록을 읽지 못했습니다. 새로 시작해 주세요.') }}
 function showGame(){$('homeScreen').classList.add('hidden');$('gameScreen').classList.remove('hidden');hide();render();window.Moyeo3D?.refresh();tick()}
 function home(){save();hide();$('gameScreen').classList.add('hidden');$('homeScreen').classList.remove('hidden');$('continueBtn').classList.toggle('hidden',!store.getItem(SAVE))}
 function hide(){modalOpen=false;$('modalOverlay').classList.add('hidden')}
@@ -192,10 +192,12 @@ function ambientInspect(id,justAdvanced=false){
  const result=level===0?object.description:object.steps[level-1][1];
  const action=object.steps[level]?.[0];
  const progress=level?'<div class="ambient-time-note">탐험 중에 '+level*10+'초가 흘렀다.</div>':'';
+ const actions=action?[[action+' · +10초','ambient-next-'+id,true],['그만 살펴보기','close']]:[['돌아가기','close',true]];
+ if(id==='foyer-sconce')actions.unshift([g.ambientFlags?.sconceHeat?'등잔에 손을 댔던 기억':'불꽃 가까이 손 넣어보기','sconce-touch',false]);
  modal('저택 · 주변 조사',object.name,
   '<div class="ambient-description">'+result+'</div>'+progress+
   (level>=object.steps.length?'<p class="puzzle-helper">여기서는 더 살펴볼 것이 보이지 않는다.</p>':''),
-  action?[[action+' · +10초','ambient-next-'+id,true],['그만 살펴보기','close']]:[['돌아가기','close',true]]
+  actions
  );
  if(justAdvanced){tick();notify('탐험 시간 +10초');}
 }
@@ -209,8 +211,76 @@ function ambientNext(id){
  save();ambientInspect(id,true);
 }
 
+
+/* Optional foyer bell toy: a real, replayable four-note interaction, not a required seal. */
+const bellScore=['◆','☾','❖','✦'];
+const bellVoices={'☾':440,'✦':523.25,'◆':659.25,'❖':783.99};
+function bellTone(symbol){
+ if(!g.sound)return;
+ try{
+  audio??=new (window.AudioContext||window.webkitAudioContext)();
+  if(audio.state==='suspended')audio.resume();
+  const t=audio.currentTime,o=audio.createOscillator(),v=audio.createGain();
+  o.type='sine';o.frequency.value=bellVoices[symbol];
+  v.gain.setValueAtTime(.0001,t);v.gain.exponentialRampToValueAtTime(.075,t+.012);
+  v.gain.exponentialRampToValueAtTime(.0001,t+.55);
+  o.connect(v);v.connect(audio.destination);o.start(t);o.stop(t+.58);
+ }catch(e){}
+}
+function foyerBell(){
+ g.sideGames??={bell:false};g.bellInput??=[];
+ if(g.sideGames.bell){
+  modal('현관 · 작은 발견','달빛 종의 짧은 연주',
+   '<div class="bell-toy-complete">잘했어요! 종의 맑은 소리가 현관을 채웠다.<small>미로가 귀를 쫑긋 세운다. 아무 잠금쇠도 움직이지 않는다.</small></div>'+
+   '<div class="bell-sheet">낡은 악보 <strong>'+bellScore.join(' · ')+'</strong></div>',
+   [['다시 연주해 보기','bell-reset',true],['돌아가기','close']]);
+  return;
+ }
+ const buttons=Object.entries(bellVoices).map(([glyph],i)=>
+  '<button type="button" class="bell-key" data-action="bell-note-'+i+'" aria-label="황동 종 '+glyph+'">' +
+  '<span>♪</span><b>'+glyph+'</b></button>').join('');
+ modal('현관 · 선택형 놀이','작은 황동 종',
+  '<p class="modal-description">탁자 위에 크기가 다른 종 네 개가 달려 있다. 옆에 구겨진 작은 악보가 펼쳐져 있다.</p>'+
+  '<div class="bell-sheet"><small>낡은 악보 · 연주 기록</small><div class="bell-score">'+bellScore.map(n=>'<span>'+n+'</span>').join('')+'</div></div>'+
+  '<div class="bell-keys" role="group" aria-label="네 개의 종을 눌러 연주할 수 있습니다">'+buttons+'</div>'+
+  '<div class="bell-progress" aria-live="polite">'+(g.bellInput.map(n=>'<span>'+n+'</span>').join('')||'<span class="bell-idle">종의 맑은 울림을 들어 볼 수 있다.</span>')+'</div>',
+  [['연주를 처음부터','bell-reset'],['돌아가기','close',true]]);
+}
+function bellNote(index){
+ const symbols=Object.keys(bellVoices);
+ if(!Number.isInteger(index)||index<0||index>=symbols.length||g.sideGames?.bell)return;
+ const symbol=symbols[index];bellTone(symbol);
+ g.bellInput??=[];g.bellInput.push(symbol);
+ if(g.bellInput.length>=4){
+  if(g.bellInput.join('|')===bellScore.join('|')){
+   g.sideGames??={};g.sideGames.bell=true;
+   g.ambientFlags??={};g.ambientFlags.bellPlayed=true;
+   $('catDialog').textContent='이 소리… 나도 따라 부를 수 있을 것 같아. 야옹!';
+   save();return foyerBell();
+  }
+  g.bellInput=[];notify('종소리가 짧게 흩어졌다. 다시 연주할 수 있다.');
+ }
+ save();foyerBell();
+}
+function bellReset(){
+ g.bellInput=[];if(g.sideGames)g.sideGames.bell=false;save();foyerBell();
+}
+function sconceTouch(){
+ g.ambientFlags??={};
+ const first=!g.ambientFlags.sconceHeat;
+ if(first){g.ambientFlags.sconceHeat=true;g.elapsedCarry+=10;tick();}
+ tone('bad');
+ $('catDialog').textContent='아이쿠! 불꽃에 손을 너무 가까이 댔잖아. 조심해!';
+ save();
+ modal('저택 · 작은 사고','아이쿠, 너무 뜨거워요!',
+  '<div class="ambient-warmth"><span aria-hidden="true">♨</span><p>깜짝 놀라 손을 뺐다. 다친 곳은 없지만 손끝이 잠깐 화끈거린다.</p>'+
+  '<small>미로가 눈을 동그랗게 뜨고 쳐다본다.</small></div>'+
+  (first?'<div class="ambient-time-note">탐험 시간 +10초</div>':'<p class="puzzle-helper">전에 만져 봤던 등잔이다.</p>'),
+  [['등잔 다시 보기','ambient-open-foyer-sconce',true],['돌아가기','close']]);
+}
+
 const hotspots={
- foyer:[{id:'invitation',x:27,y:40,name:'현관의 초대장',icon:'✉'},{id:'catbed',x:20,y:70,name:'고양이 침대',icon:'♧'},{id:'rug',x:47,y:83,name:'오래된 양탄자',icon:'⌕',ok:()=>done('rug')},{id:'cabinet',x:76,y:72,name:'황동 수납장',icon:'▣',ok:()=>done('foot')},{id:'crescent',x:54,y:35,name:'반쪽 달 장식',icon:'☾',ok:()=>done('mirror')},{id:'study',x:14,y:54,name:'서재 문',icon:'⌑'},{id:'cat',x:84,y:76,name:'미로',icon:'♣'}],
+ foyer:[{id:'invitation',x:27,y:40,name:'현관의 초대장',icon:'✉'},{id:'catbed',x:20,y:70,name:'고양이 침대',icon:'♧'},{id:'rug',x:47,y:83,name:'오래된 양탄자',icon:'⌕',ok:()=>done('rug')},{id:'cabinet',x:76,y:72,name:'황동 수납장',icon:'▣',ok:()=>done('foot')},{id:'crescent',x:54,y:35,name:'반쪽 달 장식',icon:'☾',ok:()=>done('mirror')},{id:'foyer-bell',x:80,y:55,name:'탁자 위 작은 종',icon:'♫'},{id:'study',x:14,y:54,name:'서재 문',icon:'⌑'},{id:'cat',x:84,y:76,name:'미로',icon:'♣'}],
  study:[{id:'books',x:24,y:42,name:'계절 책장',icon:'▤',ok:()=>done('books')},{id:'portrait',x:47,y:30,name:'루나의 초상화',icon:'▧',ok:()=>has('film')},{id:'piano',x:74,y:77,name:'자동연주 피아노',icon:'♫',ok:()=>done('piano')},{id:'desk',x:38,y:78,name:'잠긴 서랍과 유리판',icon:'⌗',ok:()=>done('film')},{id:'greenhouse',x:91,y:56,name:'온실 문',icon:'⌑'},{id:'cat',x:79,y:57,name:'미로',icon:'♣'}],
  greenhouse:[{id:'record',x:21,y:30,name:'정원 재배 기록',icon:'▤'},{id:'water',x:25,y:73,name:'네 개의 급수관',icon:'◉',ok:()=>done('water')},{id:'beam',x:64,y:38,name:'채광과 반사 장치',icon:'◐',ok:()=>done('light')},{id:'flower',x:53,y:64,name:'달빛꽃',icon:'❀',ok:()=>done('light')},{id:'shutter',x:86,y:25,name:'채광창 손잡이',icon:'☾'},{id:'pot',x:76,y:75,name:'오래된 유리 화분',icon:'⌕',ok:()=>has('collar')},{id:'tower',x:91,y:56,name:'시계탑 입구',icon:'⌑'}],
  tower:[{id:'pedestal',x:23,y:75,name:'세 인장의 제단',icon:'❖'},{id:'clock',x:50,y:36,name:'거대한 시계',icon:'◷',ok:()=>done('clock')},{id:'keeper',x:19,y:33,name:'시계 관리 기록',icon:'▤'},{id:'pin',x:78,y:81,name:'붉은 고정쇠',icon:'⌁',ok:()=>done('pin')},{id:'portal',x:84,y:54,name:'마지막 문',icon:'✦',ok:()=>done('pin')},{id:'hall',x:94,y:87,name:'돌아가는 계단',icon:'⌑'}]
@@ -226,6 +296,7 @@ for(const [room,objects] of Object.entries(ambientScenes)){
 }
 function inspect(id){if(g.ending){ending(g.ending);return}if(Object.hasOwn(ambientLookup,id))return ambientInspect(id);switch(id){
  case 'cat':talk();break;
+ case 'foyer-bell':foyerBell();break;
  case 'invitation':clue('invitation');article('발신인 없는 초대장','달빛 저택으로 와 주세요.\n멈춘 시계가 다시 움직이기 전에 사라진 기억을 찾아주세요.\n\n서명은 비어 있다. 오래된 우편 장치의 금속 자국만 남아 있다.');break;
  case 'catbed':article('미로의 작은 침대','침대 아래에는 작은 고양이 발자국이 새겨져 있다. 옆 바닥에서 희미한 발자국이 양탄자 속으로 이어지는 것 같다.');break;
  case 'rug':rug();break;
@@ -652,7 +723,7 @@ function hintMore(id){
 }
 function talk(){let lines={foyer:['이 집에는 출입문이 너무 많아. 하지만 난 양탄자가 좋아.','수납장에서는 뭔가 반짝이는 냄새가 나.'],study:['루나는 책등의 무늬로 비밀 이야기를 만들었지.','저 책 중 하나는 내가 혼자 꽂아 둔 거야. 어디더라?'],greenhouse:['난 예전에 여기서 발이 늘 젖었어.','꽃가루가 털에 묻으면 루나가 날 안아 줬지.'],tower:['열두 번의 종소리는 늘 무서웠어.','나는 왜 자꾸 누군가를 기다리는 것 같지?']};let a=lines[g.room];$('catDialog').textContent=a[(catTurns++)%a.length];tone()}
 function menu(){modal('PAUSE','탐험 메뉴',`<p class="modal-description">진행 내용은 자동 저장됩니다. 탐험 시간(추가 조사 시간 포함): ${pretty(elapsed())}</p>`,[['계속 탐험','close',true],['시작 화면','home']])}
-function handle(action){if(action.startsWith('ambient-next-'))return ambientNext(action.slice(13));if(action==='close')return hide();if(action==='home')return home();if(action==='really-new')return begin();if(action==='new-confirm')return modal('NEW GAME','처음부터 시작할까요?',`<p class="modal-description">이번 버전의 진행 데이터가 초기화됩니다.</p>`,[['취소','close'],['새로 시작','really-new',true]]);
+function handle(action){if(action==='sconce-touch')return sconceTouch();if(action.startsWith('ambient-open-'))return ambientInspect(action.slice(13));if(action==='bell-reset')return bellReset();if(action.startsWith('bell-note-'))return bellNote(Number(action.slice(10)));if(action.startsWith('ambient-next-'))return ambientNext(action.slice(13));if(action==='close')return hide();if(action==='home')return home();if(action==='really-new')return begin();if(action==='new-confirm')return modal('NEW GAME','처음부터 시작할까요?',`<p class="modal-description">이번 버전의 진행 데이터가 초기화됩니다.</p>`,[['취소','close'],['새로 시작','really-new',true]]);
 if(action==='pollen-rub'){if(done('light')&&g.flags.curtain){g.flags.blackout=true;clue('powder');save();return modal('GREENHOUSE · 관찰','희미한 발자국',`<p class="modal-description">은빛 가루를 쓸어내자 작고 둥근 발자국들이 선명해진다. 발자국은 꽃줄기 뒤편의 오래된 유리 용기 부근에서 끊겨 있다.</p>`,[['돌아가기','close',true]])}return}if(action.startsWith('step-'))return step(action.slice(5));if(action==='rug-pocket'){if(!has('photo'))item('photo');return modal('FOUND','오래된 사진',`<div class="collect-visual">▧</div><div class="letter">어린 미로와 루나가 함께 찍혀 있다.\n\n「우린 언제나 함께야」</div>`)}
 if(action.startsWith('mirror-turn-'))return mirrorTurn(action.slice(12));if(action==='mirror-switch')return mirrorSwitch();
 if(action.startsWith('flip-')){let name=action.slice(5);if(Object.hasOwn(moonBooks,name)){g.booksFlipped??={};g.booksFlipped[name]=!g.booksFlipped[name];save();return books()}}
