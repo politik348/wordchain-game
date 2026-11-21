@@ -443,8 +443,8 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
  border-color:#f3d6ce;box-shadow:0 8px 20px #7c3e2210;
 }
 .cat-hub-page .cat-choice-illustration{
- position:relative;display:block;width:100%;aspect-ratio:320/146;
- background-image:url('/assets/cat-challenge-scenes-v1.avif');
+ position:relative;display:block;width:100%;aspect-ratio:512/360;
+ background-image:url('/assets/cat-challenge-highres-v2.avif?v=2');
  background-size:300% 200%;background-repeat:no-repeat;
  border-radius:17px;flex:none;overflow:hidden;background-color:#fff0e9;
 }
@@ -470,4 +470,38 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
 @media(prefers-reduced-motion:reduce){
  .cat-hub-page .cat-choice-card:has(.cat-choice-illustration){transition:none}
  .cat-hub-page .cat-choice-card:has(.cat-choice-illustration):hover .cat-choice-illustration{filter:none}
+}
+
+/* High-definition animal-world artwork for the public game gallery. */
+.game-card-illustrated .game-illust-animal{
+  background-image:url('/assets/general-games-highres-v2.avif?v=2');
+  background-size:300% 200%;
+  background-repeat:no-repeat;
+  background-color:#fff5f3;
+  isolation:isolate;
+}
+.game-card-illustrated .game-illust-animal::before,
+.game-card-illustrated .game-illust-animal::after{content:none}
+.game-card-illustrated .game-animal-gamehell{background-position:0% 0%}
+.game-card-illustrated .game-animal-tetris{background-position:50% 0%}
+.game-card-illustrated .game-animal-logic{background-position:100% 0%}
+.game-card-illustrated .game-animal-rummikub{background-position:0% 100%}
+.game-card-illustrated .game-animal-marble{background-position:50% 100%}
+.game-card-illustrated .game-animal-mafia{background-position:100% 100%}
+.game-card-illustrated .game-illust-animal .art-sticker{
+  background:rgba(255,255,255,.92);
+  box-shadow:0 3px 9px rgba(63,48,75,.12);
+  color:#5d4b65;
+}
+.game-card-illustrated .game-illust-animal{
+  transition:filter .2s ease;
+}
+.game-card-illustrated:hover .game-illust-animal{
+  filter:saturate(1.08) contrast(1.02);
+}
+@media(max-width:480px){
+  .game-card-illustrated .game-illust-animal{height:145px}
+}
+@media(prefers-reduced-motion:reduce){
+  .game-card-illustrated .game-illust-animal{transition:none}
 }
