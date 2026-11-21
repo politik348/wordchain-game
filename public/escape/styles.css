@@ -471,39 +471,69 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 @media(prefers-reduced-motion:reduce){.pollen-tracks span,.pendulum-released .pendulum-rod,.pendulum-released .pendulum-weight{animation:none;}}
 
 
-/* EP01 ambient exploration: useful clues and ordinary props share the same soft light. */
-/* Never use correctness/solved state to assign an exclusive beacon. */
-.scene-3d .hotspot:not(.revealed)::before,
-#sceneCanvas.storybook-ready .hotspot:not(.revealed)::before{
- width:6px;height:6px;opacity:.48;
- transform:translate(-50%,-50%) scale(1);
- background:#fff0d0;
- box-shadow:0 0 6px 3px #ffe4a765,0 0 17px 7px #f6d6a130;
- transition:opacity .22s,box-shadow .22s;
+/* EP01 invisible interactive objects — ordinary props and puzzle clues look identical.
+   No persistent dots, circles, glowing pins or border rings. Accessible hit areas remain. */
+#sceneCanvas .hotspot{
+  display:grid;place-items:center;position:absolute;
+  width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;
+  padding:0!important;border:0!important;border-radius:8px!important;
+  background:transparent!important;color:transparent!important;
+  box-shadow:none!important;animation:none!important;
+  opacity:1!important;visibility:visible;cursor:pointer;
+  transform:translate(-50%,-50%)!important;touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
 }
-.scene-3d .hotspot:hover::before,
-.scene-3d .hotspot:focus-visible::before,
-#sceneCanvas.storybook-ready .hotspot:hover::before,
-#sceneCanvas.storybook-ready .hotspot:focus-visible::before{
- opacity:.95;box-shadow:0 0 8px 5px #f9daaaa2,0 0 19px 10px #fce9af75;
+#sceneCanvas .hotspot.done,
+#sceneCanvas .hotspot.near,
+#sceneCanvas .hotspot:hover,
+#sceneCanvas .hotspot:focus-visible{
+  background:transparent!important;box-shadow:none!important;
+  transform:translate(-50%,-50%)!important;
 }
-.scene-3d .hotspot.done:not(.revealed)::before,
-#sceneCanvas.storybook-ready .hotspot.done:not(.revealed)::before{
- background:#fff0d0;box-shadow:0 0 6px 3px #ffe4a765,0 0 17px 7px #f6d6a130;
+/* Earlier pseudo-elements included a permanently visible 6px disc and an outer halo.
+   Fully disable them for both completed and unfinished props. */
+#sceneCanvas .hotspot::before,
+#sceneCanvas .hotspot::after{
+  content:none!important;display:none!important;opacity:0!important;
+  background:none!important;border:0!important;
+  box-shadow:none!important;animation:none!important;
 }
-.scene-3d .hotspot:not(.revealed)::after,
-#sceneCanvas.storybook-ready .hotspot:not(.revealed)::after{
- content:"";position:absolute;inset:17px;border-radius:50%;
- border:1px solid #ffebbf69;box-shadow:0 0 6px #f3daaf40;
- pointer-events:none;opacity:.45;
+/* Feedback happens only during intentional hover, keyboard focus or the Discover action. */
+#sceneCanvas .hotspot:is(:hover,:focus-visible,.revealed)::before{
+  content:""!important;display:block!important;opacity:.8!important;
+  position:absolute;inset:0;pointer-events:none;border:0!important;border-radius:8px!important;
+  background:radial-gradient(ellipse at center,#f9e6b54d 0%,#efdc9f18 48%,transparent 80%)!important;
+  box-shadow:none!important;animation:none!important;
 }
-.scene-3d .hotspot:hover:not(.revealed)::after,
-.scene-3d .hotspot:focus-visible:not(.revealed)::after,
-#sceneCanvas.storybook-ready .hotspot:hover:not(.revealed)::after,
-#sceneCanvas.storybook-ready .hotspot:focus-visible:not(.revealed)::after{opacity:.9;}
-/* The targets remain generously clickable; only the subtle pin is visible when idle. */
-.scene-3d .hotspot,
-#sceneCanvas.storybook-ready .hotspot{min-width:44px;min-height:44px;touch-action:manipulation;}
+#sceneCanvas .hotspot:focus-visible{
+  outline:2px solid #f7dba1!important;outline-offset:3px!important;
+}
+#sceneCanvas .hotspot:not(:focus-visible){outline:0!important;}
+#sceneCanvas .hotspot span{
+  opacity:0!important;visibility:hidden!important;pointer-events:none!important;
+  transition:opacity .16s ease,transform .16s ease!important;
+}
+#sceneCanvas .hotspot:is(:hover,:focus-visible,.revealed) span{
+  opacity:1!important;visibility:visible!important;
+  transform:translateX(-50%) translateY(0)!important;
+}
+/* A single brief soft emphasis from Explore, without a circular ripple. */
+@keyframes ambientExploreReveal{
+  0%{filter:brightness(.75)}28%{filter:brightness(1.35)}100%{filter:brightness(1)}
+}
+#sceneCanvas .hotspot.revealed::before{
+  animation:ambientExploreReveal 1.3s ease-out both!important;
+}
+@media (max-width:600px), (pointer:coarse){
+  #sceneCanvas .hotspot{
+    width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  #sceneCanvas .hotspot.revealed::before{animation:none!important;}
+  #sceneCanvas .hotspot span{transition:none!important;}
+}
+
 .ambient-description{
  position:relative;background:linear-gradient(145deg,#efe2cc,#dcc7ab);
  color:#4a3a35;padding:25px 22px;margin:16px auto 10px;
@@ -520,5 +550,4 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 }
 @media(max-width:530px){
  .ambient-description{padding:18px 15px;font-size:13px;line-height:1.85;}
- .scene-3d .hotspot,#sceneCanvas.storybook-ready .hotspot{min-width:44px;min-height:44px;}
 }
