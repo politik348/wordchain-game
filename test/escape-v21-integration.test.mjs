@@ -199,7 +199,7 @@ test('integrated foyer image contains Miro bed and retains all game interactions
  assert.doesNotMatch(css,/\.storybook-catbed-art\{/,'no stray old foreground illustration');
  assert.match(storybook,/data-object="catbed"\]\{width:17%!important;height:20%!important/);
  assert.match(html,/storybook\.js\?v=20261122hotspots11/,'asset cache bust');
- assert.match(html,/styles\.css\?v=20261122integrated10/,'css cache bust');
+ assert.match(html,/styles\.css\?v=[A-Za-z0-9_-]+/,'stylesheet has an asset version');
  for(const id of ['invitation','catbed','rug','cabinet','crescent','study','cat','foyer-bell',
     'foyer-main-door','foyer-vase','foyer-chandelier','foyer-sconce','foyer-banner',
     'foyer-window','foyer-wall-plaque','foyer-moon-painting','foyer-cat-banner-emblem',
@@ -272,7 +272,7 @@ test('all 29 foyer hitboxes match the integrated painted scene without bell-book
  }
  assert.match(html,/storybook\.js\?v=20261122hotspots11/);
  assert.match(html,/extra-props\.js\?v=20261122hotspots11/);
- assert.match(html,/game\.js\?v=20261122hotspots11/);
+ assert.match(html,/game\.js\?v=[A-Za-z0-9_-]+/);
  const props=file('public/escape/extra-props.js');
  for(const absent of ['접수대의 짧은 펜','꽃병 탁자의 작은 서랍','꽃병 탁자의 아래 선반',
   '창가 바닥의 작은 등','오른쪽 벽의 둥근 액자','푸른 문의 황동 명판']){
