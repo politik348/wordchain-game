@@ -632,7 +632,26 @@ function flowerPattern(){
   [['다른 곳 둘러보기','close',true]]);
 }
 
-function rug(){g.flags.rug=true;clue('track');modal('현관 홀 · 조사','들춰진 양탄자',`<p class="modal-description">먼지 속 작은 발자국이 이어진다. 타일 중간에는 방향이 다른 커다란 신발 자국도 섞여 있다.</p><div class="trail-grid">${Array.from({length:16},(_,i)=>{let p={0:'침대',1:'🐾',5:'🐾',6:'🐾',10:'종'};return `<div class="trail-cell ${[0,1,5,6,10].includes(i)?'pawmark':''}">${p[i]||([2,9,14].includes(i)?'⌑':'·')}</div>`}).join('')}</div><div class="investigation-actions"><button data-action="rug-pocket">${has('photo')?'살펴본 안감 다시 보기':'접힌 안감도 조사한다 · +10초'}</button></div><p class="puzzle-helper">발자국의 시작과 끝에 작은 상징이 있다. 큰 신발 자국은 오래된 흙자국처럼 보인다.</p>`);save()}
+function rug(){
+ g.flags.rug=true;clue('track');
+ const pawTiles=new Set([1,5,6]);
+ const shoeTiles=new Set([2,9,14]);
+ const pawPrints='<span class="trail-paw trail-paw-one" aria-hidden="true">🐾</span><span class="trail-paw trail-paw-two" aria-hidden="true">🐾</span>';
+ const shoeSole='<svg class="trail-shoe" role="img" aria-label="낡은 신발 밑창 자국" viewBox="0 0 30 48"><path class="trail-shoe-fill" d="M12 2 C4 5 3 14 5 23 L8 40 Q9 47 16 46 Q24 46 24 39 L26 21 Q28 9 20 3 Z"/><path class="trail-shoe-tread" d="M7 15 L25 13 M7 22 L25 21 M10 30 L23 30 M10 37 L22 37"/></svg>';
+ const tiles=Array.from({length:16},(_,i)=>{
+  const anchor=i===0||i===10;
+  const label=i===0?'침대':i===10?'종':null;
+  const content=label?'<span class="trail-landmark">'+label+'</span>':pawTiles.has(i)?pawPrints:shoeTiles.has(i)?shoeSole:'·';
+  const cellLabel=label|| (pawTiles.has(i)?'작은 고양이 발자국 여러 개':shoeTiles.has(i)?'커다란 신발 자국':'빈 타일');
+  return '<div class="trail-cell'+(anchor?' trail-anchor':'')+'" aria-label="'+cellLabel+'">'+content+'</div>';
+ }).join('');
+ modal('현관 홀 · 조사','들춰진 양탄자',
+  '<p class="modal-description">먼지를 털어내자 작은 발자국이 여러 쌍 드러난다. 그 사이로 크고 투박한 밑창 자국도 보인다.</p>'+
+  '<div class="trail-grid">'+tiles+'</div>'+
+  '<div class="investigation-actions"><button data-action="rug-pocket">'+(has('photo')?'살펴본 안감 다시 보기':'접힌 안감도 조사한다 · +10초')+'</button></div>'+
+  '<p class="puzzle-helper">발자국과 밑창 자국은 크기와 눌린 깊이가 다르다. 타일 가장자리에도 희미한 흔적이 남아 있다.</p>');
+ save();
+}
 function foot(){g.activePuzzle='foot';if(done('foot')){article('열린 수납장','방향 자물쇠는 이미 풀려 있다.');return}modal('ROOM 01 · 퍼즐 1','네 번의 걸음',`<p class="modal-description">수납장 손잡이에 고양이 발자국과 네 방향의 작은 홈이 있다. 네 칸의 표시등은 아직 꺼져 있다.</p><div class="direction-pad">${[['↑','up'],['←','left'],['↓','down'],['→','right']].map(([t,v])=>`<button data-action="step-${v}" aria-label="${v}">${t}</button>`).join('')}</div><div class="puzzle-counter">${'●'.repeat(g.footInput.length)}${'○'.repeat(4-g.footInput.length)}</div><p class="puzzle-helper">현관의 다른 부분도 살펴볼 수 있다.</p>`)}
 function step(v){if(done('foot'))return;let code={right:'R',left:'L',up:'U',down:'D'}[v];g.footInput+=code;tone();if(g.footInput.length===4){if(g.footInput==='RDRD'){g.flags.foot=true;g.activePuzzle='mirror';notify('수납장의 방향 자물쇠가 풀렸다!');tone('gain');render();modal('PUZZLE SOLVED','열리는 수납장',`<div class="collect-visual">⌑</div><p class="modal-description">철컥, 수납장의 걸쇠가 풀렸다. 수납장 안을 직접 조사해 보세요.</p>`);return}g.footInput='';error('걸쇠가 원래 위치로 돌아갔다.')}foot();save()}
 
