@@ -1,5 +1,5 @@
 import {renderPregame} from '../pregame-lobbies.mjs?v=20261120marbleSetup1';
-import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,upgradeCost,maxBuildLevel,propertyValue,countMonopolies,tourismComplete,olympicCost,LEVEL_NAMES,BAIL_COST,BANK_LOAN,BANK_REPAY,winnerRanking} from './engine.mjs?v=20261120marbleAI1';
+import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,upgradeCost,maxBuildLevel,propertyValue,saleValue,countMonopolies,tourismComplete,olympicCost,LEVEL_NAMES,BAIL_COST,BANK_LOAN,BANK_REPAY,winnerRanking} from './engine.mjs?v=20261122assets1';
 const root=document.querySelector('#mmApp');
 const toastZone=document.querySelector('#mmToast');
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -33,7 +33,7 @@ let mode=catChallenge?'ai':'local',gameMode='normal',rounds=12,people=2,seconds=
 let aiDifficulty=['beginner','intermediate','advanced'].includes(localStorage.getItem('moyeo-marble-ai-difficulty'))?localStorage.getItem('moyeo-marble-ai-difficulty'):'beginner';
 let tutorialOn=localStorage.getItem('moyeo-marble-tutorial')!=='off';
 const roundsForGame=()=>gameMode==='endless'?0:rounds;
-let localGame=null,onlineRoom=null,stream=null,inFlight=false,aiTimer=null,showResult=false;
+let localGame=null,onlineRoom=null,stream=null,inFlight=false,aiTimer=null,showResult=false,sellPanelOpen=false,introActive=false,introTimer=null;
 let lastDice=null,turnHint='';
 let scene=null,sceneTimer=null,sceneQueue=[],seenActionSeq=0,inspectedCity=null;
 let effectsOn=localStorage.getItem('moyeo-marble-effects')!=='off';
@@ -206,8 +206,46 @@ function marbleCatResult(s){
   actions:button('rematch','↻ 다시 대결하기','mm-primary')+button('leave','다른 게임 선택','mm-secondary')
  });
 }
+function saleChoices(s,p){
+ const owned=Object.entries(s.properties).filter(([idx,v])=>v.owner===p.id).map(([idx,v])=>({i:Number(idx),v}));
+ if(!owned.length)return '<p class="mm-helper">매각할 부동산이 없습니다.</p>';
+ return '<div class="mm-sale-grid">'+owned.map(({i,v})=>{
+  const t=TILES[i],cash=saleValue(s,i);
+  return '<button type="button" class="mm-sale-option" data-action="sellProperty" data-index="'+i+'" '+(inFlight||!!scene?'disabled':'')+'>'+
+   '<span class="mm-sale-name">'+t.emoji+' '+escapeHTML(t.name)+' <small>'+escapeHTML(LEVEL_NAMES[v.level]||'토지')+'</small></span>'+
+   '<span class="mm-sale-price">매각 +'+formatM(cash)+'</span></button>';
+ }).join('')+'</div>';
+}
+function marbleIntroMarkup(){
+ return '<div class="mm-intro-overlay" role="dialog" aria-modal="true" aria-label="모여마블 게임 시작 연출">'+
+  '<div class="mm-intro-card"><div class="mm-intro-sparkles" aria-hidden="true">✦ ✧ ✦</div>'+
+  '<span class="mm-intro-kicker">MOYEO MARBLE · LET THE GAME BEGIN</span>'+
+  '<div class="mm-intro-city" aria-hidden="true"><span>🏠</span><span>🏙️</span><span>🏰</span></div>'+
+  '<h2>도시의 주인이 되어 볼까요?</h2><p>주사위를 굴리고 도시를 모으세요!</p>'+
+  '<div class="mm-intro-pawns" aria-hidden="true"><span>🐰</span><span>🐱</span><span>🐻</span><span>🦊</span></div>'+
+  '<div class="mm-intro-progress" aria-hidden="true"><span></span></div>'+
+  '<button type="button" data-action="skipIntro" class="mm-intro-skip">바로 시작하기 →</button></div></div>';
+}
+function finishMarbleIntro(){
+ clearTimeout(introTimer);introTimer=null;
+ if(!introActive)return;
+ introActive=false;render();queueCat();
+}
+function beginMarbleIntro(){
+ clearTimeout(introTimer);introActive=true;sellPanelOpen=false;
+ introTimer=setTimeout(finishMarbleIntro,reducedMotion||!effectsOn?700:2700);
+}
 function actionPanel(s){
  const p=current(s),yourTurn=(onlineRoom?p.id===SID:!p.ai)&&!scene;
+ if(s.phase==='liquidation'){
+  const debt=s.pending||{},difference=Math.max(0,(debt.amount||0)-p.cash);
+  const total=Object.entries(s.properties).filter(([i,v])=>v.owner===p.id).reduce((sum,[i])=>sum+saleValue(s,Number(i)),0);
+  return '<div class="mm-liquidation"><span class="mm-eyebrow">EMERGENCY · 자산 매각</span><h2>결제 자금이 부족해요!</h2>'+
+   '<p>납부할 금액 <b>'+formatM(debt.amount||0)+'</b> · 현금 <b>'+formatM(p.cash)+'</b> · 부족 <b>'+formatM(difference)+'</b></p>'+
+   '<p>어떤 부동산을 팔지 직접 선택하세요. 매각액은 현재 부동산 가치의 70%입니다. 필요한 금액이 모이면 결제가 자동으로 완료됩니다.'+
+   (total<difference?' 보유 부동산을 모두 팔아도 부족하면 파산합니다.':'')+'</p>'+
+   saleChoices(s,p)+'</div>';
+ }
  if(s.phase==='finished'){
   const ranking=winnerRanking(s),winner=s.players.find(x=>x.id===s.winner);
   if(catChallenge&&window.MoyeoCatResult?.render){
@@ -250,9 +288,15 @@ function actionPanel(s){
 }
 function sidePanel(s){
  const p=current(s),endless=s.maxRounds===0,turns=endless?0:s.maxRounds*s.players.length;
+ const canSell=s.phase!=='finished'&&s.phase!=='liquidation'&&(!onlineRoom||p.id===SID)&&!p.ai&&Object.values(s.properties).some(v=>v.owner===p.id);
+ const salePanel=canSell?'<section class="mm-card mm-sell-panel"><h2 class="mm-card-title">💵 내 부동산</h2>'+
+  '<p class="mm-helper">현금이 필요할 때 원하는 도시를 직접 매각할 수 있어요. 매각가: 부동산 가치의 70%</p>'+
+  button('toggleSellPanel',sellPanelOpen?'매각 목록 접기':'매각할 도시 선택','mm-neutral',inFlight||!!scene)+
+  (sellPanelOpen?saleChoices(s,p):'')+'</section>':'';
+
  const showTimers=onlineRoom && s.phase!=='finished';
  return `<aside class="mm-sidebar"><section class="mm-card"><h2 class="mm-card-title">참가자 <small>${s.players.length}명</small></h2>${s.players.map((x,i)=>`<div class="mm-player ${p.id===x.id&&s.phase!=='finished'?'current':''} ${x.bankrupt?'bankrupt':''}"><span class="mm-avatar" style="--pcolor:${paint[i]}">${characterArt(i)}</span><div class="mm-player-info"><strong>${escapeHTML(x.name)}${x.ai?' · AI':''}</strong><small>부동산 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개 · 컬러 ${countMonopolies(s,x.id)}세트 · 🪽${x.angel||0} 🎟️${x.discountCards||0}${x.bankDebt?` · 빚 ${formatM(x.bankDebt)}`:''}</small></div><span class="mm-money">${formatM(x.cash)}<small><br>자산 ${formatM(netWorth(s,x.id))}</small></span></div>`).join('')}${endless?`<div class="mm-endless-progress">♾️ 파산까지 계속 · ${s.round}라운드 진행 · 생존 ${s.players.filter(x=>!x.bankrupt).length}명</div>`:`<div class="mm-progress"><div class="mm-progress-fill" style="width:${Math.min(100,Math.round(s.turnCount/turns*100))}%"></div></div><div class="mm-progress-label"><span>${s.round} / ${s.maxRounds}라운드</span><span>${Math.min(turns,s.turnCount)}/${turns}턴</span></div>`}${showTimers?`<p style="text-align:center;margin:10px 0 0"><span class="mm-clock" data-clock>⏳ 30초</span></p>`:''}</section>
- ${cityInspector(s)}<section class="mm-card mm-events-card"><h2 class="mm-card-title">📣 행동 기록 <small>고양이가 뭘 했는지 확인!</small></h2><div class="mm-event-list">${(s.events||[]).slice(0,7).map((ev,j)=>`<div class="mm-event ${ev.ai?'is-cat':''} ${j===0?'new':''}" style="--event-color:${ownerColor(s,ev.actor)}"><span class="mm-event-icon">${ownerAvatar(s,ev.actor)}</span><div><strong>${escapeHTML(ev.message)}</strong>${ev.moneyChanges.length?`<small>${ev.moneyChanges.map(m=>`${escapeHTML(m.name)} ${fmtDelta(m.delta)}`).join(' · ')}</small>`:''}${ev.thought?`<small class="mm-event-thought">💭 ${escapeHTML(ev.thought)}</small>`:''}</div></div>`).join('')||'<p class="mm-helper">첫 행동을 기다리고 있어요.</p>'}</div><details class="mm-raw-history"><summary>전체 세부 기록 보기</summary><div class="mm-log-list">${s.log.slice(0,24).map(e=>`<div class="mm-log">${escapeHTML(e.text)}</div>`).join('')}</div></details></section>
+ ${salePanel}${cityInspector(s)}<section class="mm-card mm-events-card"><h2 class="mm-card-title">📣 행동 기록 <small>고양이가 뭘 했는지 확인!</small></h2><div class="mm-event-list">${(s.events||[]).slice(0,7).map((ev,j)=>`<div class="mm-event ${ev.ai?'is-cat':''} ${j===0?'new':''}" style="--event-color:${ownerColor(s,ev.actor)}"><span class="mm-event-icon">${ownerAvatar(s,ev.actor)}</span><div><strong>${escapeHTML(ev.message)}</strong>${ev.moneyChanges.length?`<small>${ev.moneyChanges.map(m=>`${escapeHTML(m.name)} ${fmtDelta(m.delta)}`).join(' · ')}</small>`:''}${ev.thought?`<small class="mm-event-thought">💭 ${escapeHTML(ev.thought)}</small>`:''}</div></div>`).join('')||'<p class="mm-helper">첫 행동을 기다리고 있어요.</p>'}</div><details class="mm-raw-history"><summary>전체 세부 기록 보기</summary><div class="mm-log-list">${s.log.slice(0,24).map(e=>`<div class="mm-log">${escapeHTML(e.text)}</div>`).join('')}</div></details></section>
  ${tutorialOn?`<section class="mm-card mm-tutorial-game"><h2 class="mm-card-title">💡 초보자 도움말</h2><p>① 주사위를 굴려 도시를 찾아가요.</p><p>② 도시는 현금이 부족해지지 않게 구매·건설하세요.</p><p>③ 다른 플레이어의 도시에 도착하면 통행료를 지불해요.</p><p>④ 시작 화면에서 도움말을 끌 수 있어요.</p></section>`:''}<section class="mm-card"><h2 class="mm-card-title">✨ 승리 팁</h2><div class="mm-helper">${s.maxRounds===0?'♾️ 무한모드는 독점해도 승리하지 않아요. 마지막 한 명만 남으면 끝!':'컬러 독점 2배 · 관광지 둘 다 소유하면 즉시 승리!<br>컬러 3세트 또는 한 면의 도시를 모두 소유해도 승리합니다.'}<br>랜드마크와 관광지는 인수 불가. 무인도는 더블/보석금으로 탈출!</div>${onlineRoom?`<div style="margin-top:12px">${button('copyInvite','🔗 방 링크 복사','mm-neutral')}</div>`:''}</section></aside>`;
 }
 function renderGame(s){
@@ -268,6 +312,7 @@ function render(){
  root.dataset.effects=effectsOn?'on':'off';
  const s=getState();if(s)consumeEvents(s);
  if(onlineRoom){if(!onlineRoom.state)renderWaiting();else renderGame(onlineRoom.state);}else if(localGame)renderGame(localGame);else renderLobby();
+ if(introActive&&s&&s.phase!=='finished')root.insertAdjacentHTML('beforeend',marbleIntroMarkup());
  updateClock();
  const showCatResult=catChallenge&&mode==='ai'&&s?.phase==='finished'&&!s.catResultDismissed&&window.MoyeoCatResult?.overlay;
  if(showCatResult){
@@ -317,8 +362,8 @@ function persistNick(){const input=document.querySelector('#mmNick');if(input){n
 async function startLocal(){if(mode==='local'&&!(await ensureMember()))return;if(mode==='ai')persistNick();const players=[{id:SID,name:nick}];
  if(mode==='ai')players.push({id:'moyeo-cat',name:'고양이',ai:true});
  else for(let i=1;i<people;i++)players.push({id:`local-${i}`,name:`플레이어 ${i+1}`});
- resetScenes();inspectedCity=null;localGame=createGame({players,maxRounds:roundsForGame()});onlineRoom=null;lastDice=null;render();queueCat();}
-function queueCat(){clearTimeout(aiTimer);if(onlineRoom||!localGame||localGame.phase==='finished')return;
+ resetScenes();inspectedCity=null;localGame=createGame({players,maxRounds:roundsForGame()});onlineRoom=null;lastDice=null;beginMarbleIntro();render();queueCat();}
+function queueCat(){clearTimeout(aiTimer);if(introActive||onlineRoom||!localGame||localGame.phase==='finished')return;
  const p=current(localGame);if(!p.ai||scene||sceneQueue.length)return;
  aiTimer=setTimeout(()=>{if(!localGame||!current(localGame).ai)return;const action=chooseCatAction(localGame,aiDifficulty);if(action)executeAction(action.type,action.payload||{},catThought(localGame,action));},effectsOn&&!reducedMotion?520:120);
 }
@@ -332,7 +377,13 @@ function executeAction(type,payload={},thought=''){
 }
 async function post(url,data){const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const json=await res.json();if(!res.ok)throw Error(json.error||'요청 실패');return json;}
 async function get(url){const res=await fetch(url);const json=await res.json();if(!res.ok)throw Error(json.error||'요청 실패');return json;}
-function updateOnlineRoom(data){if(onlineRoom?.state && !data.state)resetScenes();onlineRoom=data;clockOffset=data.now-Date.now();lastDice=data.state?.lastRoll||lastDice;render();}
+function updateOnlineRoom(data){
+ const previouslyStarted=Boolean(onlineRoom?.state),nowStarted=Boolean(data.state);
+ if(previouslyStarted&&!nowStarted)resetScenes();
+ onlineRoom=data;clockOffset=data.now-Date.now();lastDice=data.state?.lastRoll||lastDice;
+ if(!previouslyStarted&&nowStarted)beginMarbleIntro();
+ render();
+}
 function connectSSE(roomCode){stream?.close();stream=new EventSource(`/api/marble/rooms/${roomCode}/events?sid=${encodeURIComponent(SID)}`);
  stream.addEventListener('state',e=>{try{const data=JSON.parse(e.data);if(data.code!==onlineRoom?.code)return;updateOnlineRoom(data);}catch(error){console.error('온라인 상태 수신 오류',error);}});
  stream.addEventListener('error',()=>{/* EventSource automatically reconnects. */});
@@ -343,7 +394,7 @@ async function joinOnline(code){if(!(await ensureMember()))return;const id=(code
 async function startOnline(){if(!onlineRoom||inFlight)return;if(!(await ensureMember()))return;inFlight=true;try{const data=await post(`/api/marble/rooms/${onlineRoom.code}/start`,{sid:SID});resetScenes();lastDice=null;updateOnlineRoom(data);}catch(error){toast(error.message);}finally{inFlight=false;}}
 async function leave(){
  if(onlineRoom?.state?.phase!=='finished' && onlineRoom?.state && !window.confirm('온라인 게임에서 나가면 기권 처리됩니다. 나갈까요?'))return;
- clearTimeout(aiTimer);resetScenes();stream?.close();stream=null;
+ clearTimeout(aiTimer);clearTimeout(introTimer);introActive=false;sellPanelOpen=false;resetScenes();stream?.close();stream=null;
  if(onlineRoom){
   try{await post(`/api/marble/rooms/${onlineRoom.code}/leave`,{sid:SID});}catch{}
  }
@@ -388,8 +439,12 @@ root.addEventListener('click',async e=>{
  const land=e.target.closest('[data-land]');if(land){executeAction('travel',{index:Number(land.dataset.land)});return;}
  const inspect=e.target.closest('[data-inspect]');if(inspect){inspectedCity=Number(inspect.dataset.inspect);render();return;}
  const action=e.target.closest('[data-action]')?.dataset.action;if(!action)return;
+ if(action==='skipIntro'){finishMarbleIntro();return;}
+ if(introActive)return;
  switch(action){
  case 'catResultDismiss':{const state=getState();if(state){state.catResultDismissed=true;render();}break;}
+ case 'toggleSellPanel':sellPanelOpen=!sellPanelOpen;render();break;
+ case 'sellProperty':executeAction('sellProperty',{index:Number(e.target.closest('[data-action]').dataset.index)});break;
  case 'marbleBack':location.href=catChallenge?'/?cat=1':'/';break;
  case 'startLocal':startLocal();break;
  case 'createOnline':await createOnline();break;
