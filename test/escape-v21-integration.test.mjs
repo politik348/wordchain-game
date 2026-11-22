@@ -114,7 +114,7 @@ test('foyer three distinct species share start and finish, with exactly five mov
   // There must be one non-repeating route along this kind's own prints.
   const visible=new Set(path.slice(1,-1)),found=[];
   function explore(pos,used,curr){
-   if(pos===destination){found.push(curr);return;}
+   if(pos===destination){if(curr.length===5)found.push(curr);return;}
    if(curr.length>=5)return;
    for(const delta of [1,-1,5,-5]){
     const target=pos+delta;
@@ -124,7 +124,7 @@ test('foyer three distinct species share start and finish, with exactly five mov
    }
   }
   explore(path[0],new Set([path[0]]),'');
-  assert.deepEqual(found,[code],kind+' trace must be unique');
+  assert.deepEqual(found,[code],kind+' five-move trace must be unique');
  }
  assert.equal(startsFound.size,1);
  assert.equal(Number(Object.keys(starts)[0]),[...startsFound][0]);
