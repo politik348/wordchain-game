@@ -38,6 +38,11 @@ export function legalYutMoves(mine,steps){
 }
 export function yutDestination(piece,steps,shortcut=true){
  const {route,at}=pickRoute(piece,shortcut);
+ // House rule: 도 → 빽도 reaches the HOME gateway; another 빽도 finishes.
+ // HOME is distinct from reserve (node 0), so the piece remains playable.
+ if(steps===-1&&piece.backdoHome)return {node:20,route:'outer',index:21,done:true};
+ if(steps===-1&&piece.node===1&&at===1)
+  return {node:20,route:'outer',index:20,done:false,backdoHome:true};
  const nextIndex=at+steps;
  if(nextIndex<0)throw new Error('Invalid backward move');
  const complete=nextIndex>=YUT_ROUTES[route].length;
@@ -64,6 +69,8 @@ export function yutTravelNodes(piece,steps,shortcut=true){
  const {route,at}=pickRoute(piece,shortcut);
  const track=YUT_ROUTES[route];
  if(steps===-1){
+  if(piece.backdoHome)return [20,20];
+  if(piece.node===1&&at===1)return [1,20];
   if(at<1)throw new Error('Invalid backward move');
   return [piece.node,track[at-1]];
  }
