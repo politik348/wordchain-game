@@ -1,4 +1,4 @@
-import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut5';
+import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261122backdo1';
 // Solo cat mode uses the same Yut board, toss queue and path confirmation as multiplayer.
 export function renderSoloYut(s,helpers={}){
  const {timeBar=()=>' ',esc=String,rolling=false,catThrowing=false,power=0,selected=null,chosen=[0],steps=null}=helpers;
@@ -12,6 +12,6 @@ export function renderSoloYut(s,helpers={}){
  const board=renderYutBoard({pieces:s.pieces,me:'player',turn:s.turn,steps:canMove?steps:null,active:!s.finished,action:'soloYutPick',routeAction:'soloYutRoute',selected:canMove?selected:null,lastMove:s.lastMove,labels:{player:'나',ai:'고양이'}});
  const routes=canMove?renderYutRouteChooser(s.pieces.player,steps,selected,'soloYutRoute'):'';
  const history=`<div class="cat-yut-history">${(s.history||[]).slice(-6).reverse().map(h=>`<div>${esc(h)}</div>`).join('')}</div>`;
- const help='<p class="game-note">윷/모는 추가로 모두 던진 다음 이동합니다. 나온 결과를 여러 개 선택하면 합쳐서 움직일 수도 있어요. 말을 누르면 경로가 먼저 보이고, 확정 버튼을 누를 때 이동합니다.</p>';
+ const help='<p class="game-note">윷/모는 추가로 모두 던진 다음 이동합니다. 나온 결과를 여러 개 선택하면 합쳐서 움직일 수도 있어요. 말을 누르면 경로가 먼저 보이고, 확정 버튼을 누를 때 이동합니다. 도에서 빽도로 HOME에 돌아온 말은 빽도를 한 번 더 쓰면 완주합니다.</p>';
  return top+score+message+`<div class="yut-play-layout"><div class="yut-board-column">${board}${routes}${help}</div><aside class="yut-control-column">${throwHtml}${tray}<h4>최근 진행</h4>${history}</aside></div>`;
 }
