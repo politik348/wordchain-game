@@ -299,3 +299,38 @@ test('all 29 foyer hitboxes match the integrated painted scene without bell-book
  new Function(props);
  new Function(game);
 });
+
+test('puzzle 4 cylinder pegs actually rotate and brass fingers press observed keys',()=>{
+ const piano=game.slice(game.indexOf('const rollPegs=[3,0,4,3]'),game.indexOf('// Optional paper-film device'));
+ assert.match(piano,/const pianoPegPositions=offset=>rollPegs\.map\(x=>\(x\+offset\)%6\)/);
+ assert.match(piano,/const pegPositions=pianoPegPositions\(offset\)/);
+ assert.match(piano,/const sequence=pianoPegPositions\(g\.drumOffset\|\|0\)/);
+ assert.match(piano,/const candidate=g\.pianoInput\.join\(','\),correct=pianoPegPositions\(4\)\.join\(','\)/);
+ const positions=Function('rollPegs','offset','return rollPegs.map(x=>(x+offset)%6)');
+ assert.deepEqual(positions([3,0,4,3],4),[1,4,2,1],'original solution stays unchanged');
+ assert.deepEqual(positions([3,0,4,3],1),[4,1,5,4],'dial must physically move the teeth');
+ assert.match(piano,/roll-frame-marks/,'fixed shaft star stays visible');
+ assert.match(piano,/roll-drum-marks/,'engraved cylinder star moves with the dial');
+ assert.match(piano,/i===4\?'frame-star'/);
+ assert.match(piano,/i===offset\?'drum-star'/);
+ assert.match(piano,/data-finger=/);
+ assert.match(piano,/data-roll-row=/);
+ assert.match(piano,/fingerEls\[key\]\.classList\.add\('is-striking'\)/);
+ assert.match(piano,/keys\[key\]\.classList\.add\('mechanically-pressed'\)/);
+ assert.match(piano,/rows\[i\]\.classList\.add\('is-striking'\)/);
+ assert.match(piano,/stepMs=reduceMotion\?750:560/);
+ assert.match(piano,/window\.matchMedia\?\./);
+ assert.match(piano,/status\.setAttribute\('aria-label'/);
+ assert.match(piano,/g\.drumPlayed=true;save\(\)/);
+ assert.match(game,/function hide\(\)\{cancelDrumPlayback\(\)/);
+ assert.match(game,/function modal\([^)]*\)\{cancelDrumPlayback\(\)/);
+ assert.match(game,/if\(action==='piano-reset'\)\{cancelDrumPlayback\(\)/);
+ assert.match(css,/\.piano-keyboard \.piano-keys\{display:grid;grid-template-columns:repeat\(6/);
+ assert.match(css,/\.piano-finger\.is-striking \.piano-finger-rod/);
+ assert.match(css,/\.piano-keyboard \.piano-key\.mechanically-pressed/);
+ assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
+ assert.match(html,/game\.js\?v=20261122piano12/);
+ assert.match(html,/styles\.css\?v=20261122piano12/);
+ assert.doesNotMatch(piano,/손잡이를 감으면 황동 손가락이 [^']*건반을 누르세요/);
+ new Function(game);
+});
