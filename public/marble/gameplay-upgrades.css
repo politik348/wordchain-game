@@ -42,3 +42,5 @@
 @keyframes mmIntroProgress{to{transform:scaleX(0)}}
 @media(max-width:540px){.mm-intro-card{min-height:390px;padding:24px 13px}.mm-sale-grid{grid-template-columns:1fr 1fr}.mm-sale-name{font-size:11px}.mm-sale-option{padding:9px;min-height:75px}.mm-liquidation-amounts{grid-template-columns:1fr 1fr 1fr;gap:5px}.mm-liquidation-amounts span{font-size:10px}.mm-liquidation-dialog{padding:15px}}
 @media(prefers-reduced-motion:reduce){.mm-intro-card,.mm-intro-card:before,.mm-intro-card:after,.mm-intro-city span,.mm-intro-sparkles,.mm-intro-pawns span,.mm-intro-progress span{animation:none!important}}
+
+.mm-liquidation-loan{border-top:1px solid #e4d4df;padding-top:12px;margin-top:15px;text-align:center}.mm-liquidation-loan .mm-btn{width:100%;max-width:430px}
