@@ -215,7 +215,17 @@ function sceneMoment(kind='solved'){
  cinematicTimer=setTimeout(()=>{scene.classList.remove('cinematic-active');cinematicTimer=null},kind==='final-bell'?2200:1100);
 }
 
-function solved(key,text){g.flags[key]=true;g.activePuzzle=key;g.catMood=key==='pin'?'remembering':'happy';$('catDialog').textContent=key==='pin'?'이 장치… 내가 여기 있었던 밤과 이어져 있는 것 같아.':'와! 정말 움직였어. 방 안의 공기가 달라졌어!';tone('gain');render();const focusId=({foot:'cabinet',mirror:'crescent',books:'books',piano:'piano',film:'desk',water:'water',light:'flower',clock:'clock',pin:'pin'})[key];if(focusId)window.MoyeoEscapeCamera?.focusSolvedProp(focusId);sceneMoment(key==='light'?'flower':'solved');modal('PUZZLE SOLVED','장치가 움직이기 시작했다',`<div class="collect-visual">✦</div><p class="modal-description">${text}</p>`)}
+function solved(key,text){
+ g.flags[key]=true;g.activePuzzle=key;
+ g.catMood=key==='pin'?'remembering':'happy';
+ $('catDialog').textContent=key==='pin'?'이 장치… 내가 여기 있었던 밤과 이어져 있는 것 같아.':'와! 정말 움직였어. 방 안의 공기가 달라졌어!';
+ tone('gain');render();save();
+ const focusId=({foot:'cabinet',mirror:'crescent',books:'books',piano:'piano',film:'desk',water:'water',light:'flower',clock:'clock',pin:'pin'})[key];
+ if(focusId)window.MoyeoEscapeCamera?.focusSolvedProp(focusId);
+ sceneMoment(key==='light'?'flower':key==='pin'?'final-bell':'solved');
+ const showResult=()=>modal('PUZZLE SOLVED','장치가 움직이기 시작했다','<div class="collect-visual">✦</div><p class="modal-description">'+text+'</p>');
+ if(!window.MoyeoEscapeCutscenes?.playPuzzle?.({key,onFinish:showResult}))showResult();
+}
 function error(text='아직 맞지 않는 것 같습니다.'){g.errors++;tone('bad');notify(text);save()}
 function objective(){
  if(g.ending)return '저택의 이야기가 끝났다.';
@@ -261,14 +271,29 @@ function render(){if(!g)return;
  let next=rooms[index+1];$('nextRoomBtn').classList.toggle('hidden',!next||!clearRoom(g.room));if(next)$('nextRoomBtn').textContent=`${meta[next][0]}으로 이동 →`;
  if(sceneChanged)$('catAvatar').innerHTML=catSvg();const catCard=document.querySelector('.cat-card');if(catCard)catCard.dataset.mood=g.catMood||'curious';const catMood=document.querySelector('.cat-mood');if(catMood)catMood.textContent=({happy:'✧',remembering:'☾',startled:'!',curious:'✦'})[g.catMood]||'✦';$('sceneCanvas').classList.toggle('tower-awake',g.room==='tower'&&done('pin')&&!!g.ending&&g.ending!=='stay');$('sceneCanvas').classList.toggle('flower-awake',g.room==='greenhouse'&&done('light'));syncMarkerDisplay();save()}
 function tick(){if(g)$('timerDisplay').textContent=pretty(elapsed())}
+let roomTransitionBusy=false;
 function move(r){
+ if(roomTransitionBusy)return;
  if(!canEnter(r)){article('잠긴 문','이전 방의 필수 퍼즐을 마쳐야 합니다.');return;}
- const prior=g.room;g.room=r;g.selected=null;
- if(prior!==r){const panel=$('sceneCanvas');panel.classList.remove('room-entering');void panel.offsetWidth;panel.classList.add('room-entering');}
- if(!g.visited.includes(r)){g.visited.push(r);notify('새 공간 · '+meta[r][0]);tone('gain');sceneMoment('room');}
- const lines={foyer:'저 시계가 왜 멈췄을까?',study:'이 방은 왜 낯설지가 않지?',greenhouse:'이 꽃 향기… 기억날 것 같아.',tower:'저 종소리는 어디에서 들었을까?'};
- $('catDialog').textContent=lines[r];g.catMood=r==='tower'?'remembering':'curious';render();
- if(!g.roomIntroSeen?.[r])showRoomIntro(r);
+ if(r===g.room)return;
+ const prior=g.room,firstVisit=!g.visited.includes(r);
+ const enterRoom=()=>{
+  g.room=r;g.selected=null;
+  const panel=$('sceneCanvas');
+  panel.classList.remove('room-entering');void panel.offsetWidth;panel.classList.add('room-entering');
+  if(firstVisit){g.visited.push(r);notify('새 공간 · '+meta[r][0]);tone('gain');sceneMoment('room');}
+  const lines={foyer:'저 시계가 왜 멈췄을까?',study:'이 방은 왜 낯설지가 않지?',greenhouse:'이 꽃 향기… 기억날 것 같아.',tower:'저 종소리는 어디에서 들었을까?'};
+  $('catDialog').textContent=lines[r];g.catMood=r==='tower'?'remembering':'curious';
+  render();save();
+ };
+ const afterTransition=()=>{
+  roomTransitionBusy=false;
+  if(!g.roomIntroSeen?.[r])showRoomIntro(r);
+ };
+ roomTransitionBusy=true;
+ if(!window.MoyeoEscapeCutscenes?.playRoom?.({from:prior,to:r,firstVisit,onMidpoint:enterRoom,onFinish:afterTransition})){
+  enterRoom();afterTransition();
+ }
 }
 const ambientScenes={
  foyer:[
@@ -988,8 +1013,20 @@ const endings={
  true:['잊히지 않은 이름','당신은 사진과 일기, 은빛 목걸이를 시계의 기억 장치에 함께 놓습니다. 서로 다른 세 흔적이 같은 이름, 루나를 가리킵니다. 열세 번째 종의 봉인이 풀리고 멈춘 시간이 흐르기 시작합니다. 미로는 루나를 기억해 냅니다. 종 아래에서 돌아온 루나가 미로를 안아 줍니다.'],
  stay:['멈춰 있는 약속','당신은 봉인을 해제하지 않기로 선택합니다. 거대한 시계는 다시 멈추고 저택은 자정에 머뭅니다. 루나의 마지막 흔적도 사라지지 않습니다. 당신은 미로 곁에 남아, 아직 끝나지 않은 약속을 지키기로 합니다.']
 };
-function finish(id){if(id==='true'&&!['photo','diary','collar'].every(has)){error('기억의 물건이 부족합니다.');return}g.ending=id;try{let o=JSON.parse(store.getItem(HISTORY)||'[]');if(!o.includes(id))o.push(id);store.setItem(HISTORY,JSON.stringify(o))}catch(e){}tone(id==='stay'?'tap':'bell');save();ending(id)}
-function ending(id){let [title,copy]=endings[id];modal('EPISODE 01 · COMPLETE',title,`<div class="ending-crown">${id==='normal'?'☀':id==='true'?'✦':'☾'}</div><p class="ending-copy">${copy}</p><div class="result-stats"><div><small>탐험 시간</small><b>${pretty(elapsed())}</b></div><div><small>힌트</small><b>${g.hintsUsed}회</b></div><div><small>기억의 물건</small><b>${['photo','diary','collar'].filter(has).length}/3</b></div></div>`,[['시작 화면','home'],['새로 시작','really-new',true]])}
+function finish(id){if(id==='true'&&!['photo','diary','collar'].every(has)){error('기억의 물건이 부족합니다.');return}g.ending=id;try{let o=JSON.parse(store.getItem(HISTORY)||'[]');if(!o.includes(id))o.push(id);store.setItem(HISTORY,JSON.stringify(o))}catch(e){}tone(id==='stay'?'tap':'bell');save();ending(id,true)}
+function ending(id,withCinematic=false){
+ const [title,copy]=endings[id];
+ const showSummary=()=>modal('EPISODE 01 · COMPLETE',title,
+  '<div class="ending-crown">'+(id==='normal'?'☀':id==='true'?'✦':'☾')+'</div>'+
+  '<p class="ending-copy">'+copy+'</p>'+
+  '<div class="result-stats"><div><small>탐험 시간</small><b>'+pretty(elapsed())+'</b></div>'+
+  '<div><small>힌트</small><b>'+g.hintsUsed+'회</b></div>'+
+  '<div><small>기억의 물건</small><b>'+['photo','diary','collar'].filter(has).length+'/3</b></div></div>',
+  [['시작 화면','home'],['새로 시작','really-new',true]]);
+ // Reloading an already completed save shows the result immediately, not a repeated film.
+ if(withCinematic&&window.MoyeoEscapeCutscenes?.playEnding?.({id,onFinish:showSummary}))return;
+ showSummary();
+}
 
 const scrapbookIcons={bell:'◷',invitation:'✉',lock9:'◷',track:'♣',portrait:'▧',dust:'▤',shelfEnds:'✦',roll:'♫',water:'♧',watering:'◷',waterSketch:'▤',cloudOutlet:'♧',powder:'✿',clock:'◷',pin:'❖',story:'☾'};
 function journal(tab='clues',page=0){
