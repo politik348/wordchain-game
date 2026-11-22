@@ -81,63 +81,64 @@ test('EP01 story chapters reveal broad goals without giving away mechanics',()=>
  new Function(game);
 });
 
-test('foyer three distinct species share start and finish, with exactly five moves and visible intersections',()=>{
+test('foyer B reads five paw facing directions, not cat travel directions',()=>{
  assert.match(game,/const FOYER_GRID_SIZE=5/);
  assert.match(game,/function foyerDogSvg\(/);
  assert.match(game,/function foyerPawSvg\(/);
  assert.match(game,/function foyerBootSvg\(/);
  const routes=JSON.parse(game.match(/const FOYER_ROUTES=(\{[^;]+\});/)[1]);
  const starts=JSON.parse(game.match(/const FOYER_STARTS=(\{[^;]+\});/)[1]);
- const destination=Number(game.match(/const FOYER_DESTINATION=(\d+)/)[1]);
- const sequence=game.match(/const FOYER_FOOT_SEQUENCE='([UDLR]+)'/)[1];
- const moveFor=(a,b)=>{
+ const facing=JSON.parse(game.match(/const FOYER_CAT_FACING=(\[[^;]+\]);/)[1].replace(/'/g,'"'));
+ const dest=Number(game.match(/const FOYER_DESTINATION=(\d+)/)[1]);
+ const answer=game.match(/const FOYER_FOOT_SEQUENCE='([UDLR]+)'/)[1];
+ const step=(a,b)=>{
   const dr=Math.floor(b/5)-Math.floor(a/5),dc=b%5-a%5;
   return dr===1&&dc===0?'D':dr===-1&&dc===0?'U':dr===0&&dc===1?'R':dr===0&&dc===-1?'L':null;
  };
- const perKind=Object.entries(routes);
- assert.deepEqual(perKind.map(([kind])=>kind),['cat','dog','human']);
- assert.equal(Object.keys(starts).length,1);
- const startsFound=new Set(),codes=new Set(),tileUsage=new Map();
- for(const [kind,path] of perKind){
+ assert.equal(routes.cat[0],routes.dog[0]);
+ assert.equal(starts[routes.cat[0]],'침대');
+ assert.notEqual(routes.human[0],routes.cat[0]);
+ assert.equal(starts[routes.human[0]],'문간');
+ assert.equal(Object.keys(starts).length,2);
+ assert.equal(dest,12);
+ const allPaths=[];
+ for(const [kind,path] of Object.entries(routes)){
   assert.equal(path.length,6,kind);
-  assert.equal(new Set(path).size,6,'no revisits for '+kind);
-  assert.ok(path.every(i=>Number.isInteger(i)&&i>=0&&i<25),kind);
-  assert.equal(path.at(-1),destination,kind);
-  startsFound.add(path[0]);
-  const moves=path.slice(1).map((v,i)=>moveFor(path[i],v));
-  assert.ok(moves.every(Boolean),kind+' has broken adjacency');
-  const code=moves.join('');
-  assert.equal(code.length,5,kind);
-  assert.ok(moves.slice(1).filter((d,i)=>d!==moves[i]).length>=3,kind+' is too straight');
-  codes.add(code);
-  for(const tile of path.slice(1,-1))tileUsage.set(tile,[...(tileUsage.get(tile)||[]),kind]);
-  // There must be one non-repeating route along this kind's own prints.
-  const visible=new Set(path.slice(1,-1)),found=[];
-  function explore(pos,used,curr){
-   if(pos===destination){if(curr.length===5)found.push(curr);return;}
-   if(curr.length>=5)return;
-   for(const delta of [1,-1,5,-5]){
-    const target=pos+delta;
-    if(target<0||target>=25||!moveFor(pos,target)||used.has(target))continue;
-    if(target!==destination&&!visible.has(target))continue;
-    explore(target,new Set([...used,target]),curr+moveFor(pos,target));
+  assert.equal(new Set(path).size,6,kind+' repeats a tile');
+  assert.equal(path.at(-1),dest,kind);
+  const moves=path.slice(1).map((cell,i)=>step(path[i],cell));
+  assert.ok(moves.every(Boolean),kind+' has a broken step');
+  assert.equal(moves.length,5);
+  allPaths.push(moves.join(''));
+  // A route of exactly five steps must be unique to that kind's footprint tiles.
+  const validTiles=new Set(path.slice(0,-1)),solutions=[];
+  function explore(at,visited,code){
+   if(at===dest){if(code.length===5)solutions.push(code);return;}
+   if(code.length>=5)return;
+   for(const diff of [-5,5,-1,1]){
+    const next=at+diff;if(next<0||next>=25||!step(at,next)||visited.has(next))continue;
+    if(next!==dest&&!validTiles.has(next))continue;
+    explore(next,new Set([...visited,next]),code+step(at,next));
    }
   }
   explore(path[0],new Set([path[0]]),'');
-  assert.deepEqual(found,[code],kind+' five-move trace must be unique');
+  assert.deepEqual(solutions,[moves.join('')],kind+' exact five-step track is not unique');
  }
- assert.equal(startsFound.size,1);
- assert.equal(Number(Object.keys(starts)[0]),[...startsFound][0]);
- assert.equal(codes.size,3);
- assert.equal(sequence,routes.cat.slice(1).map((v,i)=>moveFor(routes.cat[i],v)).join(''));
- const overlaps=[...tileUsage].filter(([,kinds])=>kinds.length>1);
- assert.ok(overlaps.length>=2,'overlapping prints are intentionally present');
- assert.match(game,/type:'mixed',prints/);
- assert.match(game,/foyer-track-mix/);
- assert.match(game,/g\.foyerRouteVersion!==4/);
+ assert.equal(new Set(allPaths).size,3);
+ assert.equal(facing.length,5);
+ assert.ok(facing.every(dir=>'UDLR'.includes(dir)));
+ assert.equal(answer,facing.join(''));
+ assert.notEqual(answer,allPaths[0],'B must differ from real cat travel');
+ assert.ok([...answer].filter((dir,i)=>dir!==allPaths[0][i]).length>=2);
+ assert.match(game,/FOYER_ROUTES\.cat\.slice\(0,-1\)/);
+ assert.match(game,/foyerRouteMarks\(FOYER_ROUTES\.dog\)/);
+ assert.match(game,/if\(Object\.hasOwn\(FOYER_STARTS,i\)\)return \{type:'anchor',text:FOYER_STARTS\[i\],prints\}/);
+ assert.match(game,/foyer-anchor-prints/);
+ assert.match(game,/미로의 발자국을 따라 종까지/);
  assert.match(game,/FOYER_FOOT_SEQUENCE.length/);
- assert.match(game,/g\.footInput\[i\]/);
+ assert.match(game,/g\.foyerRouteVersion!==5/);
+ assert.match(game,/g\.footInput===FOYER_FOOT_SEQUENCE/);
  assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
- assert.match(css,/foyer-track-mix/);
+ assert.match(css,/foyer-lock-crest/);
  new Function(game);
 });
