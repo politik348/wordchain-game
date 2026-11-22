@@ -963,3 +963,30 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 
 /* Integrated foyer painting already contains Miro's bed. Do not draw
    the obsolete foreground SVG on top of the new illustration. */
+
+/* Puzzle 4 — observable music-box mechanism; numbers are never printed as
+   solutions and the brass-finger animation is coupled to real peg positions. */
+.roll-sheet{width:min(100%,350px);max-width:350px;padding:9px 17px 12px;}
+.roll-frame-marks,.roll-drum-marks{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;text-align:center;height:23px;align-items:center;}
+.roll-frame-marks{margin-bottom:4px;color:#78546a;}
+.roll-drum-marks{margin-top:4px;color:#6c4a60;}
+.roll-frame-marks span,.roll-drum-marks span{min-width:0;font-size:17px;line-height:23px;}
+.roll-frame-marks .frame-star{color:#9a4a70;text-shadow:0 1px 0 #fff7d5;}
+.roll-drum-marks .drum-star{color:#6e416b;text-shadow:0 1px 0 #f7dfb0;}
+.roll-row{position:relative;}
+.roll-row .peg{transition:background .14s,color .14s,box-shadow .14s;}
+.roll-row.is-striking .peg{background:#edba6f;color:#44344d;box-shadow:0 0 0 3px #ffe1a585,0 0 13px #f9dc9f;}
+.piano-keyboard{width:min(100%,420px);margin:17px auto 0;}
+.piano-keyboard .piano-fingers{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;align-items:end;height:65px;padding:0 1px;pointer-events:none;}
+.piano-finger{display:flex;align-items:center;justify-content:center;position:relative;height:61px;min-width:0;overflow:visible;}
+.piano-finger-rod{display:block;width:16px;height:55px;border-radius:8px 8px 5px 5px;border:2px solid #b39a77;background:linear-gradient(90deg,#715a54 0%,#e0bc79 26%,#f2dfb2 55%,#896952 100%);box-shadow:inset 2px 0 4px #f7e7b866,0 3px 4px #0d102044;position:relative;transform:translateY(-6px);transition:transform .12s ease,box-shadow .12s ease;}
+.piano-finger-rod::after{content:"";position:absolute;bottom:-3px;left:1px;right:1px;height:11px;background:linear-gradient(135deg,#e7bc83,#84604b);border-radius:2px 2px 5px 5px;border:1px solid #b99a73;}
+.piano-finger.is-striking .piano-finger-rod{transform:translateY(9px);box-shadow:0 3px 12px #ffdf95ba,inset 2px 0 4px #ffe9ba;}
+.piano-keyboard .piano-keys{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;margin:0 0 6px;align-items:stretch;}
+.piano-keyboard .piano-key{min-width:0;min-height:95px;height:105px;}
+.piano-keyboard .piano-key.mechanically-pressed{background:#edc58b;transform:translateY(3px);box-shadow:inset 0 9px 12px #96745c5e,0 0 12px #eac48f73;}
+.piano-playback-status{text-align:center;margin:11px auto 3px;color:#c5bdd2;font-size:12px;min-height:20px;}
+@media(max-width:460px){.roll-sheet{padding:7px 10px 10px}.roll-frame-marks,.roll-drum-marks{gap:2px}.piano-finger-rod{width:12px}.piano-keyboard .piano-key{height:92px;min-height:92px}}
+@media(prefers-reduced-motion:reduce){
+ .piano-finger-rod,.piano-keyboard .piano-key,.roll-row .peg{transition:none!important;}
+}
