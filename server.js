@@ -498,6 +498,7 @@ const ESCAPE_TASTE_ASSETS=new Map([
  ['/taste/escape/storybook.js','escape/storybook.js'],
  ['/taste/escape/miro-avatar.webp','escape/miro-avatar.webp'],
  ['/taste/escape/foyer-scene.avif','escape/foyer-scene.avif'],
+ ['/taste/escape/foyer-scene-integrated.avif','escape/foyer-scene-integrated.avif'],
  ['/taste/escape/study-scene.avif','escape/study-scene.avif'],
  ['/taste/escape/greenhouse-scene.avif','escape/greenhouse-scene.avif'],
  ['/taste/escape/tower-scene.avif','escape/tower-scene.avif']
