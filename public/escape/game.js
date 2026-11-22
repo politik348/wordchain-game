@@ -518,7 +518,7 @@ function wallLightReset(){
 }
 
 const hotspots={
- foyer:[{id:'invitation',x:27,y:40,name:'현관의 초대장',icon:'✉'},{id:'catbed',x:20,y:70,name:'고양이 침대',icon:'♧'},{id:'rug',x:47,y:83,name:'오래된 양탄자',icon:'⌕',ok:()=>done('rug')},{id:'cabinet',x:76,y:72,name:'황동 수납장',icon:'▣',ok:()=>done('foot')},{id:'crescent',x:54,y:35,name:'반쪽 달 장식',icon:'☾',ok:()=>done('mirror')},{id:'foyer-bell',x:80,y:55,name:'탁자 위 작은 종',icon:'♫'},{id:'study',x:14,y:54,name:'서재 문',icon:'⌑'},{id:'cat',x:84,y:76,name:'미로',icon:'♣'}],
+ foyer:[{id:'invitation',x:27,y:40,name:'현관의 초대장',icon:'✉'},{id:'catbed',x:19,y:79,name:'미로의 침대',icon:'♧'},{id:'rug',x:47,y:83,name:'오래된 양탄자',icon:'⌕',ok:()=>done('rug')},{id:'cabinet',x:76,y:72,name:'황동 수납장',icon:'▣',ok:()=>done('foot')},{id:'crescent',x:54,y:35,name:'반쪽 달 장식',icon:'☾',ok:()=>done('mirror')},{id:'foyer-bell',x:80,y:55,name:'탁자 위 작은 종',icon:'♫'},{id:'study',x:14,y:54,name:'서재 문',icon:'⌑'},{id:'cat',x:84,y:76,name:'미로',icon:'♣'}],
  study:[{id:'books',x:24,y:42,name:'계절 책장',icon:'▤',ok:()=>done('books')},{id:'portrait',x:47,y:30,name:'빛바랜 초상화',icon:'▧',ok:()=>has('film')},{id:'piano',x:74,y:77,name:'자동연주 피아노',icon:'♫',ok:()=>done('piano')},{id:'desk',x:38,y:78,name:'잠긴 서랍과 유리판',icon:'⌗',ok:()=>done('film')},{id:'greenhouse',x:91,y:56,name:'온실 문',icon:'⌑'},{id:'cat',x:79,y:57,name:'미로',icon:'♣'}],
  greenhouse:[{id:'record',x:21,y:30,name:'정원 재배 기록',icon:'▤'},{id:'water',x:25,y:73,name:'네 개의 급수관',icon:'◉',ok:()=>done('water')},{id:'beam',x:64,y:38,name:'채광과 반사 장치',icon:'◐',ok:()=>done('light')},{id:'flower',x:53,y:64,name:'달빛꽃',icon:'❀',ok:()=>done('light')},{id:'shutter',x:86,y:25,name:'채광창 손잡이',icon:'☾'},{id:'pot',x:76,y:75,name:'오래된 유리 화분',icon:'⌕',ok:()=>has('collar')},{id:'tower',x:91,y:56,name:'시계탑 입구',icon:'⌑'}],
  tower:[{id:'pedestal',x:23,y:75,name:'세 인장의 제단',icon:'❖'},{id:'clock',x:50,y:36,name:'거대한 시계',icon:'◷',ok:()=>done('clock')},{id:'keeper',x:19,y:33,name:'시계 관리 기록',icon:'▤'},{id:'pin',x:78,y:81,name:'붉은 고정쇠',icon:'⌁',ok:()=>done('pin')},{id:'portal',x:84,y:54,name:'마지막 문으로 올라가는 계단',icon:'✦',ok:()=>done('pin')},{id:'hall',x:94,y:87,name:'돌아가는 계단',icon:'⌑'}]
@@ -1275,7 +1275,18 @@ function catSvg(){return '<img class="miro-portrait" src="miro-avatar.webp?v=202
       <path d="M510 154Q614 72 714 154" stroke="#e5c394" fill="none" stroke-width="8"/><circle cx="614" cy="231" r="31" fill="#3b3555" stroke="#d7b47e" stroke-width="7"/><path d="M614 205v25l16 10" stroke="#e6d3b2" stroke-width="5" fill="none" stroke-linecap="round"/>
       <path d="M325 201h150v135H325z" fill="#c19a80" stroke="#efd3aa" stroke-width="8"/><path d="M343 217h114v103H343z" fill="#6c6080"/><path d="M375 242q25-18 48 0m-46 36q22-14 44 0" stroke="#f4d6a6" fill="none" stroke-width="4"/><path d="M347 358h108v18H347z" fill="#b18d77"/>
       <g><path d="M788 392h147v167H788z" fill="#67516b" stroke="#aa8c81" stroke-width="7"/><path d="M808 414h107v52H808zM808 477h107v59H808z" fill="#4a486b" stroke="#aa918b" stroke-width="5"/><circle cx="858" cy="441" r="6" fill="#f3cf94"/><circle cx="858" cy="500" r="6" fill="#f3cf94"/><path d="M773 383h176v17H773z" fill="#b29083"/></g>
-      <path d="M290 564Q600 496 816 567L778 628H340Z" fill="#95707c" stroke="#d2af9a" stroke-width="5"/><path d="M335 571Q600 521 782 577L754 609H365Z" stroke="#ead0af" stroke-width="3" stroke-dasharray="10 9" fill="none"/>
+      <g id="foyer-catbed-art" aria-hidden="true">
+        <ellipse cx="218" cy="567" rx="132" ry="28" fill="#1f2038" opacity=".33"/>
+        <path d="M105 508Q112 456 216 453Q328 455 333 508L327 546Q225 585 109 548Z" fill="#916376" stroke="#d2a18d" stroke-width="10"/>
+        <ellipse cx="219" cy="500" rx="110" ry="39" fill="#d0b0a4" stroke="#f0cdad" stroke-width="8"/>
+        <ellipse cx="219" cy="502" rx="96" ry="30" fill="#77627f"/>
+        <path d="M127 502Q163 474 215 493Q270 462 316 505Q284 541 221 531Q164 537 127 502Z" fill="#a59aba"/>
+        <path d="M139 510Q185 524 218 510T306 513" stroke="#e0c8bc" stroke-width="5" fill="none" stroke-linecap="round" opacity=".85"/>
+        <path d="M109 518Q212 562 330 516L322 552Q218 592 114 553Z" fill="#976b77" stroke="#d6a289" stroke-width="7"/>
+        <rect x="190" y="542" width="61" height="24" rx="7" fill="#e9c698" stroke="#886a6e" stroke-width="3"/>
+        <text x="220" y="558" font-size="12" fill="#604656" text-anchor="middle" font-family="sans-serif" font-weight="bold">MIRO</text>
+       </g>
+       <path d="M290 564Q600 496 816 567L778 628H340Z" fill="#95707c" stroke="#d2af9a" stroke-width="5"/><path d="M335 571Q600 521 782 577L754 609H365Z" stroke="#ead0af" stroke-width="3" stroke-dasharray="10 9" fill="none"/>
       <g transform="translate(1080 505)"><ellipse cx="0" cy="81" rx="65" ry="19" fill="#161d35" opacity=".3"/><path d="M-48 71q-29-30-8-60l12 11 20-10 20 10L9 10q27 28 3 61z" fill="#f0dfc5"/><path d="M-22 15-8-9 3 22M-57 16-50-8-36 21" fill="#f0dfc5"/><ellipse cx="-36" cy="43" rx="4" ry="6" fill="#4e4865"/><ellipse cx="-10" cy="43" rx="4" ry="6" fill="#4e4865"/><path d="M-26 53l4 3 4-3" fill="none" stroke="#d79496" stroke-width="3"/><path d="M10 66q42-22 25-61" fill="none" stroke="#f0dfc5" stroke-width="13" stroke-linecap="round"/></g>
       <g opacity=".7"><path d="M102 120h88m826 0h100" stroke="#eacb99" stroke-width="5"/><circle cx="145" cy="147" r="12" fill="#f8dc9d"/><circle cx="1062" cy="147" r="12" fill="#f8dc9d"/></g>`),
     study:()=>artFrame(`
