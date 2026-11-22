@@ -1,4 +1,4 @@
-import {YUT_ROUTES, YUT_NAMES, legalYutMoves, yutDestination, yutTravelNodes} from './yut-solo-engine.mjs?v=20261120yut4';
+import {YUT_ROUTES, YUT_NAMES, legalYutMoves, yutDestination, yutTravelNodes} from './yut-solo-engine.mjs?v=20261122backdo1';
 
 // Matches the historic 525x525 drawing coordinate system used by 모여게임즈.
 export const YUT_COORDS={
@@ -101,7 +101,7 @@ export function renderYutBoard({pieces={},me='',turn='',steps=null,active=true,a
  const onBoard=`<div class="yut-liveboard"><svg class="yut-canvas" viewBox="-15 -15 555 555" role="img" aria-label="윷놀이 말판. 말 선택 시 이동 경로 미리보기"><rect class="yut-canvas-bg" x="-12" y="-12" width="549" height="549" rx="28"/>${segments.map(line).join('')}${nodes}${previewLines.join('')}<text x="433" y="524" class="yut-home-label">HOME</text></svg>${routeBtns.join('')}${visual.join('')}</div>`;
  const reserve=mine.map((p,i)=>{
   const can=allowed&&legalIndices.has(i)&&!p.done&&p.node===0;
-  const status=p.done?'도착':p.node===0?'대기':'이동 중';
+  const status=p.done?'도착':p.node===0?'대기':p.backdoHome?'HOME 도착':'이동 중';
   return `<button type="button" class="yut-reserve-token ${can?'is-available':''} ${selected===i?'is-previewing':''} ${p.done?'is-finished':''}" data-action="${escapeHtml(action)}" data-index="${i}" ${!can?'disabled':''} aria-label="내 ${i+1}번 말 ${status}"><span>${p.done?'✓':i+1}</span><small>${status}</small></button>`;
  }).join('');
  return `${onBoard}<div class="yut-reserve"><div class="yut-reserve-head"><strong>내 말 4개</strong><small>${allowed?'움직일 말을 선택해 경로를 확인하세요':active?'던지기를 마치면 말을 움직일 수 있어요':'대국 종료'}</small></div><div class="yut-reserve-row">${reserve}</div></div>`;
