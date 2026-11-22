@@ -491,6 +491,7 @@ const ESCAPE_TASTE_ASSETS=new Map([
  ['/taste/escape/index.html','escape/index.html'],
  ['/taste/escape/styles.css','escape/styles.css'],
  ['/taste/escape/game.js','escape/game.js'],
+ ['/taste/escape/extra-props.js','escape/extra-props.js'],
  ['/taste/escape/room3d.js','escape/room3d.js'],
  ['/taste/escape/storybook.js','escape/storybook.js'],
  ['/taste/escape/foyer-scene.avif','escape/foyer-scene.avif'],
