@@ -952,3 +952,11 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 /* Visible Miro bed: larger hit target sits over the actual illustrated basket. */
 #sceneCanvas .hotspot[data-object="catbed"]{width:82px!important;height:66px!important;min-width:82px!important;min-height:66px!important}
 @media(max-width:600px),(pointer:coarse){#sceneCanvas .hotspot[data-object="catbed"]{width:72px!important;height:64px!important;min-width:72px!important;min-height:64px!important}}
+
+/* Keep the foyer direction lock minimal: five input cells only, no decorative
+   paw, clue paragraph, numerical progress or secondary explanation. */
+.foyer-foot-counter{margin:8px auto 24px;gap:12px}
+.foyer-foot-dot{background:#28334f}
+.foyer-foot-dot.filled{color:#342c46;background:#efcc91}
+.foyer-foot-actions{margin-top:20px}
+@media(max-width:480px){.foyer-foot-counter{gap:6px;margin:5px auto 18px}}
