@@ -153,3 +153,17 @@ test('foyer clue discovery does not narrate footprint route solution',()=>{
  assert.match(game,/타일을 눌러 자세히 관찰할 수 있다/);
  new Function(game);
 });
+
+test('foyer has an actual illustrated and clickable cat bed in both renderers',()=>{
+ assert.match(game,/id="foyer-catbed-art"/);
+ assert.match(game,/<ellipse cx="219" cy="500" rx="110"/);
+ assert.match(game,/\{id:'catbed',x:19,y:79,name:'미로의 침대'/);
+ assert.match(game,/case 'catbed':return catbedTrack\(\)/);
+ assert.match(css,/\.hotspot\[data-object="catbed"\]/);
+ assert.match(threeD,/catbed:\[-4\.45,\.33,1\.85\]/);
+ assert.match(threeD,/box\(-4\.45,\.14,1\.85,2\.02,\.27,1\.56/);
+ assert.match(html,/room3d\.js\?v=20261122bedvisible7/);
+ assert.match(html,/game\.js\?v=20261122bedvisible7/);
+ new Function(game);
+ new Function(threeD);
+});
