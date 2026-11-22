@@ -195,6 +195,21 @@ function actionPanel(s){
  const p=current(s),yourTurn=(onlineRoom?p.id===SID:!p.ai)&&!scene;
  if(s.phase==='finished'){
   const ranking=winnerRanking(s),winner=s.players.find(x=>x.id===s.winner);
+  if(catChallenge&&window.MoyeoCatResult?.render){
+   const me=s.players.find(x=>!x.ai)||s.players[0];
+   const cat=s.players.find(x=>x.ai)||s.players.find(x=>x.id==='moyeo-cat');
+   const stats=[
+    {label:'진행 라운드',value:s.round+'라운드'},
+    {label:'내 소유 도시',value:Object.values(s.properties||{}).filter(p=>p.owner===me?.id).length+'개'},
+    {label:'고양이 소유 도시',value:Object.values(s.properties||{}).filter(p=>p.owner===cat?.id).length+'개'}];
+   return window.MoyeoCatResult.render({game:'모여마블',
+    outcome:s.winner===cat?.id?'cat':s.winner===me?.id?'player':'draw',
+    summary:s.reason||'경기가 종료되었습니다.',
+    score:{player:formatM(netWorth(s,me.id)),cat:formatM(netWorth(s,cat.id))},
+    stats,
+    actions:button('rematch','↻ 다시 대결하기','mm-primary')+button('leave','다른 게임 선택','mm-secondary')
+   });
+  }
   return `<div class="mm-result"><span class="mm-result-emoji">🏆</span><h2>${escapeHTML(winner?.name||'승자')} 승리!</h2><p>${escapeHTML(s.reason||'게임 종료')}</p><div class="mm-result-rank">${ranking.map((x,i)=>`<div><span>${i+1}위 ${escapeHTML(x.name)}</span><span>${formatM(netWorth(s,x.id))}</span></div>`).join('')}</div><div class="mm-center-actions">${onlineRoom?onlineRoom.host===SID?button('startOnline','다시 대결하기','mm-primary'):button('leave','메인으로','mm-secondary'):button('rematch','다시 대결하기','mm-primary')}${button('leave','종료','mm-secondary')}</div></div>`;
  }
  if(s.phase==='chance')return `<div class="mm-status-line">💌 행운 편지 도착!</div><p class="mm-status-sub">카드 뒷면 3장 중 하나를 선택하세요. 이득일 수도, 손해일 수도 있어요!</p><div class="mm-fortune-picks">${[0,1,2].map(i=>`<button class="mm-fortune-card" type="button" data-action="pickCard" data-index="${i}" ${!yourTurn||inFlight?'disabled':''}><span>✦</span><strong>행운 ${i+1}</strong><small>뒤집기</small></button>`).join('')}</div>`;
