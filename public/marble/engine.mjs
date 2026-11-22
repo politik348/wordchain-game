@@ -309,12 +309,16 @@ export function applyAction(input,id,type,payload={},rng=Math.random){
   }
   return commit();
  }
- if(s.phase==='liquidation')throw Error('먼저 매각할 부동산을 선택하세요.');
+ if(s.phase==='liquidation'&&type!=='takeLoan')throw Error('먼저 매각할 부동산을 선택하세요.');
  if(type==='takeLoan'){
   if(p.loanUsed)throw Error('은행 대출은 한 판에 한 번만 가능합니다.');
-  if(!['roll','choice','island','travel','chance'].includes(s.phase))throw Error('현재는 대출을 이용할 수 없습니다.');
+  if(!['roll','choice','island','travel','chance','liquidation'].includes(s.phase))throw Error('현재는 대출을 이용할 수 없습니다.');
   p.cash+=BANK_LOAN;p.bankDebt=BANK_REPAY;p.loanUsed=true;
   log(s,`${p.name}님 은행 대출 +${BANK_LOAN}M · 상환 예정 ${BANK_REPAY}M (출발지 보너스부터 자동 상환)`);
+  if(s.phase==='liquidation'){
+   const debt=s.pending;
+   if(p.cash>=debt.amount||ownTiles(s,id).length===0)settleLiquidation(s,p,debt);
+  }
   return commit();
  }
  if(type==='pickCard'){
