@@ -695,12 +695,12 @@ function rug(selected=-1){
    '" aria-pressed="'+(selected===i)+'">'+foyerTrailGraphic(t)+'</button>';
  }).join('');
  modal('현관 홀 · 조사','들춰진 양탄자',
-  '<p class="modal-description">먼지를 털어내자 고양이 발자국 여러 줄과 커다란 신발 밑창이 겹쳐 나타난다. 어떤 자국은 뒤꿈치 끝이 깨져 있고, 다른 자국은 매끈하다.</p>'+
+  '<p class="modal-description">먼지를 털어내자 고양이 발자국 여러 줄과 커다란 신발 밑창 자국이 드러난다. 서로 다른 방향으로 남은 흔적이 몇 군데에서 겹쳐 있다.</p>'+
   '<div class="trail-grid" role="group" aria-label="다섯 행 다섯 열 바닥 타일. 누르면 흔적을 확대한다">'+tiles+'</div>'+
   (selected>=0&&selected<25?foyerTrailDetail(selected):
-   '<p class="foyer-track-instruction">타일을 눌러 발바닥의 작은 흠집까지 살펴볼 수 있다.</p>')+
+   '<p class="foyer-track-instruction">타일을 누르면 표면을 확대해서 볼 수 있다.</p>')+
   '<div class="investigation-actions"><button data-action="rug-pocket">'+(has('photo')?'살펴본 안감 다시 보기':'접힌 안감도 조사한다 · +10초')+'</button></div>'+
-  '<p class="puzzle-helper">바닥에는 서로 다른 시기의 흔적들이 겹쳐 있다.</p>');
+  '<p class="puzzle-helper">타일 곳곳의 먼지가 서로 다른 깊이로 눌려 있다.</p>');
  save();
 }
 function foot(){
