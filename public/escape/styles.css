@@ -47,15 +47,18 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 .investigation-actions,.puzzle-buttons{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin:18px 0}
 .investigation-actions button,.puzzle-buttons button,.film-controls button,.night-switch button{border:1px solid #9d8da2;border-radius:11px;background:#46506d;color:#f9efdf;padding:12px 15px;font-weight:800;font-size:13px}
 .investigation-actions button:hover,.puzzle-buttons button:hover,.film-controls button:hover,.night-switch button:hover{background:#626181}
-.trail-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));width:min(100%,370px);gap:5px;margin:19px auto 10px;background:#6a566d;border:8px solid #d5af87;border-radius:14px;padding:5px}
+.foyer-board-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;padding:2px 0 9px;scrollbar-width:thin}
+.trail-grid{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));width:100%;max-width:510px;min-width:414px;gap:4px;margin:12px auto 5px;background:#6a566d;border:8px solid #d5af87;border-radius:14px;padding:5px}
 .trail-grid .trail-cell{position:relative;overflow:hidden;min-width:0;width:100%;height:auto;aspect-ratio:1;background:#b49d8d;border:1px solid #e0c2a0;border-radius:5px;display:flex;align-items:center;justify-content:center;padding:0;color:#4e414a;font-weight:850;box-shadow:inset 0 1px 5px #39273a23}
 .trail-grid .trail-cell.trail-anchor{background:#b6a391}
 .trail-grid .trail-cell.selected{outline:2px solid #f3d3a1;outline-offset:-3px}
-.trail-grid .trail-cell:focus-visible{outline:3px solid #fff1c7;outline-offset:2px}
-.trail-landmark{font-size:clamp(11px,2.3vw,16px)}
-.foyer-paw-print{width:80%;height:80%;display:block;fill:#554450;opacity:.88;flex:none}
-.foyer-paw-print.large{width:86px;height:100px;max-width:100%;max-height:100%}
-.foyer-boot-print{width:68%;height:85%;display:block;flex:none;opacity:.70}
+.trail-grid .trail-cell:focus-visible{outline:3px solid #fff1c7;outline-offset:1px}
+.trail-landmark{font-size:clamp(9px,1.8vw,13px);line-height:1.1}
+.foyer-paw-print,.foyer-dog-print{width:85%;height:85%;display:block;fill:#554450;opacity:.88;flex:none}
+.foyer-dog-print{fill:#63515a}
+.foyer-dog-claws{fill:none;stroke:#4a3840;stroke-width:2.6;stroke-linecap:round}
+.foyer-paw-print.large,.foyer-dog-print.large{width:86px;height:100px;max-width:100%;max-height:100%}
+.foyer-boot-print{width:70%;height:87%;display:block;flex:none;opacity:.75}
 .foyer-boot-print.large{width:82px;height:100px;max-width:100%;max-height:100%}
 .foyer-boot-sole{fill:#675953}
 .foyer-boot-tread{fill:none;stroke:#b49d8d;stroke-width:2.4;stroke-linecap:round}
@@ -64,13 +67,18 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 .foyer-track-instruction{text-align:center;font-size:13px;color:#c8bec6;margin:10px 0 15px}
 .foyer-track-detail{display:flex;align-items:center;justify-content:center;gap:15px;max-width:440px;margin:10px auto 15px;background:#3c3c54;border:1px solid #ac94a066;border-radius:14px;padding:12px}
 .foyer-track-detail .foyer-track-magnify{flex:none;width:72px;height:80px;margin:0}
-.foyer-track-detail .foyer-track-magnify .foyer-paw-print.large{height:75px}
+.foyer-track-detail .foyer-track-magnify .foyer-paw-print.large,.foyer-track-detail .foyer-track-magnify .foyer-dog-print.large{height:75px}
 .foyer-track-detail .foyer-track-magnify .foyer-boot-print.large{height:75px}
 .foyer-track-detail p{margin:0;flex:1;color:#e4d8c8;font-size:14px;line-height:1.55}
-.foyer-foot-actions{text-align:center;margin:2px 0 8px}
+.foyer-foot-counter{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;max-width:395px;margin:15px auto 10px}
+.foyer-foot-dot{width:12px;height:12px;border:1px solid #d7be9b;border-radius:50%;background:#313a57;display:inline-block;flex:none}
+.foyer-foot-dot.filled{background:#eccd91;box-shadow:0 0 5px #e2bf8f80}
+.foyer-foot-progress{margin-left:6px;color:#e6d3bd;font-size:12px;white-space:nowrap}
+.foyer-foot-actions{text-align:center;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px;margin:2px 0 8px}
 .foyer-foot-actions button{border:1px solid #b5a1aa80;color:#e2cfbc;background:#49465d;border-radius:9px;padding:7px 13px}
+.foyer-foot-actions button:disabled{opacity:.45}
 .foyer-foot-actions button:focus-visible{outline:2px solid #fff1c7;outline-offset:2px}
-@media(max-width:420px){.trail-grid{gap:3px;border-width:6px;padding:4px}.foyer-track-detail{gap:8px;padding:8px}.foyer-track-detail p{font-size:12px}.foyer-track-detail .foyer-track-magnify{width:60px;height:70px}}
+@media(max-width:530px){.trail-grid{width:470px;max-width:none;min-width:470px;gap:4px}.foyer-track-detail{gap:8px;padding:8px}.foyer-track-detail p{font-size:12px}.foyer-track-detail .foyer-track-magnify{width:60px;height:70px}}
 .direction-pad{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:23px auto;max-width:340px}
 .direction-pad button{min-height:67px;border:1px solid #92819f;border-radius:13px;background:#374362;color:#ffdfa7;font-size:29px;box-shadow:inset 0 -5px #1f2944}
 .direction-pad button:active{transform:translateY(3px);box-shadow:inset 0 -2px #1f2944}.puzzle-counter{text-align:center;font-size:22px;letter-spacing:9px;color:#efcf9b;margin:13px}
