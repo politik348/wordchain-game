@@ -70,9 +70,9 @@ const hints={
   '정답: 가을 → 여름(뒤집기) → 겨울 → 자정(뒤집기) → 봄. 미로의 책은 제외합니다. 문양은 ✦-◆-✿-◈-❖-☾로 이어집니다.'
  ],
  piano:[
-  '책장 뒤에서 나온 원통의 돌기와 피아노 위 황동 축의 흔적을 관찰해 보세요.',
-  '여섯 걸림점과 두 개의 작은 별 표식이 남아 있습니다.',
-  '원통을 축에 끼우는 방향이 바뀌면 손가락이 건드리는 건반도 달라집니다. 짧은 선율을 듣고 연주해 보세요.',
+  '책장 뒤에서 얻은 원통의 네 줄과 피아노의 여섯 건반을 다시 살펴보세요.',
+  '축과 원통에는 각각 작은 별이 새겨져 있습니다. 둘은 원통을 돌릴 때 어떻게 달라질까요?',
+  '회전한 원통의 돌기가 어느 건반 위로 오는지 관찰해 보세요. 손잡이를 감으면 황동 손가락이 차례로 내려옵니다.',
   '정답: 원통의 다섯 번째 걸림점(별 표식)에 맞춘 뒤 왼쪽부터 2·5·3·2번째 건반을 누릅니다.'
  ],
  film:[
@@ -200,8 +200,8 @@ if(!Object.hasOwn(s,'coreInvestigations')){
 if(!Array.isArray(g.booksPlaced)||g.booksPlaced.length!==5)g.booksPlaced=[null,null,null,null,null];g.elapsedCarry=Number(s.elapsedCarry)||0;g.startedAt=Date.now();if(!canEnter(g.room))g.room='foyer';showGame();if(g.ending)ending(g.ending);else if(!g.roomIntroSeen[g.room])showRoomIntro(g.room)}catch(e){store.removeItem(SAVE);notify('저장 기록을 읽지 못했습니다. 새로 시작해 주세요.') }}
 function showGame(){$('homeScreen').classList.add('hidden');$('gameScreen').classList.remove('hidden');hide();render();tick()}
 function home(){save();hide();$('gameScreen').classList.add('hidden');$('homeScreen').classList.remove('hidden');$('continueBtn').classList.toggle('hidden',!store.getItem(SAVE))}
-function hide(){modalOpen=false;$('modalOverlay').classList.add('hidden')}
-function modal(eyebrow,title,content,actions=[['돌아가기','close',true]]){modalOpen=true;$('modalContent').innerHTML=`<div class="modal-eyebrow">${eyebrow}</div><h2 id="modalTitle" class="modal-title">${title}</h2>${content}<div class="modal-actions">${actions.map(([name,action,primary,disabled])=>`<button class="modal-btn ${primary?'primary':''}" data-action="${action}" ${disabled?'disabled':''}>${name}</button>`).join('')}</div>`;$('modalOverlay').classList.remove('hidden');}
+function hide(){cancelDrumPlayback();modalOpen=false;$('modalOverlay').classList.add('hidden')}
+function modal(eyebrow,title,content,actions=[['돌아가기','close',true]]){cancelDrumPlayback();modalOpen=true;$('modalContent').innerHTML=`<div class="modal-eyebrow">${eyebrow}</div><h2 id="modalTitle" class="modal-title">${title}</h2>${content}<div class="modal-actions">${actions.map(([name,action,primary,disabled])=>`<button class="modal-btn ${primary?'primary':''}" data-action="${action}" ${disabled?'disabled':''}>${name}</button>`).join('')}</div>`;$('modalOverlay').classList.remove('hidden');}
 function article(t,s,eyebrow='조사 기록'){modal(eyebrow,t,`<div class="letter">${s}</div>`)}
 
 let cinematicTimer=null;
@@ -905,46 +905,111 @@ function portrait(){clue('portrait');modal('달빛 서재 · 초상화','희미�
 
 const rollPegs=[3,0,4,3]; // Maker: the engraved calibration notch corresponds to offset 4.
 const noteFrequencies=[261.63,293.66,329.63,349.23,392,440];
+const pianoPegPositions=offset=>rollPegs.map(x=>(x+offset)%6);
+let drumPlaybackTimers=[],drumPlaybackToken=0;
+function cancelDrumPlayback(){
+ drumPlaybackToken++;
+ for(const timer of drumPlaybackTimers)clearTimeout(timer);
+ drumPlaybackTimers=[];
+ const modalBody=$('modalContent');
+ modalBody?.querySelectorAll('.piano-finger.is-striking,.piano-key.mechanically-pressed,.roll-row.is-striking').forEach(el=>
+  el.classList.remove('is-striking','mechanically-pressed'));
+}
 function piano(){
+ cancelDrumPlayback();
  g.activePuzzle='piano';
  if(done('piano')){article('다시 연주하는 피아노','작은 피아노는 이제 이름 모를 자장가를 연주한다. 미로가 자리를 잡고 웅크린다.');return;}
  if(!has('roll')){article('기계식 피아노','반쯤 열린 황동 원통 장치는 비어 있다. 여섯 개의 건반 위에는 고정된 연주 손가락들이 매달려 있다.');return;}
  const offset=g.drumOffset||0;
- const dial=Array.from({length:6},(_,i)=>'<button class="roll-dial-stop '+(offset===i?'selected':'')+'" data-action="drum-'+i+'" aria-label="원통 눈금 '+(i+1)+'" title="원통 눈금 '+(i+1)+'">'+(i===4?'✦':'·')+'</button>').join('');
- const roll=rollPegs.map((pos,i)=>'<div class="roll-row">'+Array.from({length:6},(_,j)=>'<span class="'+(pos===j?'peg':'')+'">'+(pos===j?'●':'·')+'</span>').join('')+'</div>').join('');
+ const pegPositions=pianoPegPositions(offset);
+ const dial=Array.from({length:6},(_,i)=>'<button type="button" class="roll-dial-stop '+(offset===i?'selected':'')+
+   '" data-action="drum-'+i+'" aria-label="원통 눈금 '+(i+1)+'" aria-pressed="'+(offset===i)+'" title="원통 눈금 '+(i+1)+'">·</button>').join('');
+ const roll=pegPositions.map((pos,i)=>'<div class="roll-row" data-roll-row="'+i+'">'+Array.from({length:6},(_,j)=>
+   '<span class="'+(pos===j?'peg':'')+'">'+(pos===j?'●':'·')+'</span>').join('')+'</div>').join('');
+ const frameStars=Array.from({length:6},(_,i)=>'<span class="'+(i===4?'frame-star':'')+'">'+(i===4?'✦':'')+'</span>').join('');
+ const drumStars=Array.from({length:6},(_,i)=>'<span class="'+(i===offset?'drum-star':'')+'">'+(i===offset?'✦':'')+'</span>').join('');
+ const fingers=Array.from({length:6},(_,i)=>'<span class="piano-finger" data-finger="'+i+'" aria-hidden="true"><span class="piano-finger-rod"></span></span>').join('');
  modal('ROOM 02 · 퍼즐 4','멈춘 자장가',
-  '<p class="modal-description">나무 건반 위에는 원통을 붙잡는 황동 손가락이 달려 있다. 표면이 닳은 축에는 여섯 개의 걸림점이 있다. 원통의 작은 별과 장치 테두리의 별 모양 흠집이 눈에 띈다.</p>'+
-  '<div class="roll-sheet"><span class="roll-star">✦</span>'+roll+'</div>'+
-  '<div class="roll-dial">'+dial+'</div>'+
+  '<p class="modal-description">피아노의 여섯 건반 위로 기계식 황동 손가락이 줄지어 있다. 오래된 원통에는 네 줄의 돌기가 서로 다른 곳에 솟았고, 축에는 여섯 개의 걸림점이 패여 있다. 원통 끝과 축 가장자리에 작은 별 흠집이 하나씩 남아 있다.</p>'+
+  '<div class="roll-sheet" aria-label="원통에 솟은 네 줄의 돌기와 두 별 표식">'+
+   '<div class="roll-frame-marks" aria-label="축 테두리의 별 흠집">'+frameStars+'</div>'+
+   roll+
+   '<div class="roll-drum-marks" aria-label="회전하는 원통의 별 흠집">'+drumStars+'</div></div>'+
+  '<div class="roll-dial" role="group" aria-label="원통 회전 눈금 여섯 개">'+dial+'</div>'+
   '<div class="puzzle-buttons"><button data-action="drum-play">원통 손잡이 감기 ♪</button></div>'+
-  '<div class="piano-keys">'+Array.from({length:6},(_,i)=>'<button class="piano-key" data-action="key-'+i+'" aria-label="건반 '+(i+1)+'" title="건반 '+(i+1)+'"></button>').join('')+'</div>'+
+  '<div class="piano-keyboard">'+
+   '<div class="piano-fingers" aria-hidden="true">'+fingers+'</div>'+
+   '<div class="piano-keys">'+Array.from({length:6},(_,i)=>'<button type="button" class="piano-key" data-action="key-'+i+
+   '" aria-label="건반 '+(i+1)+'" title="건반 '+(i+1)+'"></button>').join('')+'</div></div>'+
+  '<div class="piano-playback-status" id="pianoPlaybackStatus" role="status" aria-live="polite">금속 손가락은 움직이지 않는다.</div>'+
   '<div class="puzzle-counter">'+('♪'.repeat(g.pianoInput.length))+('○'.repeat(4-g.pianoInput.length))+'</div>'+
-  '<p class="puzzle-helper">손잡이를 돌리면 황동 손가락들이 네 번 움직인다. 건반 일부에는 오래된 손톱 자국이 남아 있다.</p>',
+  '<p class="puzzle-helper">원통의 눈금을 바꾸거나 손잡이를 감을 수 있다. 움직이는 장치를 자세히 살펴보자.</p>',
   [['건반에서 손 떼기','piano-reset']]
  );
 }
-function drumSet(i){if(!has('roll')||done('piano'))return;g.drumOffset=i;g.pianoInput=[];tone('tap');save();piano();}
+function drumSet(i){
+ if(!has('roll')||done('piano')||!Number.isInteger(i)||i<0||i>=6)return;
+ cancelDrumPlayback();g.drumOffset=i;g.pianoInput=[];tone('tap');save();piano();
+}
 function drumPlay(){
- if(!has('roll'))return;
- const sequence=rollPegs.map(x=>(x+(g.drumOffset||0))%6);
- // Sound is optional; the roll's teeth and the keys remain visually distinguishable.
+ if(!has('roll')||done('piano'))return;
+ cancelDrumPlayback();
+ const sequence=pianoPegPositions(g.drumOffset||0);
+ const playingToken=drumPlaybackToken;
+ const body=$('modalContent'),status=body?.querySelector('#pianoPlaybackStatus');
+ const fingerEls=body?.querySelectorAll('.piano-finger');
+ const keys=body?.querySelectorAll('.piano-key');
+ const rows=body?.querySelectorAll('.roll-row');
+ if(!status||fingerEls?.length!==6||keys?.length!==6||rows?.length!==4)return;
+ status.textContent='원통이 천천히 돌기 시작한다.';
+ const reduceMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches===true;
+ const stepMs=reduceMotion?750:560;
+ const strikeMs=reduceMotion?530:340;
+ const schedule=(fn,delay)=>{
+  const timer=setTimeout(()=>{if(playingToken===drumPlaybackToken&&modalOpen)fn();},delay);
+  drumPlaybackTimers.push(timer);
+ };
+ sequence.forEach((key,i)=>{
+  schedule(()=>{
+   fingerEls[key].classList.add('is-striking');
+   keys[key].classList.add('mechanically-pressed');
+   rows[i].classList.add('is-striking');
+   status.textContent='황동 손가락이 차례로 내려간다.';
+   // Equivalent audible observation for non-visual play; never auto-enter input.
+   status.setAttribute('aria-label',(key+1)+'번째 건반 위 손가락이 내려갔다.');
+  },i*stepMs+120);
+  schedule(()=>{
+   fingerEls[key].classList.remove('is-striking');
+   keys[key].classList.remove('mechanically-pressed');
+   rows[i].classList.remove('is-striking');
+  },i*stepMs+120+strikeMs);
+ });
+ schedule(()=>{
+  status.textContent='원통이 멈췄다.';
+  status.removeAttribute('aria-label');
+  drumPlaybackTimers=[];
+ },sequence.length*stepMs+150);
+ // Audio mirrors the physical movement, but the puzzle remains fully playable muted.
  if(g.sound)try{
   audio??=new (window.AudioContext||window.webkitAudioContext)();
   if(audio.state==='suspended')audio.resume();
   sequence.forEach((note,i)=>{
-   const o=audio.createOscillator(),v=audio.createGain(),start=audio.currentTime+.05+i*.25;
+   const o=audio.createOscillator(),v=audio.createGain(),start=audio.currentTime+.12+i*stepMs/1000;
    o.type='sine';o.frequency.value=noteFrequencies[note];
-   v.gain.setValueAtTime(.0001,start);v.gain.exponentialRampToValueAtTime(.045,start+.015);v.gain.exponentialRampToValueAtTime(.0001,start+.22);
-   o.connect(v);v.connect(audio.destination);o.start(start);o.stop(start+.24);
+   v.gain.setValueAtTime(.0001,start);
+   v.gain.exponentialRampToValueAtTime(.045,start+.025);
+   v.gain.exponentialRampToValueAtTime(.0001,start+.28);
+   o.connect(v);v.connect(audio.destination);o.start(start);o.stop(start+.30);
   });
  }catch(e){}
- notify('네 개의 황동 손가락이 순서대로 움직인다.');g.drumPlayed=true;save();
+ g.drumPlayed=true;save();
 }
 function keyPress(index){
  if(done('piano')||!has('roll')||!Number.isInteger(index)||index<0||index>5)return;
+ cancelDrumPlayback();
  g.pianoInput.push(index);tone('tap');
  if(g.pianoInput.length===4){
-  const candidate=g.pianoInput.join(','),correct=rollPegs.map(x=>(x+4)%6).join(',');
+  const candidate=g.pianoInput.join(','),correct=pianoPegPositions(4).join(',');
   if(g.drumOffset===4&&candidate===correct){
    g.flags.piano=true;seal('echo');solved('piano','황동 손가락이 네 번 움직이고 피아노에서 작은 선율이 흘러나옵니다. 미로는 선율이 익숙한 듯 조용히 귀를 기울입니다. 소리의 인장을 획득했습니다.');return;
   }
@@ -1250,7 +1315,7 @@ if(action.startsWith('flip-')){let name=action.slice(5);if(Object.hasOwn(moonBoo
 if(action.startsWith('book-')){let name=action.slice(5);if(name==='reset'){g.booksPlaced=[null,null,null,null,null];save();return books()}if(name==='check')return bookCheck();if(Object.hasOwn(moonBooks,name)&&!g.booksPlaced.includes(name)){let slot=g.booksPlaced.indexOf(null);if(slot>=0){g.booksPlaced[slot]=name;save();}}return books()}
 if(action.startsWith('unbook-')){let slot=Number(action.slice(7));if(Number.isInteger(slot)&&slot>=0&&slot<5){g.booksPlaced[slot]=null;save()}return books()}
 if(action==='portrait-back'){if(!has('film'))coreOneOff('portrait-back',10);item('film');return modal('FOUND','별 구멍이 난 투명 필름',`<div class="collect-visual">▧</div><p class="modal-description">액자 뒷면에서 투명한 얇은 판이 나옵니다. 네 곳에 작은 구멍이 뚫려 있고 한쪽 모서리에 별이 있습니다.</p>`)}
-if(action.startsWith('drum-')&&action!=='drum-play')return drumSet(Number(action.slice(5)));if(action==='drum-play')return drumPlay();if(action.startsWith('key-'))return keyPress(Number(action.slice(4)));if(action==='piano-reset'){g.pianoInput=[];save();return piano()}
+if(action.startsWith('drum-')&&action!=='drum-play')return drumSet(Number(action.slice(5)));if(action==='drum-play')return drumPlay();if(action.startsWith('key-'))return keyPress(Number(action.slice(4)));if(action==='piano-reset'){cancelDrumPlayback();g.pianoInput=[];save();return piano()}
 if(action==='film-turn'){g.filmRotate=(g.filmRotate+1)%4;save();return desk()}if(action==='film-slide'){g.filmShift=g.filmShift===-1?0:g.filmShift===0?1:-1;save();return desk()}if(action==='film-check')return filmCheck();
 if(action==='water-check')return waterCheck();if(action.startsWith('sluice-')){const p=action.split('-');return sluiceMove(Number(p[1]),p[2])}
 if(action.startsWith('glass-')){const p=action.split('-');return glassMove(p[1],p[2])}if(action==='beam-check')return beamCheck();
