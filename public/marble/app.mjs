@@ -191,24 +191,27 @@ function buildButtons(s,index,from,p,label='건설',action='upgrade'){
  }
  return options.join('');
 }
+function marbleCatResult(s){
+ const me=s.players.find(x=>!x.ai)||s.players[0];
+ const cat=s.players.find(x=>x.ai)||s.players.find(x=>x.id==='moyeo-cat');
+ const stats=[
+  {label:'진행 라운드',value:s.round+'라운드'},
+  {label:'내 소유 도시',value:Object.values(s.properties||{}).filter(p=>p.owner===me?.id).length+'개'},
+  {label:'고양이 소유 도시',value:Object.values(s.properties||{}).filter(p=>p.owner===cat?.id).length+'개'}];
+ return window.MoyeoCatResult.render({game:'모여마블',
+  outcome:s.winner===cat?.id?'cat':s.winner===me?.id?'player':'draw',
+  summary:s.reason||'경기가 종료되었습니다.',
+  score:{player:formatM(netWorth(s,me.id)),cat:formatM(netWorth(s,cat.id))},
+  stats,
+  actions:button('rematch','↻ 다시 대결하기','mm-primary')+button('leave','다른 게임 선택','mm-secondary')
+ });
+}
 function actionPanel(s){
  const p=current(s),yourTurn=(onlineRoom?p.id===SID:!p.ai)&&!scene;
  if(s.phase==='finished'){
   const ranking=winnerRanking(s),winner=s.players.find(x=>x.id===s.winner);
   if(catChallenge&&window.MoyeoCatResult?.render){
-   const me=s.players.find(x=>!x.ai)||s.players[0];
-   const cat=s.players.find(x=>x.ai)||s.players.find(x=>x.id==='moyeo-cat');
-   const stats=[
-    {label:'진행 라운드',value:s.round+'라운드'},
-    {label:'내 소유 도시',value:Object.values(s.properties||{}).filter(p=>p.owner===me?.id).length+'개'},
-    {label:'고양이 소유 도시',value:Object.values(s.properties||{}).filter(p=>p.owner===cat?.id).length+'개'}];
-   return window.MoyeoCatResult.render({game:'모여마블',
-    outcome:s.winner===cat?.id?'cat':s.winner===me?.id?'player':'draw',
-    summary:s.reason||'경기가 종료되었습니다.',
-    score:{player:formatM(netWorth(s,me.id)),cat:formatM(netWorth(s,cat.id))},
-    stats,
-    actions:button('rematch','↻ 다시 대결하기','mm-primary')+button('leave','다른 게임 선택','mm-secondary')
-   });
+   return '<div class="mm-result"><h2>경기 종료</h2><p>경기 결과를 확인하거나 결과창을 닫고 게임판을 살펴보세요.</p></div>';
   }
   return `<div class="mm-result"><span class="mm-result-emoji">🏆</span><h2>${escapeHTML(winner?.name||'승자')} 승리!</h2><p>${escapeHTML(s.reason||'게임 종료')}</p><div class="mm-result-rank">${ranking.map((x,i)=>`<div><span>${i+1}위 ${escapeHTML(x.name)}</span><span>${formatM(netWorth(s,x.id))}</span></div>`).join('')}</div><div class="mm-center-actions">${onlineRoom?onlineRoom.host===SID?button('startOnline','다시 대결하기','mm-primary'):button('leave','메인으로','mm-secondary'):button('rematch','다시 대결하기','mm-primary')}${button('leave','종료','mm-secondary')}</div></div>`;
  }
@@ -266,6 +269,12 @@ function render(){
  const s=getState();if(s)consumeEvents(s);
  if(onlineRoom){if(!onlineRoom.state)renderWaiting();else renderGame(onlineRoom.state);}else if(localGame)renderGame(localGame);else renderLobby();
  updateClock();
+ const showCatResult=catChallenge&&mode==='ai'&&s?.phase==='finished'&&!s.catResultDismissed&&window.MoyeoCatResult?.overlay;
+ if(showCatResult){
+  root.insertAdjacentHTML('beforeend',window.MoyeoCatResult.overlay(marbleCatResult(s)));
+  root.querySelector('.cat-result-close')?.focus({preventScroll:true});
+ }
+ document.body.classList.toggle('cat-result-open',Boolean(showCatResult));
 }
 function consumeEvents(s){
  if((s.actionSeq||0)<seenActionSeq){seenActionSeq=0;sceneQueue=[];clearTimeout(sceneTimer);scene=null;}
@@ -380,6 +389,7 @@ root.addEventListener('click',async e=>{
  const inspect=e.target.closest('[data-inspect]');if(inspect){inspectedCity=Number(inspect.dataset.inspect);render();return;}
  const action=e.target.closest('[data-action]')?.dataset.action;if(!action)return;
  switch(action){
+ case 'catResultDismiss':{const state=getState();if(state){state.catResultDismissed=true;render();}break;}
  case 'marbleBack':location.href=catChallenge?'/?cat=1':'/';break;
  case 'startLocal':startLocal();break;
  case 'createOnline':await createOnline();break;
