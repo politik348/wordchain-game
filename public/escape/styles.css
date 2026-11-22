@@ -800,3 +800,11 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 @media(prefers-reduced-motion:reduce){
  .wall-light-switch{transition:none!important;}
 }
+
+
+/* Canonical Miro illustration in the existing guide card (2026-11-22). */
+.cat-avatar{overflow:hidden;}
+.cat-avatar img.miro-portrait{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit;filter:drop-shadow(0 2px 3px #14172f33);animation:miroPortraitBreath 6s ease-in-out infinite;transform-origin:50% 65%;}
+.cat-avatar.miro-looking img.miro-portrait{animation:miroObserve .61s ease-in-out 1;transform-origin:50% 65%;}
+@keyframes miroPortraitBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+@media(prefers-reduced-motion:reduce){.cat-avatar img.miro-portrait{animation:none!important;}}
