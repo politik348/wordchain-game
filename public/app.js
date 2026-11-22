@@ -3,9 +3,9 @@ import {chooseBeginnerCatWord} from './wordchain-beginner-ai.mjs?v=20261121begin
 import {renderMafiaGame,renderMafiaRoleCatalog} from './mafia-ui.mjs?v=20261120mafia2';
 import {configureRummikubUI, renderRummikubGame} from './rummikub/ui.mjs?v=20261120rk3';
 import {createSoloRummikub, soloRoom, soloPlayRummikub, soloTickRummikub, catPlayRummikub} from './rummikub/solo.mjs?v=20261120catlevels1';
-import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove, yutSelectedSteps, usableYutRolls} from './yut-solo-engine.mjs?v=20261120catlevels1';
-import {renderSoloYut} from './yut-solo-ui.mjs?v=20261120yut5';
-import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261120yut5';
+import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseCatYutMove, yutSelectedSteps, usableYutRolls} from './yut-solo-engine.mjs?v=20261122backdo1';
+import {renderSoloYut} from './yut-solo-ui.mjs?v=20261122backdo1';
+import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261122backdo1';
 import {installYutPowerControl} from './yut-power.mjs?v=20261120yut5';
 import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261121catart2';
 import {createMembershipUI} from './auth-ui.mjs?v=20261120statusrefresh1';
@@ -314,7 +314,7 @@ function yutGame(){
  const rolls=renderYutRollTray({rolls:s.rolls||[],phase:s.phase,chosen:choice.indices,action:'yutRollChoice',myTurn:mineTurn});
  const board=renderYutBoard({pieces:s.pieces,me:user.sid,turn:s.turn,steps:canMove?choice.steps:null,active:room.status==='playing',action:'yutPick',routeAction:'yutRoute',selected,lastMove:s.lastMove,labels:names});
  const picker=canMove?renderYutRouteChooser(s.pieces[user.sid],choice.steps,selected,'yutRoute'):'';
- return status+progress+guide+`<div class="yut-play-layout"><div class="yut-board-column">${board}${picker}<p class="game-note">윷/모는 이어서 모두 던진 다음 이동합니다. 여러 윷 결과를 선택해 합쳐 이동할 수 있어요. 말을 누르면 이동 경로를 먼저 보여줍니다.</p></div><aside class="yut-control-column">${throwUi}${rolls}<h4>최근 진행</h4><div class="cat-yut-history">${(s.history||[]).slice(-6).reverse().map(h=>`<div>${esc(h)}</div>`).join('')}</div></aside></div>`+endBanner();
+ return status+progress+guide+`<div class="yut-play-layout"><div class="yut-board-column">${board}${picker}<p class="game-note">윷/모는 이어서 모두 던진 다음 이동합니다. 여러 윷 결과를 선택해 합쳐 이동할 수 있어요. 말을 누르면 이동 경로를 먼저 보여줍니다. 도에서 빽도로 HOME에 돌아온 말은 빽도를 한 번 더 쓰면 완주합니다.</p></div><aside class="yut-control-column">${throwUi}${rolls}<h4>최근 진행</h4><div class="cat-yut-history">${(s.history||[]).slice(-6).reverse().map(h=>`<div>${esc(h)}</div>`).join('')}</div></aside></div>`+endBanner();
 }
 let drawColor='#29283f',drawWidth=5;
 function drawDoodleSegment(st){
