@@ -125,18 +125,56 @@ function nextTurn(s){
  else if(p.stuck>0){s.phase='island';s.pending={kind:'island'};log(s,`${p.name}님은 무인도에 있어요. 더블 탈출 또는 보석금을 선택하세요.`);}
  else{s.phase='roll';}
 }
+// Keep the historical 70% cash-out value; a human chooses WHICH property to sell.
+export function saleValue(s,index){
+ const held=s.properties[index];
+ if(!held||!isProperty(Number(index)))return 0;
+ return roundMoney(propertyValue(Number(index),held.level)*.7);
+}
 function sellToCover(s,p,amount){
- const assets=ownTiles(s,p.id).sort((a,b)=>propertyValue(a,property(s,a).level)-propertyValue(b,property(s,b).level));
- for(const i of assets){if(p.cash>=amount)break;const proceeds=roundMoney(propertyValue(i,property(s,i).level)*.7);
+ const assets=ownTiles(s,p.id).sort((a,b)=>saleValue(s,a)-saleValue(s,b));
+ for(const i of assets){if(p.cash>=amount)break;const proceeds=saleValue(s,i);
   p.cash+=proceeds;delete s.properties[i];delete s.olympics[i];log(s,`${p.name}님이 ${TILES[i].name} 매각 · +${proceeds}M`);}
 }
-function spend(s,p,amount,receiver){
+function spend(s,p,amount,receiver,context={}){
  if(!Number.isFinite(amount)||amount<0)throw Error('잘못된 결제 금액입니다.');
- sellToCover(s,p,amount);const paid=Math.min(p.cash,amount);p.cash-=paid;
+ if(!p.ai&&p.cash<amount&&ownTiles(s,p.id).length){
+  s.phase='liquidation';
+  s.pending={kind:'liquidation',amount,receiverId:receiver?.id??null,context};
+  log(s,`${p.name}님 결제 자금 ${roundMoney(amount-p.cash)}M 부족 · 팔 부동산을 직접 선택하세요.`);
+  return null;
+ }
+ // AI opponents retain the automated sale policy; exhausted players may go bankrupt.
+ if(p.ai)sellToCover(s,p,amount);
+ const paid=Math.min(p.cash,amount);p.cash-=paid;
  if(receiver)receiver.cash+=paid;
  if(paid<amount){p.cash=0;p.bankrupt=true;for(const i of ownTiles(s,p.id)){delete s.properties[i];delete s.olympics[i];}
   p.travelTicket=false;p.stuck=0;log(s,`${p.name}님이 자금 부족으로 파산했어요.`);}
  return paid;
+}
+function afterToll(s,p,index){
+ if(checkVictory(s))return;
+ const held=property(s,index);
+ if(!p.bankrupt&&held&&TILES[index].kind==='city'&&held.level<4&&p.cash>=propertyValue(index,held.level)*2){
+  s.pending={kind:'takeover',index};s.phase='choice';log(s,`${p.name}님은 ${TILES[index].name}을(를) 인수할 수 있어요.`);
+ }else nextTurn(s);
+}
+function settleLiquidation(s,p,debt){
+ const {amount,receiverId,context={}}=debt;
+ const receiver=s.players.find(x=>x.id===receiverId);
+ // The last sale must still settle the bill, even when that means bankruptcy.
+ s.pending=null;s.phase='roll';
+ const paid=spend(s,p,amount,receiver);
+ if(paid===null)throw Error('결제가 완료되지 않았습니다.');
+ if(context.kind==='toll'){
+  const tile=TILES[context.index];
+  log(s,`${p.name}님이 ${receiver?.name||'상대'}님에게 ${tile.name} 통행료 ${paid}M 지불${context.defense?' · '+context.defense:''}!`);
+  afterToll(s,p,context.index);
+ }else{
+  if(context.kind==='tax')log(s,`${p.name}님 국세청 세금 ${paid}M`);
+  if(context.kind==='fortune')log(s,`${p.name}님 행운 편지 비용 ${paid}M`);
+  if(!checkVictory(s))nextTurn(s);
+ }
 }
 function credit(s,p,amount,source){
  let net=amount;
@@ -148,7 +186,7 @@ function drawFortune(s,p,choiceIndex,rng){
  s.lastCard=card.title;s.cardReveal={...card,owner:p.id};
  log(s,`행운 편지 ${choiceIndex+1}번 공개: ${card.title}`);
  switch(card.effect){
-  case 'cash':if(card.amount>=0)credit(s,p,card.amount,'행운 편지');else log(s,`${p.name}님 행운 편지 비용 ${spend(s,p,-card.amount)}M`);break;
+  case 'cash':if(card.amount>=0)credit(s,p,card.amount,'행운 편지');else {const paid=spend(s,p,-card.amount,null,{kind:'fortune'});if(paid!==null)log(s,`${p.name}님 행운 편지 비용 ${paid}M`);}break;
   case 'angel':p.angel++;log(s,`${p.name}님이 천사카드 1장을 받았어요!`);break;
   case 'discount':p.discountCards++;log(s,`${p.name}님이 통행료 50% 할인권을 받았어요!`);break;
   case 'travel':p.travelTicket=true;log(s,`${p.name}님이 다음 차례 세계여행권을 받았어요!`);break;
@@ -174,13 +212,11 @@ function arrive(s,index,rng){
   const owner=s.players.find(x=>x.id===held.owner),charge=toll(s,index);
   let paid=0,defense='';
   if(p.angel>0){p.angel--;defense='천사카드 면제';}
-  else if(p.discountCards>0){p.discountCards--;paid=spend(s,p,roundMoney(charge*.5),owner);defense='50% 할인권';}
-  else paid=spend(s,p,charge,owner);
+  else if(p.discountCards>0){p.discountCards--;defense='50% 할인권';paid=spend(s,p,roundMoney(charge*.5),owner,{kind:'toll',index,defense});}
+  else paid=spend(s,p,charge,owner,{kind:'toll',index});
+  if(paid===null)return;
   log(s,defense==='천사카드 면제'?`${p.name}님이 천사카드로 ${tile.name} 통행료 ${charge}M 면제!`:`${p.name}님이 ${owner?.name||'상대'}님에게 ${tile.name} 통행료 ${paid}M 지불${defense?' · '+defense:''}!`);
-  if(checkVictory(s))return;
-  if(tile.kind==='city'&&held.level<4&&p.cash>=propertyValue(index,held.level)*2){
-   s.pending={kind:'takeover',index};s.phase='choice';log(s,`${p.name}님은 ${tile.name}을(를) 인수할 수 있어요.`);
-  }else nextTurn(s);
+  afterToll(s,p,index);
   return;
  }
  switch(tile.kind){
@@ -193,7 +229,7 @@ function arrive(s,index,rng){
   case 'tax':{
    const assessed=ownTiles(s,p.id).reduce((sum,i)=>sum+propertyValue(i,property(s,i).level),0);
    const amount=roundMoney(Math.max(40,Math.min(260,assessed*.1)));
-   const paid=spend(s,p,amount);log(s,`${p.name}님 국세청 세금 ${paid}M`);break;
+   const paid=spend(s,p,amount,null,{kind:'tax'});if(paid!==null)log(s,`${p.name}님 국세청 세금 ${paid}M`);break;
   }
   case 'olympic':{
    const available=ownTiles(s,p.id).filter(i=>(s.olympics[i]||1)<5);
@@ -203,6 +239,7 @@ function arrive(s,index,rng){
   case 'chance':s.phase='chance';s.pending={kind:'fortune'};log(s,`${p.name}님, 행운 편지 3장 중 하나를 고르세요!`);return;
   case 'travel':p.travelTicket=true;log(s,`${p.name}님 세계여행 티켓 획득! 다음 자기 차례에 목적지를 선택해요.`);break;
  }
+ if(s.phase==='liquidation')return;
  if(checkVictory(s))return;nextTurn(s);
 }
 function move(s,target,rng,teleport=false){
@@ -240,6 +277,7 @@ function summarizeAction(before,after,id,type,pending,origin,diceResult){
  else if(type==='upgrade'||type==='startBuild')message=`${actor.name} · ${TILES[pending.kind==='startBuild'?pending.index??-1:pending.index]?.name||TILES[after.lastBuilt]?.name||'도시'} ${LEVEL_NAMES[after.properties[after.lastBuilt]?.level||0]} 건설!`;
  else if(type==='takeover')message=`${actor.name} · ${TILES[pending.index].name} 인수 성공!`;
  else if(type==='olympic')message=`${actor.name} · ${TILES[after.olympicTarget]?.name||'도시'} 올림픽 개최! 통행료 ${after.olympics[after.olympicTarget]||2}배`;
+ else if(type==='sellProperty')message=`${actor.name} · ${TILES[pending?.index??after.lastSold]?.name||'부동산'} 매각으로 현금 확보!`;
  else if(type==='payBail')message=`${actor.name} · 보석금을 내고 무인도 탈출!`;
  else message=`${actor.name} · 이번 행동을 넘겼어요`;
  const special=messages.find(x=>x.includes('통행료')||x.includes('무인도')||x.includes('행운 편지')||x.includes('세금')||x.includes('세계여행'));
@@ -258,6 +296,20 @@ export function applyAction(input,id,type,payload={},rng=Math.random){
  const p=current(s),origin=p.position,pending=s.pending?{...s.pending}:null;
  let rolled=null;
  const commit=()=>{const event=summarizeAction(input,s,id,type,pending,origin,rolled);s.actionSeq=event.seq;s.lastEvent=event;s.events=[event,...(input.events||[])].slice(0,28);return s;};
+ if(type==='sellProperty'){
+  const index=Number(payload.index),held=property(s,index);
+  if(!validIndex(index)||held?.owner!==id)throw Error('내가 보유한 부동산만 매각할 수 있습니다.');
+  if(p.bankrupt)throw Error('파산한 참가자는 매각할 수 없습니다.');
+  const proceeds=saleValue(s,index);
+  p.cash+=proceeds;delete s.properties[index];delete s.olympics[index];s.lastSold=index;
+  log(s,`${p.name}님이 ${TILES[index].name}을(를) 직접 선택해 매각 · +${proceeds}M (매각률 70%)`);
+  if(s.phase==='liquidation'){
+   const debt=s.pending;
+   if(p.cash>=debt.amount||ownTiles(s,id).length===0)settleLiquidation(s,p,debt);
+  }
+  return commit();
+ }
+ if(s.phase==='liquidation')throw Error('먼저 매각할 부동산을 선택하세요.');
  if(type==='takeLoan'){
   if(p.loanUsed)throw Error('은행 대출은 한 판에 한 번만 가능합니다.');
   if(!['roll','choice','island','travel','chance'].includes(s.phase))throw Error('현재는 대출을 이용할 수 없습니다.');
@@ -270,7 +322,7 @@ export function applyAction(input,id,type,payload={},rng=Math.random){
   const index=Number(payload.index);
   if(!Number.isInteger(index)||index<0||index>2)throw Error('편지는 1~3번에서 선택해주세요.');
   s.pending=null;s.phase='roll';drawFortune(s,p,index,rng);
-  if(!checkVictory(s))nextTurn(s);
+  if(s.phase!=='liquidation'&&!checkVictory(s))nextTurn(s);
   return commit();
  }
  if(type==='roll'){
