@@ -31,7 +31,7 @@
     'foyer-cat-banner-emblem':[75.8,23.5],
     'foyer-four-lights':[76.0,42.5], 'foyer-armillary':[94.2,43.8],
     'foyer-counter-ledger':[89.8,50.8],
-    'foyer-counter-pen':[88.7,55.3],
+    'foyer-counter-pen':[88.3,56.0],
     'foyer-counter-base':[86.6,70.4],
     'foyer-side-table-drawer':[7.6,64.5],
     'foyer-side-table-shelf':[4.1,77.8],
