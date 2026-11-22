@@ -856,6 +856,7 @@ function journal(tab='clues',page=0){
   const names={...combinationNotes};
   records=(g.combinedFindings||[]).filter(id=>names[id]).map((id,i)=>({icon:'✧',title:names[id][0],text:names[id][1],stamp:'관찰 '+String(i+1).padStart(2,'0')}));
   if(g.sideGames?.bell)records.unshift({icon:'♫',title:'현관의 작은 음악회',text:'종 네 개의 짧은 연주를 마쳤다. 미로는 한참 동안 귀를 쫑긋 세웠다.',stamp:'작은 발견'});
+  if(g.sideGames?.wallLights)records.unshift({icon:'◉',title:'네 빛의 실없는 장난',text:'색유리 네 개를 모두 켰지만 문은 그대로였다. 미로가 대신 앞발로 작은 박수를 쳤다.',stamp:'선택형 낚시'});
  }
  if(tab==='progress'){
   const entries=[['foot','현관'],['mirror','달'],['books','서재'],['piano','소리'],['film','일기'],['water','온실'],['light','꽃'],['blackout','흔적'],['clock','시간'],['pin','종']];
