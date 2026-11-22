@@ -224,3 +224,10 @@ test('integrated foyer image contains Miro bed and retains all game interactions
  assert.match(storybook,/function focusSolvedProp\(id\)/);
  new Function(storybook);
 });
+
+test('new integrated foyer image is served through both official and taste routes',()=>{
+ const server=file('server.js');
+ assert.match(server,/\['\/taste\/escape\/foyer-scene-integrated\.avif','escape\/foyer-scene-integrated\.avif'\]/);
+ assert.match(server,/if\(protectedEscape\)await requireEscapeAccess\(req\)/,'official route stays permission protected');
+ assert.match(server,/if\(isEscapeTaste&&!tasteFile\)throw err\(404/,'taste preview remains restricted to allowlisted files');
+});
