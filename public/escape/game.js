@@ -14,9 +14,12 @@ const clueText={
  lock9:['현관 출입 기록','현관문이 닫히는 자동 시각은 매일 밤 9시다. 기록지 마지막 줄에 당일의 날짜가 남아 있다.'],
  track:['양탄자 아래의 발자국','침대에서 시작된 작은 발자국과 커다란 신발 자국이 오래된 타일 위에 서로 겹쳐 있다.'],
  portrait:['서재의 초상화','미로와 한 어린 소녀가 함께 앉아 있다. 금빛 액자 아래쪽에 작은 흠집이 보인다.'],
- dust:['서가의 황동 문양','서가 양 끝에 별과 초승달이 새겨져 있다. 책등마다 두 개의 문양이 서로 다른 높이에 있다. 한 권의 책에는 거의 먼지가 없다.'],
+ dust:['서가의 황동 문양','책등마다 두 개의 문양이 다른 높이에 있다. 서가 양 끝은 높아 손이 쉽게 닿지 않지만 오래된 황동 장식이 남아 있다.'],
+ shelfEnds:['높은 서가의 양 끝','사다리로 올려다보니 서가 왼편 끝에는 별(✦), 오른편 끝에는 초승달(☾) 모양이 남아 있다.'],
+ waterSketch:['화분 뒤의 찢어진 스케치','오래된 수조 스케치에는 별 수면이 달보다 정확히 한 눈금 높게 그려져 있다.'],
+ cloudOutlet:['분수 조각상 아래의 배관','구름 모양 배관은 바닥까지 말라 있다. 다른 수조와 달리 굳은 진흙만 남았다.'],
  roll:['기계식 자동연주 원통','원통 표면에는 네 줄의 돌기 흔적이 있고 각 줄마다 여섯 칸의 위치가 있다. 한쪽 모서리와 기계 축에 같은 별이 새겨져 있다.'],
- water:['정원 관리 기록','네 수조 가운데 해 그림 옆에는 세 번째 눈금 높이의 물때가 있고, 구름 수조 바닥에는 마른 진흙이 굳었고 수면 흔적은 없다. 물은 측면 배관으로만 오간다. 이전 그림에서는 별 수조의 수면이 달보다 한 눈금 높다.'],
+ water:['정원 관리 기록','네 수조가 측면 배관으로 이어져 있다. 해 그림 수조에는 세 번째 눈금에 마른 물때가 있다. 나머지 수조에 대한 기록은 찢겨 나갔다.'],
  watering:['온실 자동 급수 시계','유리 덮개 아래 마지막 급수 종료 시각 21:10. 시계 바늘은 그 뒤 더 움직이지 않았다.'],
  powder:['달빛꽃 관찰 기록','희게 마른 꽃가루는 밝은 곳에서는 보이지 않지만 창을 가리면 흐릿한 은빛 반점을 남긴다.'],
  clock:['시계 관리인의 메모','현관 자동 잠금과 온실 급수 종료는 밤에 있었다. 급수 장치의 마지막 진동이 멎은 뒤 모래가 완전히 내려가는 데는 다섯 분이 걸렸다.'],
@@ -32,9 +35,9 @@ const hints={
  ],
  mirror:[
   '황동 벽 장식의 표면은 은면을 댈 만한 곳이 여러 군데 있습니다.',
-  '등불을 켜고 빛이 꺾여 나가는 위치를 관찰해 보세요. 은면마다 면이 두 방향으로 놓입니다.',
+  '장치의 시작점과 반쪽 달의 위치를 비교하고, 은면마다 놓일 수 있는 두 방향을 생각해 보세요.',
   '반사된 빛이 다음 은면으로 이어지도록 회전 각도를 바꿔 보세요. 길이 끊어지는 은면을 먼저 조사해 보세요.',
-  '정답: A(/), B(/), C(＼), D(＼), E(/)입니다. 등불을 켜면 다섯 반사면을 지나 벽 위 반쪽 달에 도달합니다.'
+  '정답: A(/), B(/), C(＼), D(＼), E(/)입니다. 다섯 반사면이 모두 제자리를 향하도록 돌리면 반쪽 달 장치가 반응합니다.'
  ],
  books:[
   '서가 양 끝에 새겨진 문양과 책등의 양 끝을 비교해 보세요.',
@@ -252,7 +255,8 @@ const ambientScenes={
    ['지구본 돌려 보기','지구본이 부드럽게 돌아간다. 어느 나라 위에 고양이 털 한 올이 달라붙어 있다.',10],
    ['바닥 받침 확인하기','받침을 뒤집어 보니 오래된 가격표 자국뿐이다. 미로가 공을 가지고 놀듯 눈으로 따라간다.',10]]],
   ['study-ladder','서가의 사다리',45,43,'높은 책장 옆에 가벼운 나무 사다리가 기대어 있다.',[
-   ['사다리 옮겨 보기','사다리를 조금 밀자 나무가 삐걱거린다. 위쪽 선반에서도 별다른 소리가 나지 않는다.',15]]],
+   ['사다리 옮겨 보기','사다리를 조금 밀자 나무가 삐걱거린다. 위쪽 서가 양 끝에 황동 문양이 붙어 있다.',15],
+   ['높은 서가 양끝 살펴보기','왼쪽 황동 끝에는 별(✦), 오른쪽에는 초승달(☾)이 남아 있다. 어떤 책을 그 사이에 놓을지는 책등을 비교해야 한다.',10]]],
   ['study-bouquet','창가 꽃다발',79,39,'작은 흰 꽃다발이 꽃병에 꽂혀 있다. 수분이 거의 남지 않았다.',[
    ['꽃잎 만져 보기','마른 꽃잎이 손바닥에 떨어졌다. 창가의 그림자가 잠깐 꽃잎 위를 스친다.',5]]],
   ['study-candles','은촛대',88,12,'책상 너머 촛대에 여러 개의 짧아진 초가 서 있다.',[
@@ -336,6 +340,11 @@ function ambientNext(id){
  g.ambientSpent??={};
  g.ambientSpent[id]=ambientTimeSpent(id,level)+seconds;
  g.ambientSteps[id]=level+1;
+ // An optional-looking household prop can contain a genuine fragment. It is
+ // recorded only after physical examination, under the same time rules.
+ if(id==='study-ladder'&&level===1)clue('shelfEnds');
+ if(id==='green-row-of-pots'&&level===1)clue('waterSketch');
+ if(id==='green-fountain-statue'&&level===0)clue('cloudOutlet');
  g.elapsedCarry=(Number(g.elapsedCarry)||0)+seconds;
  save();ambientInspect(id,seconds);
 }
@@ -512,7 +521,7 @@ function inspect(id){if(g.ending){ending(g.ending);return}rememberInspection(id)
  case 'piano':piano();break;
  case 'desk':desk();break;
  case 'greenhouse':move('greenhouse');break;
- case 'record':clue('water');clue('powder');clue('watering');article('달빛 온실 관리판','네 개의 물통을 잇는 황동관에는 새는 곳이 없다.\n해 그림 수조에는 세 번째 눈금 높이의 물때가 남아 있다. 구름 수조의 배출구와 바닥에는 물때가 전혀 없다.\n서랍 안의 오래된 그림에서는 별 수조의 물이 달보다 딱 한 줄 높다.\n\n자동 급수 시계: 「종료 21:10」. 낡은 꽃가루가 기록지 가장자리에 붙어 있다.');break;
+ case 'record':clue('water');clue('watering');article('달빛 온실 관리판','종이 위에는 네 개의 수조를 잇는 배관도가 그려져 있다.\n해 그림 수조의 세 번째 눈금에 오래된 물때가 표시되어 있다.\n\n자동 급수 시계: 「종료 21:10」.\n\n종이 오른쪽 아래가 찢어져 다른 수조의 수위 기록은 읽을 수 없다.');break;
  case 'water':water();break;
  case 'beam':beam();break;
  case 'flower':
@@ -637,7 +646,7 @@ function books(){
    '<button class="rune-flip" data-action="flip-'+name+'" aria-label="'+name+' 책 방향 바꾸기">↻ 뒤집기</button></div>').join('');
  modal('ROOM 02 · 퍼즐 3','서가에 남은 문장',
    '<p class="modal-description">오래된 서가가 텅 비어 있다. 책등에는 제목보다 작은 기호들이 눈에 띈다. 서가 양옆의 황동 장식은 서로 다른 모양으로 닳아 있다.</p>'+
-   '<div class="rune-book-ends"><span>✦</span><small>서가의 낡은 홈</small><span>☾</span></div>'+
+   '<div class="rune-book-ends"><span>·</span><small>양끝의 황동 장식이 높은 곳에 있다</small><span>·</span></div>'+
    '<div class="rune-book-shelf">'+slots+'</div>'+
    '<div class="rune-book-choices">'+options+'</div>'+
    '<p class="puzzle-helper">책을 고르거나 비어 있는 칸에 끌어다 놓을 수 있다. 책은 앞뒤로 돌려 볼 수 있다.</p>',
@@ -891,7 +900,7 @@ const endings={normal:['혼자 맞는 새벽','당신은 문을 열고 혼자 �
 function finish(id){if(id==='true'&&!['photo','diary','collar'].every(has)){error('기억의 물건이 부족합니다.');return}g.ending=id;try{let o=JSON.parse(store.getItem(HISTORY)||'[]');if(!o.includes(id))o.push(id);store.setItem(HISTORY,JSON.stringify(o))}catch(e){}tone('bell');save();ending(id)}
 function ending(id){let [title,copy]=endings[id];modal('EPISODE 01 · COMPLETE',title,`<div class="ending-crown">${id==='normal'?'☀':id==='true'?'✦':'☾'}</div><p class="ending-copy">${copy}</p><div class="result-stats"><div><small>탐험 시간</small><b>${pretty(elapsed())}</b></div><div><small>힌트</small><b>${g.hintsUsed}회</b></div><div><small>기억의 물건</small><b>${['photo','diary','collar'].filter(has).length}/3</b></div></div>`,[['시작 화면','home'],['새로 시작','really-new',true]])}
 
-const scrapbookIcons={invitation:'✉',lock9:'◷',track:'♣',portrait:'▧',dust:'▤',roll:'♫',water:'♧',watering:'◷',powder:'✿',clock:'◷',pin:'❖',story:'☾'};
+const scrapbookIcons={invitation:'✉',lock9:'◷',track:'♣',portrait:'▧',dust:'▤',shelfEnds:'✦',roll:'♫',water:'♧',watering:'◷',waterSketch:'▤',cloudOutlet:'♧',powder:'✿',clock:'◷',pin:'❖',story:'☾'};
 function journal(tab='clues',page=0){
  if(!g)return;
  const supported=['clues','items','moments','progress'];
