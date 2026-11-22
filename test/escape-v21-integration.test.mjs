@@ -188,17 +188,39 @@ test('foyer lock reveals neither paw graphic nor interpretation rules',()=>{
  new Function(threeD);
 });
 
-test('illustrated foyer renders Miro bed over AVIF and allows clicking its clue',()=>{
- assert.match(storybook,/foyer:'foyer-scene\.avif'/);
- assert.match(storybook,/catbed:\[19\.5,85\]/,'bed hotspot aligns with rendered bed');
- assert.match(storybook,/foyer:new Set\(\[\]\)/,'storybook no longer suppresses bed');
- assert.doesNotMatch(storybook,/foyer:new Set\(\['catbed'\]\)/);
- assert.match(storybook,/className='storybook-catbed-art'/);
- assert.match(storybook,/art\.appendChild\(bed\)/,'bed drawn on pan/zoom artwork');
- assert.match(storybook,/viewBox="0 0 300 206"/,'bed illustration has vector geometry');
- assert.match(storybook,/data-object="catbed"\]\{width:18%!important;height:24%!important/,'click target spans bed');
- assert.match(css,/storybook-ready\[data-room="foyer"\] \.storybook-catbed-art\{display:block;\}/);
- assert.match(html,/storybook\.js\?v=20261122visiblebed9/);
+
+test('integrated foyer image contains Miro bed and retains all game interactions',()=>{
+ const img=file('public/escape/foyer-scene-integrated.avif');
+ assert.ok(img.length>=20000,'integrated AVIF asset must not be an empty placeholder');
+ assert.match(storybook,/foyer:'foyer-scene-integrated\.avif'/);
+ assert.match(storybook,/catbed:\[16\.0,79\.2\]/,'bed hotspot is on painted cat bed');
+ assert.match(storybook,/foyer:new Set\(\[\]\)/,'the catbed hotspot is not hidden');
+ assert.doesNotMatch(storybook,/storybook-catbed-art/,'do not paste a second bed over new background');
+ assert.doesNotMatch(css,/\.storybook-catbed-art\{/,'no stray old foreground illustration');
+ assert.match(storybook,/data-object="catbed"\]\{width:17%!important;height:20%!important/);
+ assert.match(html,/storybook\.js\?v=20261122integrated10/,'asset cache bust');
+ assert.match(html,/styles\.css\?v=20261122integrated10/,'css cache bust');
+ for(const id of ['invitation','catbed','rug','cabinet','crescent','study','cat','foyer-bell',
+    'foyer-main-door','foyer-vase','foyer-chandelier','foyer-sconce','foyer-banner',
+    'foyer-window','foyer-wall-plaque','foyer-moon-painting','foyer-cat-banner-emblem',
+    'foyer-four-lights','foyer-armillary','foyer-counter-ledger','foyer-counter-pen',
+    'foyer-counter-base','foyer-side-table-drawer','foyer-side-table-shelf',
+    'foyer-floor-lantern','foyer-right-sconce','foyer-right-portrait',
+    'foyer-door-crest','foyer-blue-door-plaque']){
+    assert.ok(storybook.includes("'"+id+"':")||storybook.includes(id+":"),'retained target: '+id);
+ }
  assert.match(game,/case 'catbed':return catbedTrack\(\)/);
+ assert.match(game,/const FOYER_FOOT_SEQUENCE='UULRD'/);
+ assert.match(game,/case 'rug':rug\(\)/);
+ assert.match(game,/case 'foyer-bell':foyerBell\(\)/);
+ assert.match(game,/case 'cabinet':if\(!done\('foot'\)\)foot\(\)/);
+ assert.match(game,/function invitation\(\)/);
+ assert.match(game,/g\.footInput===FOYER_FOOT_SEQUENCE/);
+ assert.match(storybook,/if\(direction==='reset'\)/,'camera reset remains active');
+ assert.match(storybook,/if\(direction==='left'\)/);
+ assert.match(storybook,/if\(direction==='right'\)/);
+ assert.match(storybook,/if\(direction==='in'\)/);
+ assert.match(storybook,/if\(direction==='out'\)/);
+ assert.match(storybook,/function focusSolvedProp\(id\)/);
  new Function(storybook);
 });
