@@ -513,7 +513,7 @@ function inspect(id){if(g.ending){ending(g.ending);return}rememberInspection(id)
  case 'invitation':invitation();break;
  case 'catbed':article('미로의 작은 침대','침대 아래에는 작은 고양이 발자국이 새겨져 있다. 옆 바닥에서 희미한 발자국이 양탄자 속으로 이어지는 것 같다.');break;
  case 'rug':rug();break;
- case 'cabinet':if(!done('foot'))foot();else if(!has('silverDisc')){item('silverDisc');item('lamp');item('brassKey');clue('lock9');modal('OPEN','열린 황동 수납장',`<div class="collect-visual">◐</div><div class="letter">은면 원판, 작은 등불, 황동 열쇠가 있다.\n수납장 안쪽 관리 기록: 「현관문 자동 잠금 · 매일 밤 9:00」</div>`)}else article('빈 수납장','안쪽 기록에는 현관이 밤 9시에 잠긴다고 쓰여 있다.');break;
+ case 'cabinet':if(!done('foot'))foot();else if(!has('silverDisc')){modal('현관 · 수납장 안쪽','열린 황동 수납장','<p class="modal-description">걸쇠가 풀리자 서랍이 조금 열린다. 안쪽에는 접힌 종이와 금빛 물건들이 희미하게 보인다.</p>',[['수납장 안쪽 뒤져 보기 · +10초','cabinet-search',true],['뒤로 가기','close']])}else article('빈 수납장','안쪽 기록에는 현관이 밤 9시에 잠긴다고 쓰여 있다.');break;
  case 'crescent':mirror();break;
  case 'study':move('study');break;
  case 'books':books();break;
@@ -529,7 +529,7 @@ function inspect(id){if(g.ending){ending(g.ending);return}rememberInspection(id)
    modal('유리 온실 · 관찰','꽃술에 남은 은빛 흔적',
     '<p class="modal-description">어둠 속에서 꽃술을 살펴보니 꽃가루가 작게 모여 있다. 바닥에도 비슷한 점들이 희미하게 이어져 있다.</p>'+
     '<div class="pollen-tracks" aria-hidden="true"><span>✧ · ✧ · ✧</span><span>· ✧ ✧ ·</span><span>✧ · · ✧</span></div>',
-    [['꽃가루를 가까이 살핀다','pollen-rub',true],['그대로 두기','close']]
+    [['꽃가루를 가까이 살핀다 · +10초','pollen-rub',true],['그대로 두기','close']]
    );
   }else if(!done('light')){
    g.flags.flowerObserved=true;save();
@@ -563,7 +563,7 @@ function inspect(id){if(g.ending){ending(g.ending);return}rememberInspection(id)
  case 'portal':if(done('pin'))finalChoices();else article('위층으로 향하는 계단','계단 위쪽에 닫힌 문이 희미하게 보인다. 아래층 시계추에는 아직 금속 고리가 걸려 있다.');break;
  case 'hall':move('foyer');break;
  }}
-function rug(){g.flags.rug=true;clue('track');modal('현관 홀 · 조사','들춰진 양탄자',`<p class="modal-description">먼지 속 작은 발자국이 이어진다. 타일 중간에는 방향이 다른 커다란 신발 자국도 섞여 있다.</p><div class="trail-grid">${Array.from({length:16},(_,i)=>{let p={0:'침대',1:'🐾',5:'🐾',6:'🐾',10:'종'};return `<div class="trail-cell ${[0,1,5,6,10].includes(i)?'pawmark':''}">${p[i]||([2,9,14].includes(i)?'⌑':'·')}</div>`}).join('')}</div><div class="investigation-actions"><button data-action="rug-pocket">접힌 안감도 조사한다</button></div><p class="puzzle-helper">발자국의 시작과 끝에 작은 상징이 있다. 큰 신발 자국은 오래된 흙자국처럼 보인다.</p>`);save()}
+function rug(){g.flags.rug=true;clue('track');modal('현관 홀 · 조사','들춰진 양탄자',`<p class="modal-description">먼지 속 작은 발자국이 이어진다. 타일 중간에는 방향이 다른 커다란 신발 자국도 섞여 있다.</p><div class="trail-grid">${Array.from({length:16},(_,i)=>{let p={0:'침대',1:'🐾',5:'🐾',6:'🐾',10:'종'};return `<div class="trail-cell ${[0,1,5,6,10].includes(i)?'pawmark':''}">${p[i]||([2,9,14].includes(i)?'⌑':'·')}</div>`}).join('')}</div><div class="investigation-actions"><button data-action="rug-pocket">접힌 안감도 조사한다 · +10초</button></div><p class="puzzle-helper">발자국의 시작과 끝에 작은 상징이 있다. 큰 신발 자국은 오래된 흙자국처럼 보인다.</p>`);save()}
 function foot(){g.activePuzzle='foot';if(done('foot')){article('열린 수납장','방향 자물쇠는 이미 풀려 있다.');return}modal('ROOM 01 · 퍼즐 1','네 번의 걸음',`<p class="modal-description">수납장 손잡이에 고양이 발자국과 네 방향의 작은 홈이 있다. 네 칸의 표시등은 아직 꺼져 있다.</p><div class="direction-pad">${[['↑','up'],['←','left'],['↓','down'],['→','right']].map(([t,v])=>`<button data-action="step-${v}" aria-label="${v}">${t}</button>`).join('')}</div><div class="puzzle-counter">${'●'.repeat(g.footInput.length)}${'○'.repeat(4-g.footInput.length)}</div><p class="puzzle-helper">현관의 다른 부분도 살펴볼 수 있다.</p>`)}
 function step(v){if(done('foot'))return;let code={right:'R',left:'L',up:'U',down:'D'}[v];g.footInput+=code;tone();if(g.footInput.length===4){if(g.footInput==='RDRD'){g.flags.foot=true;g.activePuzzle='mirror';notify('수납장의 방향 자물쇠가 풀렸다!');tone('gain');render();modal('PUZZLE SOLVED','열리는 수납장',`<div class="collect-visual">⌑</div><p class="modal-description">철컥, 수납장의 걸쇠가 풀렸다. 수납장 안을 직접 조사해 보세요.</p>`);return}g.footInput='';error('걸쇠가 원래 위치로 돌아갔다.')}foot();save()}
 
@@ -600,7 +600,7 @@ function mirror(){
  if(!has('silverDisc')||!has('lamp')){
   article('깨진 달 장식','문양 아래에는 은면이 결합되는 다섯 개의 받침이 있다. 한쪽 끝에는 등불을 끼울 홈이 보인다.');return;
  }
- if(!g.discMounted){modal('현관 · 조사','반쪽 달 장식','<p class="modal-description">황동 장식 옆에 은빛 원판과 크기가 비슷한 빈 홈이 있다. 가장자리에는 마모된 금속 가루가 남아 있다.</p>',[['원판을 홈에 대 보기','mirror-mount',true],['돌아가기','close']]);return;}
+ if(!g.discMounted){modal('현관 · 조사','반쪽 달 장식','<p class="modal-description">황동 장식 옆에 은빛 원판과 크기가 비슷한 빈 홈이 있다. 가장자리에는 마모된 금속 가루가 남아 있다.</p>',[['원판을 홈에 대 보기 · +5초','mirror-mount',true],['돌아가기','close']]);return;}
  // Existing saves may already contain the correct arrangement with the former lamp off.
  // Resolve it without requiring the removed beam-preview button.
  if(traceMoonbeam().solved)return mirrorSolve();
@@ -664,7 +664,7 @@ function bookCheck(){
  solved('books','책등의 문양이 하나의 길처럼 이어지자 서가가 천천히 뒤로 밀려났습니다. 숨겨진 칸에서 기계식 자동연주 원통을 발견했습니다.');
 }
 
-function portrait(){clue('portrait');modal('달빛 서재 · 초상화','희미한 얼굴',`<p class="modal-description">미로와 함께 앉은 어린 소녀가 그려져 있다. 아래 이름은 <b>루나</b>. 금빛 액자 틈이 다른 곳보다 조금 벌어져 있다.</p>${has('film')?'<div class="letter">액자 안쪽은 비어 있다.</div>':'<div class="investigation-actions"><button data-action="portrait-back">액자 뒷면을 살핀다</button></div>'}`)}
+function portrait(){clue('portrait');modal('달빛 서재 · 초상화','희미한 얼굴',`<p class="modal-description">미로와 함께 앉은 어린 소녀가 그려져 있다. 아래 이름은 <b>루나</b>. 금빛 액자 틈이 다른 곳보다 조금 벌어져 있다.</p>${has('film')?'<div class="letter">액자 안쪽은 비어 있다.</div>':'<div class="investigation-actions"><button data-action="portrait-back">액자 뒷면을 살핀다 · +10초</button></div>'}`)}
 
 const rollPegs=[3,0,4,3]; // Maker: the engraved calibration notch corresponds to offset 4.
 const noteFrequencies=[261.63,293.66,329.63,349.23,392,440];
@@ -970,13 +970,13 @@ function hintMore(id){
 }
 function talk(){let lines={foyer:['이 집에는 출입문이 너무 많아. 하지만 난 양탄자가 좋아.','수납장에서는 뭔가 반짝이는 냄새가 나.'],study:['루나는 책등의 무늬로 비밀 이야기를 만들었지.','저 책 중 하나는 내가 혼자 꽂아 둔 거야. 어디더라?'],greenhouse:['난 예전에 여기서 발이 늘 젖었어.','꽃가루가 털에 묻으면 루나가 날 안아 줬지.'],tower:['열두 번의 종소리는 늘 무서웠어.','나는 왜 자꾸 누군가를 기다리는 것 같지?']};let a=lines[g.room];$('catDialog').textContent=a[(catTurns++)%a.length];g.catMood='curious';tone();render()}
 function menu(){modal('PAUSE','탐험 메뉴',`<p class="modal-description">진행 내용은 자동 저장됩니다. 탐험 시간(추가 조사 시간 포함): ${pretty(elapsed())}</p>`,[['계속 탐험','close',true],['시작 화면','home']])}
-function handle(action){if(action.startsWith('core-deep-'))return coreDeep(action.slice(10));if(action==='wall-reset')return wallLightReset();if(action.startsWith('wall-light-'))return wallLightPress(Number(action.slice(11)));if(action==='invitation')return invitation();if(action==='invitation-flip')return invitationFlip();if(action.startsWith('item-flip-'))return itemFlip(action.slice(10));if(action==='mirror-mount'){if(has('silverDisc')&&has('lamp')){g.discMounted=true;save();return mirror()}return;}if(action==='sconce-touch')return sconceTouch();if(action.startsWith('ambient-open-'))return ambientInspect(action.slice(13));if(action==='bell-reset')return bellReset();if(action.startsWith('bell-note-'))return bellNote(Number(action.slice(10)));if(action.startsWith('ambient-next-'))return ambientNext(action.slice(13));if(action==='close')return hide();if(action==='home')return home();if(action==='really-new')return begin();if(action==='new-confirm')return modal('NEW GAME','처음부터 시작할까요?',`<p class="modal-description">이번 버전의 진행 데이터가 초기화됩니다.</p>`,[['취소','close'],['새로 시작','really-new',true]]);
-if(action==='pollen-rub'){if(done('light')&&g.flags.curtain){g.flags.blackout=true;clue('powder');save();return modal('GREENHOUSE · 관찰','희미한 발자국',`<p class="modal-description">은빛 가루를 쓸어내자 작고 둥근 발자국들이 선명해진다. 발자국은 꽃줄기 뒤편의 오래된 유리 용기 부근에서 끊겨 있다.</p>`,[['돌아가기','close',true]])}return}if(action.startsWith('step-'))return step(action.slice(5));if(action==='rug-pocket'){if(!has('photo'))item('photo');return modal('FOUND','오래된 사진',`<div class="collect-visual">▧</div><div class="letter">어린 미로와 루나가 함께 찍혀 있다.\n\n「우린 언제나 함께야」</div>`)}
+function handle(action){if(action==='cabinet-search'){if(!done('foot')||has('silverDisc'))return;coreOneOff('cabinet-search',10);item('silverDisc');item('lamp');item('brassKey');clue('lock9');return modal('OPEN','열린 황동 수납장',`<div class="collect-visual">◐</div><div class="letter">은면 원판, 작은 등불, 황동 열쇠를 꺼냈다.\n안쪽 접힌 기록에 「현관문 자동 잠금 · 매일 밤 9:00」가 적혀 있다.</div>`);}if(action.startsWith('core-deep-'))return coreDeep(action.slice(10));if(action==='wall-reset')return wallLightReset();if(action.startsWith('wall-light-'))return wallLightPress(Number(action.slice(11)));if(action==='invitation')return invitation();if(action==='invitation-flip')return invitationFlip();if(action.startsWith('item-flip-'))return itemFlip(action.slice(10));if(action==='mirror-mount'){if(has('silverDisc')&&has('lamp')){if(!g.discMounted)coreOneOff('mirror-mount',5);g.discMounted=true;save();return mirror()}return;}if(action==='sconce-touch')return sconceTouch();if(action.startsWith('ambient-open-'))return ambientInspect(action.slice(13));if(action==='bell-reset')return bellReset();if(action.startsWith('bell-note-'))return bellNote(Number(action.slice(10)));if(action.startsWith('ambient-next-'))return ambientNext(action.slice(13));if(action==='close')return hide();if(action==='home')return home();if(action==='really-new')return begin();if(action==='new-confirm')return modal('NEW GAME','처음부터 시작할까요?',`<p class="modal-description">이번 버전의 진행 데이터가 초기화됩니다.</p>`,[['취소','close'],['새로 시작','really-new',true]]);
+if(action==='pollen-rub'){if(done('light')&&g.flags.curtain){coreOneOff('pollen-rub',10);g.flags.blackout=true;clue('powder');save();return modal('GREENHOUSE · 관찰','희미한 발자국',`<p class="modal-description">은빛 가루를 쓸어내자 작고 둥근 발자국들이 선명해진다. 발자국은 꽃줄기 뒤편의 오래된 유리 용기 부근에서 끊겨 있다.</p>`,[['돌아가기','close',true]])}return}if(action.startsWith('step-'))return step(action.slice(5));if(action==='rug-pocket'){if(!g.flags.rug)return;if(!has('photo'))coreOneOff('rug-pocket',10);if(!has('photo'))item('photo');return modal('FOUND','오래된 사진',`<div class="collect-visual">▧</div><div class="letter">어린 미로와 루나가 함께 찍혀 있다.\n\n「우린 언제나 함께야」</div>`)}
 if(action.startsWith('mirror-turn-'))return mirrorTurn(action.slice(12));if(action==='mirror-switch')return; // Ignore stale buttons from earlier cached puzzle versions.
 if(action.startsWith('flip-')){let name=action.slice(5);if(Object.hasOwn(moonBooks,name)){g.booksFlipped??={};g.booksFlipped[name]=!g.booksFlipped[name];save();return books()}}
 if(action.startsWith('book-')){let name=action.slice(5);if(name==='reset'){g.booksPlaced=[null,null,null,null,null];save();return books()}if(name==='check')return bookCheck();if(Object.hasOwn(moonBooks,name)&&!g.booksPlaced.includes(name)){let slot=g.booksPlaced.indexOf(null);if(slot>=0){g.booksPlaced[slot]=name;save();}}return books()}
 if(action.startsWith('unbook-')){let slot=Number(action.slice(7));if(Number.isInteger(slot)&&slot>=0&&slot<5){g.booksPlaced[slot]=null;save()}return books()}
-if(action==='portrait-back'){item('film');return modal('FOUND','별 구멍이 난 투명 필름',`<div class="collect-visual">▧</div><p class="modal-description">액자 뒷면에서 투명한 얇은 판이 나옵니다. 네 곳에 작은 구멍이 뚫려 있고 한쪽 모서리에 별이 있습니다.</p>`)}
+if(action==='portrait-back'){if(!has('film'))coreOneOff('portrait-back',10);item('film');return modal('FOUND','별 구멍이 난 투명 필름',`<div class="collect-visual">▧</div><p class="modal-description">액자 뒷면에서 투명한 얇은 판이 나옵니다. 네 곳에 작은 구멍이 뚫려 있고 한쪽 모서리에 별이 있습니다.</p>`)}
 if(action.startsWith('drum-')&&action!=='drum-play')return drumSet(Number(action.slice(5)));if(action==='drum-play')return drumPlay();if(action.startsWith('key-'))return keyPress(Number(action.slice(4)));if(action==='piano-reset'){g.pianoInput=[];save();return piano()}
 if(action==='film-turn'){g.filmRotate=(g.filmRotate+1)%4;save();return desk()}if(action==='film-slide'){g.filmShift=g.filmShift===-1?0:g.filmShift===0?1:-1;save();return desk()}if(action==='film-check')return filmCheck();
 if(action==='water-check')return waterCheck();if(action.startsWith('sluice-')){const p=action.split('-');return sluiceMove(Number(p[1]),p[2])}
