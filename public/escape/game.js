@@ -11,17 +11,17 @@ const meta={foyer:['현관 홀','자정에 멈춘 저택의 첫 번째 공간'],
 const roomStories={
   "foyer": {
     "title": "멈춰 버린 시간",
-    "intro": "현관문이 등 뒤에서 닫혔다. 오래된 시계는 자정에 멈춰 있다.\n계단 아래의 고양이가 고개를 든다.\n미로: “여기가 낯설지는 않은데… 왜 아무것도 기억나지 않지?”",
+    "intro": "현관문이 등 뒤에서 닫혔다. 오래된 시계는 자정에 멈춰 있다.\n현관 한쪽의 고양이가 고개를 든다.\n미로: “여기가 낯설지는 않은데… 왜 아무것도 기억나지 않지?”",
     "goal": "저택 안쪽으로 들어갈 방법을 찾자."
   },
   "study": {
     "title": "지워진 기록",
-    "intro": "오래된 종이 냄새가 난다. 책상 위에 일기장이 펼쳐져 있고, 벽에는 빛바랜 초상화가 걸려 있다.\n미로: “여기서 누가 내게 책을 읽어 줬던 것 같아.”",
+    "intro": "오래된 종이 냄새가 난다. 책상 위에는 여러 장의 낡은 서류가 놓여 있고, 벽에는 빛바랜 초상화가 걸려 있다.\n미로: “여기서 누가 내게 책을 읽어 줬던 것 같아.”",
     "goal": "저택에 무슨 일이 있었는지 알아낼 기록을 찾자."
   },
   "greenhouse": {
     "title": "잊어버린 약속",
-    "intro": "유리문을 열자 희미한 꽃향기가 퍼진다. 멈춘 저택에서 꽃들은 이상할 만큼 생생하다.\n미로는 오래된 의자 곁에 앉는다.\n미로: “여기서 기다리면… 누가 와야 하는데.”",
+    "intro": "유리문을 열자 희미한 꽃향기가 퍼진다. 멈춘 저택에서 꽃들은 이상할 만큼 생생하다.\n미로는 작은 찻상 곁에 앉는다.\n미로: “여기서 기다리면… 누가 와야 하는데.”",
     "goal": "온실에 남은 흔적을 조사하고 시계탑으로 향하자."
   },
   "tower": {
@@ -773,7 +773,7 @@ function filmWindows(){
 }
 function desk(){
  g.activePuzzle='film';
- if(done('film')){article('숨겨진 일기','열린 서랍 안에는 「미로에게 꼭 돌아갈게」라는 글과 사고 당시의 자동 기록이 남아 있다.');return;}
+ if(done('film')){article('숨겨진 일기','열린 서랍 안에는 「미로에게 꼭 돌아갈게」라는 일기와 「상주 인원 0명」이라고 적힌 기록부가 함께 남아 있다.');return;}
  const hasSheet=has('film'),windows=hasSheet&&g.filmShift!==-1?filmWindows():[];
  const starCorner=[0,3,15,12][g.filmRotate||0];
  const cells=filmMarks.map((mark,i)=>'<div class="film-number '+(windows.includes(i)?'window-number':windows.length?'covered-number':'')+'">'+mark+'</div>').join('');
@@ -792,7 +792,7 @@ function filmCheck(){
  if(!has('film')||!has('lamp')){article('빛이 닿지 않는 유리','다른 빛이 필요할 것 같다.');return;}
  if(g.filmRotate===2&&g.filmShift===0){
   g.flags.film=true;item('diary');clue('story');
-  solved('film','필름의 창을 통과한 빛이 책상 아래 숨은 감광 장치를 건드립니다. 서랍이 열리고 누군가 남긴 일기와 오래된 기록이 드러났습니다.');return;
+  solved('film','필름의 창을 통과한 빛이 책상 아래 숨은 감광 장치를 건드립니다. 서랍이 열리고 미로를 돌보던 사람의 일기와 「상주 인원 0명」이라고 쓰인 기록부가 함께 드러났습니다.');return;
  }
  error('필름 아래로 엷은 그림자가 생겼지만 서랍에서는 아무 소리도 들리지 않는다.');desk();
 }
