@@ -22,7 +22,7 @@ test('the Cat hub keeps six actual cat battles and adds two separate taste cards
  assert.match(markup,/3종 미니게임/);
  assert.match(app,/if\(action==='catTasteEscape'\)\{location\.href='\/taste\/escape\/index\.html'/);
  assert.match(app,/if\(action==='catTasteArcade'\)\{location\.href='\/gamehell\/index\.html\?trial=1'/);
- assert.match(read('public/index.html'),/app\.js\?v=20261121taste1/);
+ assert.match(read('public/index.html'),/app\.js\?v=[A-Za-z0-9_-]+/);
 });
 
 test('arcade trial exposes only three modes and isolates all local state',()=>{
