@@ -535,7 +535,7 @@ for(const [room,objects] of Object.entries(ambientScenes)){
 /* Uniform exploration: mandatory puzzle parts and ordinary props both require
    paid physical examination; looking at any object remains free.
    Re-entering a previously examined mechanism never costs another fee. */
-const coreInspections={"invitation":[5,"초대장과 봉투","오래된 편지와 봉투가 놓여 있다. 종이는 여러 번 펼친 흔적이 있다.","봉투를 집어 펼쳐 보기"],"rug":[10,"바닥에 놓인 양탄자","큰 양탄자 끝이 약간 들려 있다. 그림자 아래 바닥이 궁금하다.","양탄자 모서리 들추기"],"cabinet":[5,"황동 수납장","손잡이에 발바닥 모양 문양과 다섯 개의 빈 홈이 있다. 단단한 잠금쇠가 걸려 있다.","손잡이를 돌려 장치 확인하기"],"crescent":[10,"반쪽 달 장식","금빛 장식의 표면에 얇은 홈이 있다. 먼지가 적은 부분도 보인다.","황동 장치 가까이 조사하기"],"books":[10,"달빛 서가","계절 이름이 붙은 책등마다 다른 문양이 보인다.","책을 꺼내 양쪽 문양 확인하기"],"portrait":[10,"빛바랜 초상화","초상화 아래 금빛 테두리가 약간 벌어져 있다.","액자 틈과 뒷면 확인하기"],"piano":[10,"기계식 피아노","원통 축과 낡은 건반이 보인다.","건반 덮개 열어 장치 확인하기"],"desk":[10,"잠긴 서랍과 유리판","유리 아래에 작은 표식이 있고 서랍은 열리지 않는다.","책상 유리판과 서랍 조사하기"],"record":[10,"온실 관리 기록","오래된 관리 기록이 벽에 붙어 있다. 먼지 때문에 글씨가 흐리다.","관리 기록 펼쳐 읽기"],"water":[10,"수조의 황동 밸브","네 수조가 금속관과 이어져 있다. 밸브에는 손자국이 있다.","밸브 덮개 열어 눈금 살펴보기"],"beam":[10,"유리 채광 장치","색유리 두 장이 채광창의 둥근 홈에 끼워져 있다.","유리 틀 고정쇠 풀어 보기"],"flower":[5,"달빛꽃","푸른 꽃잎 표면에 작은 점들이 있고 바깥쪽은 오므라들었다.","꽃잎 자세히 들여다보기"],"shutter":[5,"채광창 손잡이","창틀에 손잡이와 걸쇠가 있다.","걸쇠를 당겨 보기"],"pot":[10,"오래된 유리 화분","꽃줄기 뒤쪽에 두꺼운 먼지가 쌓인 유리 화분이 있다.","유리 가장자리 들어 살펴보기"],"pedestal":[10,"세 인장의 제단","서로 모양이 다른 세 개의 홈이 파여 있다.","제단의 홈과 인장 뒷면 조사하기"],"keeper":[10,"시계 관리인의 기록","관리 장부 가장자리가 접혀 있고 일부는 낡은 끈으로 묶여 있다.","장부 펼쳐 내용 읽기"],"clock":[10,"거대한 시계","시계의 바늘은 멈춰 있고 수동 손잡이에 먼지가 묻었다.","태엽과 바늘 조작 장치 조사하기"],"pin":[10,"붉은 고정쇠","시계추 아래에 굵은 붉은 걸쇠가 걸려 있다. 세 바퀴는 움직이지 않는다.","고정쇠와 황동 바퀴 조사하기"]};
+const coreInspections={"invitation":[5,"초대장과 봉투","오래된 편지와 봉투가 놓여 있다. 종이는 여러 번 펼친 흔적이 있다.","봉투를 집어 펼쳐 보기"],"rug":[10,"바닥에 놓인 양탄자","큰 양탄자 끝이 약간 들려 있다. 그림자 아래 바닥이 궁금하다.","양탄자 모서리 들추기"],"cabinet":[5,"황동 수납장","황동 손잡이 아래 다섯 개의 빈 홈이 있고, 장치는 굳게 잠겨 있다.","잠금쇠 가까이 살펴보기"],"crescent":[10,"반쪽 달 장식","금빛 장식의 표면에 얇은 홈이 있다. 먼지가 적은 부분도 보인다.","황동 장치 가까이 조사하기"],"books":[10,"달빛 서가","계절 이름이 붙은 책등마다 다른 문양이 보인다.","책을 꺼내 양쪽 문양 확인하기"],"portrait":[10,"빛바랜 초상화","초상화 아래 금빛 테두리가 약간 벌어져 있다.","액자 틈과 뒷면 확인하기"],"piano":[10,"기계식 피아노","원통 축과 낡은 건반이 보인다.","건반 덮개 열어 장치 확인하기"],"desk":[10,"잠긴 서랍과 유리판","유리 아래에 작은 표식이 있고 서랍은 열리지 않는다.","책상 유리판과 서랍 조사하기"],"record":[10,"온실 관리 기록","오래된 관리 기록이 벽에 붙어 있다. 먼지 때문에 글씨가 흐리다.","관리 기록 펼쳐 읽기"],"water":[10,"수조의 황동 밸브","네 수조가 금속관과 이어져 있다. 밸브에는 손자국이 있다.","밸브 덮개 열어 눈금 살펴보기"],"beam":[10,"유리 채광 장치","색유리 두 장이 채광창의 둥근 홈에 끼워져 있다.","유리 틀 고정쇠 풀어 보기"],"flower":[5,"달빛꽃","푸른 꽃잎 표면에 작은 점들이 있고 바깥쪽은 오므라들었다.","꽃잎 자세히 들여다보기"],"shutter":[5,"채광창 손잡이","창틀에 손잡이와 걸쇠가 있다.","걸쇠를 당겨 보기"],"pot":[10,"오래된 유리 화분","꽃줄기 뒤쪽에 두꺼운 먼지가 쌓인 유리 화분이 있다.","유리 가장자리 들어 살펴보기"],"pedestal":[10,"세 인장의 제단","서로 모양이 다른 세 개의 홈이 파여 있다.","제단의 홈과 인장 뒷면 조사하기"],"keeper":[10,"시계 관리인의 기록","관리 장부 가장자리가 접혀 있고 일부는 낡은 끈으로 묶여 있다.","장부 펼쳐 내용 읽기"],"clock":[10,"거대한 시계","시계의 바늘은 멈춰 있고 수동 손잡이에 먼지가 묻었다.","태엽과 바늘 조작 장치 조사하기"],"pin":[10,"붉은 고정쇠","시계추 아래에 굵은 붉은 걸쇠가 걸려 있다. 세 바퀴는 움직이지 않는다.","고정쇠와 황동 바퀴 조사하기"]};
 function coreInspect(id){
  const spec=coreInspections[id];
  if(!spec||g.coreInvestigations?.[id])return false;
@@ -685,7 +685,7 @@ function catbedTrack(){
  return modal('현관 홀 · 관찰','미로의 작은 침대',
   '<p class="modal-description">침대 옆의 낡은 표찰에는 「미로의 발자국을 따라 종까지 와 줘」라고 적혀 있다. 방석 끝에는 작고 둥근 발바닥 자국이 남아 있다. 뒤꿈치 오른쪽 가장자리가 반달처럼 패여 있다.</p>'+
   '<div class="foyer-track-sample">'+foyerPawSvg(true,'U',true)+'</div>'+
-  '<p class="puzzle-helper">침대에서 종까지 이어지는 다른 발자국도 있는 듯하다.</p>');
+  '<p class="puzzle-helper">방석을 더 살피자 먼지가 묻은 둥근 발자국이 보인다.</p>');
 }
 function foyerTrailTile(i){
  if(i===FOYER_DESTINATION)return {type:'anchor',text:'종',prints:[]};
@@ -748,17 +748,12 @@ function foot(){
  }
  if(done('foot')){article('열린 수납장','방향 자물쇠는 이미 풀려 있다.');return;}
  modal('ROOM 01 · 퍼즐 1','지워진 발걸음',
-  '<p class="modal-description">수납장에는 발바닥을 본뜬 회전식 문양과 다섯 개의 빈 홈이 있다. 문양의 발끝 쪽에는 짧은 홈이 새겨져 있다.</p>'+
-  '<div class="foyer-lock-crest" aria-label="발끝 방향에 짧은 홈이 새겨진 발바닥 문양">'+foyerPawSvg(false,'L',true)+
-  '<span class="foyer-lock-notch" aria-hidden="true"></span></div>'+
-  '<div class="direction-pad">'+[['↑','up'],['←','left'],['↓','down'],['→','right']].map(([t,v])=>'<button data-action="step-'+v+'" aria-label="'+v+'">'+t+'</button>').join('')+'</div>'+
-  '<div class="foyer-foot-counter" role="status" aria-label="이동 방향 '+g.footInput.length+'/'+FOYER_FOOT_SEQUENCE.length+'개 입력">'+
+  '<div class="foyer-foot-counter" role="status" aria-label="다섯 칸 중 '+g.footInput.length+'칸 입력">'+
     Array.from({length:FOYER_FOOT_SEQUENCE.length},(_,i)=>
       '<span class="foyer-foot-dot'+(i<g.footInput.length?' filled':'')+'" aria-hidden="true">'+
-      ({U:'↑',D:'↓',L:'←',R:'→'}[g.footInput[i]]||'·')+'</span>').join('')+
-    '<span class="foyer-foot-progress">'+g.footInput.length+' / '+FOYER_FOOT_SEQUENCE.length+'</span></div>'+
-  '<div class="foyer-foot-actions"><button data-action="foot-back" '+(!g.footInput.length?'disabled':'')+'>한 걸음 취소</button><button data-action="foot-reset">전체 지우기</button></div>'+
-  '<p class="puzzle-helper">현관에서 발견한 흔적을 다시 확인할 수 있다.</p>');
+      ({U:'↑',D:'↓',L:'←',R:'→'}[g.footInput[i]]||'·')+'</span>').join('')+'</div>'+
+  '<div class="direction-pad">'+[['↑','up'],['←','left'],['↓','down'],['→','right']].map(([t,v])=>'<button data-action="step-'+v+'" aria-label="'+v+'">'+t+'</button>').join('')+'</div>'+
+  '<div class="foyer-foot-actions"><button data-action="foot-back" '+(!g.footInput.length?'disabled':'')+'>한 칸 취소</button><button data-action="foot-reset">전체 지우기</button></div>');
 }
 function step(v){
  if(done('foot'))return;
@@ -772,7 +767,7 @@ function step(v){
    notify('수납장의 방향 자물쇠가 풀렸다!');tone('gain');render();
    modal('PUZZLE SOLVED','열리는 수납장','<div class="collect-visual">⌑</div><p class="modal-description">철컥, 수납장의 걸쇠가 풀렸다. 수납장 안을 직접 조사해 보세요.</p>');save();return;
   }
-  g.footInput='';error('금속 표시등 다섯 개가 다시 꺼졌다.');
+  g.footInput='';error('다섯 개의 홈이 다시 비워졌다.');
  }
  foot();save();
 }
@@ -1276,6 +1271,8 @@ function catSvg(){return '<img class="miro-portrait" src="miro-avatar.webp?v=202
       <path d="M325 201h150v135H325z" fill="#c19a80" stroke="#efd3aa" stroke-width="8"/><path d="M343 217h114v103H343z" fill="#6c6080"/><path d="M375 242q25-18 48 0m-46 36q22-14 44 0" stroke="#f4d6a6" fill="none" stroke-width="4"/><path d="M347 358h108v18H347z" fill="#b18d77"/>
       <g><path d="M788 392h147v167H788z" fill="#67516b" stroke="#aa8c81" stroke-width="7"/><path d="M808 414h107v52H808zM808 477h107v59H808z" fill="#4a486b" stroke="#aa918b" stroke-width="5"/><circle cx="858" cy="441" r="6" fill="#f3cf94"/><circle cx="858" cy="500" r="6" fill="#f3cf94"/><path d="M773 383h176v17H773z" fill="#b29083"/></g>
       <g id="foyer-catbed-art" aria-hidden="true">
+        <path d="M111 489Q101 450 123 420L133 393L169 415Q214 398 260 415L300 393L314 421Q342 453 327 489Z" fill="#a87888" stroke="#e7c19e" stroke-width="9"/>
+        <path d="M134 468Q182 431 222 443Q261 430 302 468" fill="none" stroke="#efd8ba" stroke-width="6" stroke-linecap="round" opacity=".75"/>
         <ellipse cx="218" cy="567" rx="132" ry="28" fill="#1f2038" opacity=".33"/>
         <path d="M105 508Q112 456 216 453Q328 455 333 508L327 546Q225 585 109 548Z" fill="#916376" stroke="#d2a18d" stroke-width="10"/>
         <ellipse cx="219" cy="500" rx="110" ry="39" fill="#d0b0a4" stroke="#f0cdad" stroke-width="8"/>
