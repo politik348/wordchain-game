@@ -80,3 +80,30 @@ test('EP01 story chapters reveal broad goals without giving away mechanics',()=>
  assert.ok(!game.includes('루나의 무릎 위에서 듣던 자장가'));
  new Function(game);
 });
+
+test('foyer chipped-heel route has one six-step solution and several decoys',()=>{
+ assert.match(game,/const FOYER_FOOT_SEQUENCE='RDDRRD'/);
+ const cat=JSON.parse(game.match(/const FOYER_CAT_PRINTS=(\{[^;]+\});/)[1]);
+ const other=JSON.parse(game.match(/const FOYER_OTHER_PRINTS=(\{[^;]+\});/)[1]);
+ function routes(tiles){
+  const result=[];
+  function visit(i,steps){
+   if(steps.length===6){if(i===18)result.push(steps);return;}
+   for(const [dr,dc,step] of [[0,1,'R'],[1,0,'D'],[0,-1,'L'],[-1,0,'U']]){
+    const row=Math.floor(i/5)+dr,col=(i%5)+dc;
+    if(row<0||row>4||col<0||col>4)continue;
+    const next=row*5+col;
+    if(next===18||tiles.has(next))visit(next,steps+step);
+   }
+  }
+  visit(0,'');return result;
+ }
+ assert.deepEqual(routes(new Set(Object.keys(cat).map(Number))),['RDDRRD']);
+ assert.ok(routes(new Set([...Object.keys(cat),...Object.keys(other)].map(Number))).length>1);
+ assert.match(game,/function foyerTrailDetail\(i\)/);
+ assert.match(game,/data-action="rug-tile-/);
+ assert.match(game,/function catbedTrack\(\)/);
+ assert.match(game,/g\.footInput\.length===6/);
+ assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+ new Function(game);
+});
