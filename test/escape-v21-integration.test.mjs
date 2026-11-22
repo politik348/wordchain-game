@@ -17,8 +17,8 @@ test('EP01 v2.1 has its own save keys, ten puzzle hint trees and three endings',
  }
  assert.ok(game.includes('window.Moyeo3D'));
  assert.match(html,/13번째 종소리/);
- assert.match(html,/<script src="room3d\.js"><\/script>/);
- assert.match(html,/<script src="game\.js"><\/script>/);
+ assert.match(html,/<script src="room3d\.js(?:\?[^\"]*)?"><\/script>/);
+ assert.match(html,/<script src="game\.js(?:\?[^\"]*)?"><\/script>/);
  new Function(game);
 });
 
@@ -46,7 +46,7 @@ test('home gallery advertises the upgraded puzzle count and owner gate',()=>{
  assert.match(app,/id:'escape',name:'모여 방탈출'/);
  assert.match(app,/퍼즐 10종/);
  assert.match(app,/escape-access\/index\.html/);
- assert.match(home,/app\.js\?v=20261121taste1/);
+ assert.match(home,/app\.js\?v=[a-zA-Z0-9_-]+/);
 });
 
 test('unauthenticated HTTP cannot request 3D renderer directly',async()=>{
@@ -67,4 +67,16 @@ test('unauthenticated HTTP cannot request 3D renderer directly',async()=>{
   await new Promise(resolve=>server.close(resolve));
   if(prior===undefined)delete process.env.NODE_ENV;else process.env.NODE_ENV=prior;
  }
+});
+
+test('EP01 story chapters reveal broad goals without giving away mechanics',()=>{
+ for(const title of ['멈춰 버린 시간','지워진 기록','잊어버린 약속','마지막 종소리'])assert.ok(game.includes(title),title);
+ for(const goal of ['저택 안쪽으로 들어갈 방법을 찾자.','저택에 무슨 일이 있었는지 알아낼 기록을 찾자.','온실에 남은 흔적을 조사하고 시계탑으로 향하자.','멈춘 시계를 복구하고 저택에서 일어난 일을 밝혀내자.'])assert.ok(game.includes(goal),goal);
+ assert.match(game,/roomIntroSeen/);
+ assert.match(game,/function showRoomIntro\(id\)/);
+ assert.match(game,/journal-rooms/);
+ assert.match(game,/기억을 모아 루나의 봉인을 푼다/);
+ assert.match(game,/const endings=\{/);
+ assert.ok(!game.includes('루나의 무릎 위에서 듣던 자장가'));
+ new Function(game);
 });
