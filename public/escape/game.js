@@ -670,6 +670,7 @@ function mirror(){
   '<div class="moonbeam-track moonbeam-track--d" aria-hidden="true"></div>'+
   '<div class="moonbeam-source" title="등불" aria-hidden="true">✧</div><div class="moonbeam-destination" title="반쪽 달" aria-hidden="true">☾</div>'+
   mirrors+'</div>'+
+  '<div class="moonbeam-rotation-grid" role="group" aria-label="은면 회전 보조 버튼">'+Object.keys(moonMirrors).map(id=>'<button type="button" data-action="mirror-turn-'+id+'" aria-label="'+id+' 은면 회전">'+id+' '+(g.mirrorTiles[id]==='/'?'╱':'╲')+'</button>').join('')+'</div>'+
   '<div class="moonbeam-inspect-actions"><button type="button" data-action="mirror-inspect-silver">은빛 받침 살펴보기</button><button type="button" data-action="mirror-inspect-brass">황동 받침 살펴보기</button></div>'+
   '<div class="moonbeam-rail-controls" aria-label="황동 은면 위치 조정">'+rails+'</div>'+
   '<p class="puzzle-helper">은면을 눌러 회전시킬 수 있다. 나머지 움직임은 장치에 남은 흔적을 살펴보자. 실험할 때마다 빛의 길이 드러나지는 않는다.</p>',
@@ -678,7 +679,7 @@ function mirror(){
 }
 function mirrorInspect(kind){
  if(kind==='silver')return modal('현관 · 받침 관찰','둥근 마모 자국','<div class="ambient-description">은빛 받침의 가장자리가 원형으로 닳았다. 손끝으로 살짝 건드리자 반사면이 제자리에서 돌아간다.</div>',[['장치로 돌아가기','mirror-open',true]]);
- if(kind==='brass')return modal('현관 · 받침 관찰','길게 닳은 황동','<div class="ambient-description">황동 받침 아래에는 좌우로 긁힌 두 줄의 홈이 있다. 양쪽 끝에는 먼지가 쌓였지만 홈 가운데는 유난히 매끄럽다. 손끝으로 살짝 밀자 받침이 한 칸 미끄러진다.</div>',[['장치로 돌아가기','mirror-open',true]]);
+ if(kind==='brass')return modal('현관 · 받침 관찰','길게 닳은 황동','<div class="ambient-description">황동 받침 아래에는 좌우로 긁힌 두 줄의 홈이 있다. 양쪽 끝에는 먼지가 쌓였지만 홈 가운데는 유난히 매끄럽다. 손끝으로 살짝 밀면 받침이 홈을 따라 움직일 듯하다.</div>',[['장치로 돌아가기','mirror-open',true]]);
 }
 function mirrorTurn(id){
  if(done('mirror')||!Object.hasOwn(moonMirrors,id))return;
