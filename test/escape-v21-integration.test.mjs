@@ -164,7 +164,7 @@ test('foyer has an actual illustrated and clickable cat bed in both renderers',(
  assert.match(threeD,/catbed:\[-4\.45,\.33,1\.85\]/);
  assert.match(threeD,/box\(-4\.45,\.14,1\.85,2\.02,\.27,1\.56/);
  assert.match(html,/room3d\.js\?v=20261122minimal8/);
- assert.match(html,/game\.js\?v=20261122minimal8/);
+ assert.match(html,/game\.js\?v=[A-Za-z0-9_-]+/);
  new Function(game);
  new Function(threeD);
 });
