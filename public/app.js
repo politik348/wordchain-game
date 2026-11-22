@@ -460,8 +460,9 @@ function catResultView(s){
  const r=window.MoyeoCatResult;
  if(!r?.render)return '<div class="end-banner"><h2>'+esc(s.msg||'대국 종료')+'</h2></div>';
  let outcome='draw',stats=[],score=null,game='';
- const summary=s.game==='rummikub'?String(s.engine?.result||'게임 종료'):String(s.msg||'게임 종료');
- const seconds=Number(s.startedAt)>0?Math.floor((Date.now()-s.startedAt)/1000):null;
+ const summary=s.game==='rummikub'?String(soloRoom(s).state?.result||'게임 종료'):String(s.msg||'게임 종료');
+ s.finishedAt??=Date.now();
+ const seconds=Number(s.startedAt)>0?Math.floor((s.finishedAt-s.startedAt)/1000):null;
  if(s.game==='rummikub'){
   game='루미큐브';outcome=s.engine?.winner==='cat'?'cat':s.engine?.winner==='player'?'player':'draw';
   const a=s.engine?.scores||{};
