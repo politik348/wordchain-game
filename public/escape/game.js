@@ -35,7 +35,7 @@ const seals={path:['❖','길의 인장'],echo:['♫','소리의 인장'],light:
 const clueText={
  invitation:['발신인 없는 편지','달빛 저택에 와 주세요. 멈춘 시계가 다시 움직이기 전에 사라진 기억을 찾아 주세요. 봉투의 금속 인장에는 발신인 이름이 없다.'],
  lock9:['현관 출입 기록','현관문이 닫히는 자동 시각은 매일 밤 9시다. 기록지 마지막 줄에 당일의 날짜가 남아 있다.'],
- track:['양탄자 아래의 발자국','작은 발자국과 낡은 신발 밑창 자국이 겹쳐 있다. 작은 발자국끼리도 뒤꿈치 테두리가 서로 다르다.'],
+ track:['양탄자 아래의 발자국','작은 고양이 발자국과 커다란 신발 밑창 자국이 침대 쪽에서 시작해 종 근처에서 만난다. 양쪽 흔적은 서로 다른 모양을 하고 있다.'],
  portrait:['서재의 초상화','미로와 한 어린 소녀가 함께 앉아 있다. 금빛 액자 아래쪽에 작은 흠집이 보인다.'],
  dust:['서가의 황동 문양','책등마다 두 개의 문양이 다른 높이에 있다. 서가 양 끝은 높아 손이 쉽게 닿지 않지만 오래된 황동 장식이 남아 있다.'],
  shelfEnds:['높은 서가의 양 끝','사다리로 올려다보니 서가 왼편 끝에는 별(✦), 오른편 끝에는 초승달(☾) 모양이 남아 있다.'],
@@ -52,10 +52,10 @@ const clueText={
 };
 const hints={
  foot:[
-  '발자국이 모두 같은 시기에 남은 것 같지는 않습니다. 침대 주변에도 비교할 흔적이 있습니다.',
-  '침대 옆의 작은 발자국은 뒤꿈치 한쪽이 특이하게 패여 있습니다. 양탄자 위의 인상들을 확대해서 보세요.',
-  '침대부터 종까지 밟을 수 있는 자국은 여러 줄이지만, 침대의 깨진 뒤꿈치와 닮은 흔적을 연결하면 하나의 길이 남습니다.',
-  '정답: 오른쪽 → 아래 → 아래 → 오른쪽 → 오른쪽 → 아래(RDDRRD). 침대의 뒤꿈치 패임과 일치하는 다섯 자국을 이어서 여섯 걸음을 입력합니다.'
+  '양탄자에 남은 크고 작은 발자국은 어디로 향할까요? 침대 근처에도 오래된 자국이 있습니다.',
+  '작은 발과 신발 밑창이 각각 이어진 흔적을 남겼습니다. 침대의 발바닥 자국도 확대해 보세요.',
+  '두 줄 모두 종에 닿지만, 침대의 반달 모양으로 패인 뒤꿈치와 일치하는 것은 작은 발자국입니다.',
+  '정답: 고양이 발자국은 오른쪽 → 아래 → 아래 → 오른쪽 → 오른쪽 → 아래(RDDRRD)입니다. 신발 자국도 아래 → 아래 → 아래 → 오른쪽 → 오른쪽 → 오른쪽(DDDRRR)으로 종까지 이어지지만, 침대에 남은 흔적은 고양이의 것입니다.'
  ],
  mirror:[
   '반쪽 달 장식의 문장과 등불 받침에 남은 흔적을 살펴보세요. 장치 위의 달은 창문과 떨어져 있습니다.',
@@ -632,12 +632,13 @@ function flowerPattern(){
   [['다른 곳 둘러보기','close',true]]);
 }
 
-/* Foyer footprint deduction: the chipped heel seen at Miro's bed
-   identifies one route among overlapping paw and boot impressions. */
+/* Foyer footprint deduction: two complete six-step trails converge on the bell.
+   Miro's chipped paw impression near the bed distinguishes cat from boot.
+   Both routes are walkable; only the cat route opens the lock. */
 const FOYER_FOOT_SEQUENCE='RDDRRD';
 const FOYER_CAT_PRINTS={"1":"R","6":"D","11":"D","12":"R","13":"R"};
-const FOYER_OTHER_PRINTS={"5":"D","7":"R","14":"R","17":"D"};
-const FOYER_BOOT_PRINTS={"2":35,"9":-25,"15":-12,"22":20};
+// A complete six-step second route (DDDRRR) leads to the same bell.
+const FOYER_BOOT_PRINTS={"5":180,"10":180,"15":90,"16":90,"17":90};
 function foyerPawSvg(chipped,dir='U',large=false){
  const rotation={U:0,R:90,D:180,L:270}[dir]||0;
  const pad=chipped?
@@ -664,7 +665,6 @@ function foyerTrailTile(i){
  if(i===0)return {type:'anchor',text:'침대'};
  if(i===18)return {type:'anchor',text:'종'};
  if(Object.hasOwn(FOYER_CAT_PRINTS,i))return {type:'cat',chipped:true,dir:FOYER_CAT_PRINTS[i]};
- if(Object.hasOwn(FOYER_OTHER_PRINTS,i))return {type:'cat',chipped:false,dir:FOYER_OTHER_PRINTS[i]};
  if(Object.hasOwn(FOYER_BOOT_PRINTS,i))return {type:'boot',angle:FOYER_BOOT_PRINTS[i]};
  return {type:'dust'};
 }
@@ -695,12 +695,12 @@ function rug(selected=-1){
    '" aria-pressed="'+(selected===i)+'">'+foyerTrailGraphic(t)+'</button>';
  }).join('');
  modal('현관 홀 · 조사','들춰진 양탄자',
-  '<p class="modal-description">먼지를 털어내자 고양이 발자국 여러 줄과 커다란 신발 밑창 자국이 드러난다. 서로 다른 방향으로 남은 흔적이 몇 군데에서 겹쳐 있다.</p>'+
+  '<p class="modal-description">먼지를 털어내자 작은 고양이 발자국과 커다란 신발 밑창 자국이 드러난다. 두 종류의 자국이 각기 다른 방향으로 이어져 있다.</p>'+
   '<div class="trail-grid" role="group" aria-label="다섯 행 다섯 열 바닥 타일. 누르면 흔적을 확대한다">'+tiles+'</div>'+
   (selected>=0&&selected<25?foyerTrailDetail(selected):
    '<p class="foyer-track-instruction">타일을 누르면 표면을 확대해서 볼 수 있다.</p>')+
   '<div class="investigation-actions"><button data-action="rug-pocket">'+(has('photo')?'살펴본 안감 다시 보기':'접힌 안감도 조사한다 · +10초')+'</button></div>'+
-  '<p class="puzzle-helper">타일 곳곳의 먼지가 서로 다른 깊이로 눌려 있다.</p>');
+  '<p class="puzzle-helper">타일마다 자국의 크기와 방향이 다르다.</p>');
  save();
 }
 function foot(){
