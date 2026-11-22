@@ -1,0 +1,191 @@
+/* EP01 cinematic layer. Intentional non-blocking CSS only, no video download. */
+.escape-cinema[hidden]{display:none!important}
+.escape-cinema{
+ position:fixed;inset:0;z-index:100;display:grid;place-items:center;overflow:hidden;
+ background:#10182e;color:#ffe8c4;isolation:isolate;
+ font-family:'Noto Sans KR',sans-serif;
+}
+.escape-cinema::before{
+ content:"";position:absolute;inset:-12%;z-index:-1;
+ background:radial-gradient(ellipse at 50% 43%,#74619e88,#303e65 46%,#15172d 83%);
+ animation:escapeCinemaBreathe 6s ease-in-out infinite alternate;
+}
+.escape-cinema--green::before,.escape-cinema--bloom::before,.escape-cinema--water::before{
+ background:radial-gradient(ellipse at 50% 46%,#708e8b8c,#254d53 48%,#101f36 85%);
+}
+.escape-cinema--amber::before,.escape-cinema--gears::before,.escape-cinema--bell::before{
+ background:radial-gradient(ellipse at 50% 42%,#a2736488,#4b3455 47%,#15172d 84%);
+}
+.escape-cinema--dawn::before{background:linear-gradient(0deg,#f3b47f,#9d7191 57%,#384569)}
+.escape-cinema--reunion::before{background:radial-gradient(ellipse at 50% 50%,#fff1bd,#9e90be 50%,#293450 90%)}
+.escape-cinema--midnight::before{background:linear-gradient(15deg,#161c46,#37305d 55%,#13182b)}
+.escape-cinema-space{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.escape-cinema-stars{position:absolute;inset:0}
+.escape-cinema-stars i{
+ position:absolute;top:var(--top,20%);left:var(--left,10%);font-size:clamp(15px,2.2vw,31px);
+ color:#ffdc9a;opacity:0;filter:drop-shadow(0 0 11px #fff3c6);
+ animation:escapeCinemaSpark 2.7s ease-in-out infinite;
+}
+.escape-cinema-stars i:nth-child(1){--top:14%;--left:18%;animation-delay:.15s}
+.escape-cinema-stars i:nth-child(2){--top:63%;--left:10%;animation-delay:.9s}
+.escape-cinema-stars i:nth-child(3){--top:19%;--left:81%;animation-delay:1.55s}
+.escape-cinema-stars i:nth-child(4){--top:80%;--left:70%;animation-delay:2.1s}
+.escape-cinema-stars i:nth-child(5){--top:55%;--left:90%;animation-delay:.65s}
+.escape-cinema-copy{
+ position:absolute;left:7%;right:7%;bottom:7%;z-index:5;
+ text-align:center;text-shadow:0 3px 19px #0c1428d9;
+ animation:escapeCinemaCopyIn .7s both .75s;
+}
+.escape-cinema-copy small{display:block;font-size:11px;font-weight:800;letter-spacing:.25em;color:#f6d4a1}
+.escape-cinema-copy h2{font:700 clamp(26px,5.2vw,49px) Georgia,'Noto Serif KR',serif;letter-spacing:.04em;margin:12px 0}
+.escape-cinema-copy>p{margin:4px 0;font-size:clamp(13px,1.8vw,17px);line-height:1.8;color:#fff0d7}
+.escape-cinema-skip{
+ position:absolute;top:18px;right:18px;z-index:15;
+ color:#fff2d8;border:1px solid #f8ddaaa8;border-radius:99px;
+ background:#19233ccf;padding:11px 18px;font-weight:800;font-size:13px;cursor:pointer;
+}
+.escape-cinema-skip:focus-visible{outline:3px solid #ffe6a7;outline-offset:3px}
+.escape-cinema-skip:hover{background:#364263}
+.escape-cinema-skip span{font-size:18px;margin-left:3px}
+.escape-cinema-moon{
+ position:absolute;top:8%;left:50%;width:min(34vw,245px);aspect-ratio:1;border-radius:50%;
+ transform:translateX(-50%);background:radial-gradient(circle at 40% 32%,#fffce9,#ffe1a3 63%,#d49f78);
+ box-shadow:0 0 70px #fbe5b8aa,0 0 190px #d2bcdf77;
+ animation:escapeCinemaMoonIn 1.6s ease-out both;
+}
+.escape-cinema-door{
+ position:absolute;top:-8%;bottom:-8%;width:50.4%;
+ border:12px solid #bd946f;border-top:26px solid #d0ab78;
+ background:repeating-linear-gradient(90deg,#403353 0,#544364 10%,#3c304b 20%,#554565 30%);
+ box-shadow:inset 0 0 0 20px #271f3d6b,inset 0 0 0 28px #dbb68261,0 8px 35px #070b1e;
+ z-index:3;
+}
+.escape-cinema-door--left{left:0;transform-origin:left center;animation:escapeCinemaDoorLeft 1.8s cubic-bezier(.21,.75,.3,1) both .2s}
+.escape-cinema-door--right{right:0;transform-origin:right center;animation:escapeCinemaDoorRight 1.8s cubic-bezier(.21,.75,.3,1) both .2s}
+.escape-cinema-doorbeam{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 48%,#fff1c48c,transparent 70%);opacity:0;animation:escapeCinemaDoorLight 2.3s ease-in both .3s}
+.escape-cinema--fast .escape-cinema-door--left{animation-duration:.49s;animation-delay:0s}
+.escape-cinema--fast .escape-cinema-door--right{animation-duration:.49s;animation-delay:0s}
+.escape-cinema--fast .escape-cinema-copy{animation:none;opacity:.9}
+.escape-cinema-miro{
+ position:absolute;z-index:4;right:max(7%,calc((100% - 1100px)/2));bottom:10%;
+ width:clamp(95px,20vw,230px);height:clamp(106px,21vw,250px);
+ filter:drop-shadow(0 14px 23px #15122dbf);
+ animation:escapeCinemaMiroPeek 2.6s cubic-bezier(.2,.75,.2,1) both;
+}
+.escape-cinema-miro img{
+ width:100%;height:100%;object-fit:cover;object-position:50% 46%;
+ border:5px solid #e1caa4;border-radius:46% 46% 36% 36%;
+ box-shadow:0 0 25px #ffdfab5c;
+ animation:escapeCinemaMiroBreath 2s ease-in-out infinite;
+}
+.escape-cinema--room .escape-cinema-miro{right:5%;bottom:23%;width:clamp(100px,16vw,175px);height:clamp(110px,17vw,187px)}
+.escape-cinema--room .escape-cinema-copy{bottom:7%}
+.escape-cinema--puzzle .escape-cinema-miro{right:9%;bottom:22%}
+.escape-cinema-puzzle-symbol{
+ position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(.6);
+ font:900 clamp(105px,23vw,250px) Georgia,serif;color:#f8dbaa;
+ filter:drop-shadow(0 0 23px #ffe7ad);
+ animation:escapeCinemaSymbol 1.45s cubic-bezier(.1,.6,.22,1) both;
+}
+.escape-cinema-puzzle-symbol--notes{animation:escapeCinemaNotes 1.6s both}
+.escape-cinema-puzzle-symbol--bloom{animation:escapeCinemaBloom 1.6s both}
+.escape-cinema-puzzle-symbol--water{animation:escapeCinemaWater 1.6s both}
+.escape-cinema-puzzle-symbol--gears{animation:escapeCinemaGear 2s both}
+.escape-cinema-puzzle-symbol--bell{animation:escapeCinemaBell 2s both}
+.escape-cinema-puzzle-symbol--pages{animation:escapeCinemaPages 1.7s both}
+.escape-cinema-puzzle-symbol--beam{animation:escapeCinemaBeam 1.7s both}
+.escape-cinema-pulse{
+ position:absolute;left:50%;top:42%;width:120px;height:120px;border:3px solid #f9d9a2;border-radius:50%;
+ transform:translate(-50%,-50%) scale(.3);opacity:0;box-shadow:0 0 50px #fce5b1a6;
+ animation:escapeCinemaPulse 1.5s ease-out both .2s;
+}
+.escape-cinema--puzzle .escape-cinema-copy{bottom:6%;animation-delay:.22s}
+.escape-cinema--puzzle .escape-cinema-copy h2{font-size:clamp(23px,4.1vw,39px)}
+.escape-cinema-ending-moon{
+ position:absolute;left:50%;top:13%;transform:translateX(-50%);
+ font:900 clamp(90px,22vw,240px) Georgia,serif;color:#fff2cb;
+ text-shadow:0 0 70px #fff0c7,0 0 160px #f8e4ab;
+ animation:escapeCinemaEndingMoon 8s ease-in-out both;
+}
+.escape-cinema-ending-arc{
+ position:absolute;left:50%;top:5%;width:min(61vw,490px);aspect-ratio:1;
+ border:3px solid #ffdfab73;border-radius:50%;transform:translateX(-50%) rotate(-25deg);
+ box-shadow:0 0 33px #ffe3b482;animation:escapeCinemaArc 8s linear both;
+}
+.escape-cinema-ending-ring{
+ position:absolute;left:50%;top:9%;width:min(50vw,410px);aspect-ratio:1;
+ border:2px dotted #f9d2a887;border-radius:50%;transform:translateX(-50%);
+ animation:escapeCinemaRing 8s linear both;
+}
+.escape-cinema--ending .escape-cinema-miro{
+ right:50%;bottom:15%;transform:translateX(50%);width:clamp(140px,20vw,255px);height:clamp(154px,22vw,284px);
+ animation:escapeCinemaEndingMiro 8.2s ease-in-out both;
+}
+.escape-cinema-ending-figure{
+ position:absolute;z-index:4;left:27%;bottom:16%;height:25%;width:12%;
+ opacity:0;transform:translateY(20px);
+ background:radial-gradient(ellipse at 50% 14%,#ffebcb 0%,#eed6bf 24%,transparent 26%),
+  radial-gradient(ellipse at 50% 80%,#f8e7d5 0%,#cfbad5 54%,transparent 57%);
+ filter:drop-shadow(0 0 30px #f9ecc4);
+}
+.escape-cinema--reunion .escape-cinema-ending-figure{animation:escapeCinemaReunion 8.2s ease-in-out both}
+.escape-cinema--dawn .escape-cinema-ending-figure{display:none}
+.escape-cinema--midnight .escape-cinema-ending-figure{display:none}
+.escape-cinema-ending-copy{top:5%;bottom:auto}
+.escape-cinema-ending-copy h2{margin:7px 0 9px;font-size:clamp(23px,4.2vw,43px)}
+.escape-cinema-ending-lines{display:grid;gap:9px;margin:0 auto;max-width:650px}
+.escape-cinema-ending-line{
+ font-size:clamp(13px,1.75vw,17px);font-weight:650;line-height:1.9;margin:0;
+ padding:6px 10px;background:#121b32a6;border-radius:9px;opacity:0;
+}
+.escape-cinema-ending-line--0{animation:escapeCinemaLine 2.2s ease-in-out both 1.15s}
+.escape-cinema-ending-line--1{animation:escapeCinemaLine 2.2s ease-in-out both 3.2s}
+.escape-cinema-ending-line--2{animation:escapeCinemaLine 2.7s ease-in-out both 5.5s}
+.escape-cinema--midnight .escape-cinema-ending-moon{color:#d9ccff;text-shadow:0 0 65px #b4a2ee}
+.escape-cinema--reunion .escape-cinema-ending-moon{color:#fff1c4}
+.escape-cinema--dawn .escape-cinema-ending-moon{color:#ffefbb}
+@keyframes escapeCinemaBreathe{to{transform:scale(1.08);filter:brightness(1.12)}}
+@keyframes escapeCinemaSpark{0%,100%{opacity:0;transform:scale(.45)}42%{opacity:.9;transform:scale(1.1)}}
+@keyframes escapeCinemaMoonIn{from{opacity:.2;transform:translateX(-50%) scale(.7)}to{opacity:1;transform:translateX(-50%) scale(1)}}
+@keyframes escapeCinemaDoorLeft{0%,11%{transform:perspective(900px) rotateY(0deg)}100%{transform:perspective(900px) rotateY(-102deg)}}
+@keyframes escapeCinemaDoorRight{0%,11%{transform:perspective(900px) rotateY(0deg)}100%{transform:perspective(900px) rotateY(102deg)}}
+@keyframes escapeCinemaDoorLight{0%{opacity:0}40%{opacity:.75}100%{opacity:0}}
+@keyframes escapeCinemaCopyIn{from{opacity:0;transform:translateY(19px)}to{opacity:1;transform:translateY(0)}}
+@keyframes escapeCinemaMiroPeek{0%{opacity:0;transform:translateX(85px) rotate(9deg)}35%{opacity:1}70%,100%{opacity:1;transform:translateX(0) rotate(-4deg)}}
+@keyframes escapeCinemaMiroBreath{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.015)}}
+@keyframes escapeCinemaSymbol{0%{opacity:0;transform:translate(-50%,-50%) scale(.2) rotate(-22deg)}55%{opacity:1}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@keyframes escapeCinemaNotes{0%{opacity:0;transform:translate(-50%,-10%) scale(.4) rotate(-15deg)}65%{opacity:1}100%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(5deg)}}
+@keyframes escapeCinemaBloom{0%{opacity:.4;transform:translate(-50%,-50%) scale(.08) rotate(-45deg)}75%{opacity:1}100%{opacity:1;transform:translate(-50%,-50%) scale(1.3) rotate(65deg)}}
+@keyframes escapeCinemaWater{0%{opacity:0;transform:translate(-50%,-25%) scale(.7)}60%{opacity:1;transform:translate(-50%,-54%) scale(1.1)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@keyframes escapeCinemaGear{0%{opacity:0;transform:translate(-50%,-50%) rotate(-140deg) scale(.4)}100%{opacity:1;transform:translate(-50%,-50%) rotate(40deg) scale(1)}}
+@keyframes escapeCinemaBell{0%{opacity:0;transform:translate(-50%,-50%) scale(.45) rotate(-40deg)}35%,65%{opacity:1;transform:translate(-50%,-50%) scale(1.1) rotate(20deg)}50%,80%,100%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-15deg)}}
+@keyframes escapeCinemaPages{0%{opacity:0;transform:translate(-50%,-50%) rotateY(-80deg)}100%{opacity:1;transform:translate(-50%,-50%) rotateY(0)}}
+@keyframes escapeCinemaBeam{0%{opacity:0;transform:translate(-50%,-50%) scale(.3);filter:brightness(.2)}100%{opacity:1;transform:translate(-50%,-50%) scale(1.15);filter:brightness(1.3)}}
+@keyframes escapeCinemaPulse{0%{opacity:.9;transform:translate(-50%,-50%) scale(.1)}100%{opacity:0;transform:translate(-50%,-50%) scale(4)}}
+@keyframes escapeCinemaEndingMoon{0%{opacity:.3;transform:translateX(-50%) scale(.5)}35%,100%{opacity:1;transform:translateX(-50%) scale(1)}}
+@keyframes escapeCinemaArc{to{transform:translateX(-50%) rotate(45deg)}}
+@keyframes escapeCinemaRing{to{transform:translateX(-50%) rotate(-55deg)}}
+@keyframes escapeCinemaEndingMiro{0%{opacity:0;transform:translate(50%,35px) scale(.8)}27%,100%{opacity:1;transform:translate(50%,0) scale(1)}}
+@keyframes escapeCinemaReunion{0%,54%{opacity:0;transform:translateY(25px)}80%,100%{opacity:1;transform:translateY(0)}}
+@keyframes escapeCinemaLine{0%,100%{opacity:0;transform:translateY(8px)}22%,75%{opacity:1;transform:translateY(0)}}
+@media(max-width:640px){
+ .escape-cinema-copy{left:5%;right:5%;bottom:11%}
+ .escape-cinema-copy h2{font-size:clamp(25px,7vw,38px)}
+ .escape-cinema--ending .escape-cinema-miro{bottom:12%;width:125px;height:139px}
+ .escape-cinema-ending-figure{left:15%;bottom:13%;height:17%}
+ .escape-cinema-ending-copy{top:12%}
+ .escape-cinema-ending-lines{gap:6px}
+ .escape-cinema-ending-line{font-size:12px;padding:3px 7px}
+ .escape-cinema--room .escape-cinema-miro{bottom:27%;width:100px;height:112px}
+}
+@media(prefers-reduced-motion:reduce){
+ .escape-cinema *,.escape-cinema::before,.escape-cinema *::before,
+ .escape-cinema *::after{animation:none!important;transition:none!important}
+}
+/* Existing Miro illustration: non-rigged idle breathing and occasional head tilt. */
+.cat-avatar .miro-portrait{
+ animation:escapeCinemaMiroBreath 3.7s ease-in-out infinite;
+ transform-origin:50% 65%;
+}
+.cat-card.miro-cameo .cat-avatar .miro-portrait{animation:escapeCinemaMiroPeek .9s ease-out both}
+.cat-card[data-mood="remembering"] .cat-avatar .miro-portrait{animation:escapeCinemaMiroBreath 5s ease-in-out infinite}
