@@ -19,7 +19,7 @@
   // Illustration dimensions match the 1200:650 scene aspect ratio.
   const spotPositions={
     foyer:{
-      invitation:[29.1,52.2],catbed:[8,81],rug:[48.5,91],
+      invitation:[69.1,57.5],catbed:[8,81],rug:[48.5,91],
       cabinet:[76.1,69.8],crescent:[49.7,35.7],
       study:[24.9,59.1], // LEFT PURPLE DOOR: brass handle, not panel center
       cat:[93.3,82.6],
@@ -72,6 +72,14 @@
     greenhouse:new Set(['tower']),
     tower:new Set([])
   };
+  // Every newly audited detail already has an artwork-relative hit point.
+  // Keep the camera/marker coordinates in sync with its actual pictured part.
+  for(const [room,entries] of Object.entries(window.MoyeoExtraProps||{})){
+    if(!spotPositions[room]||!Array.isArray(entries))continue;
+    for(const row of entries){
+      if(row.length>=6)spotPositions[room][row[0]]=[row[2],row[3]];
+    }
+  }
   const loaded=new Map();
   const art=document.createElement('div');
   art.className='storybook-layer';
