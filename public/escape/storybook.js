@@ -17,23 +17,32 @@
   // The dots sit at the actual part to operate: door handle, drawer grip,
   // bell, lamp, leaf, glass cover, control wheel, or notebook—not the object center.
   // Illustration dimensions match the 1200:650 scene aspect ratio.
+  // Single authoritative map for the integrated 1672x941 foyer painting.
+  // All IDs remain unchanged so saved progress and existing actions survive.
+  const foyerArtTargets=Object.freeze({
+    invitation:[18.0,41.0], catbed:[16.0,79.2], rug:[54.0,87.3],
+    cabinet:[81.0,67.0], crescent:[34.1,33.1],
+    study:[20.9,54.1], cat:[75.4,22.2],
+    'foyer-bell':[83.7,51.8], 'foyer-main-door':[55.1,54.2],
+    'foyer-vase':[5.4,50.5], 'foyer-chandelier':[50.7,8.5],
+    'foyer-sconce':[42.1,32.7], 'foyer-banner':[76.1,13.7],
+    'foyer-window':[8.5,31.0], 'foyer-wall-plaque':[21.6,30.1],
+    'foyer-moon-painting':[29.8,44.8],
+    'foyer-cat-banner-emblem':[75.8,23.5],
+    'foyer-four-lights':[76.0,42.5], 'foyer-armillary':[94.2,43.8],
+    'foyer-counter-ledger':[89.8,50.8],
+    'foyer-counter-pen':[88.7,55.3],
+    'foyer-counter-base':[86.6,70.4],
+    'foyer-side-table-drawer':[7.6,64.5],
+    'foyer-side-table-shelf':[4.1,77.8],
+    'foyer-floor-lantern':[8.9,55.1],
+    'foyer-right-sconce':[67.5,32.8],
+    'foyer-right-portrait':[97.5,27.7],
+    'foyer-door-crest':[54.2,22.7],
+    'foyer-blue-door-plaque':[91.7,22.6]
+  });
   const spotPositions={
-    foyer:{
-      invitation:[18.0,41.8], // framed parchment left of the purple door
-      catbed:[16.0,79.2], // now painted into the actual scene image
-      rug:[54.0,87.3],
-      cabinet:[87.6,69.5],
-      crescent:[34.0,34.2], // moon in gilt landscape painting
-      study:[20.9,54.1], // left purple door handle
-      cat:[76.1,22.2], // cat emblem; Miro is also available via her dialog card
-      'foyer-bell':[84.0,53.0],
-      'foyer-main-door':[55.4,56.4],
-      'foyer-vase':[5.5,51.0],
-      'foyer-chandelier':[50.7,8.5],
-      'foyer-sconce':[42.3,33.5],
-      'foyer-banner':[76.1,13.7],
-      'foyer-window':[8.5,31.0]
-    },
+    foyer:{},
     study:{
       books:[28.8,30.5],portrait:[95.1,22.7],piano:[88.7,57.7],
       desk:[35,76.4], // desk drawer's brass fitting
@@ -65,11 +74,11 @@
       'tower-lantern':[23.4,71.5]
     }
   };
-  // Some storyline objects are absent from the paintings. Study/greenhouse exits
-  // remain available via room navigation and Next Room; Miro via her dialog card.
-  // Miro's bed is now part of the integrated AVIF itself (no overlay).
+  // Objects not painted in a room are not falsely pinned to unrelated scenery.
+  // Miro remains accessible via the persistent sidebar dialog card, and is
+  // visible in the 3D fallback; only the unpainted on-picture cat marker hides.
   const unpaintedHotspots={
-    foyer:new Set([]),
+    foyer:new Set(['cat']),
     study:new Set(['greenhouse','cat']),
     greenhouse:new Set(['tower']),
     tower:new Set([])
@@ -82,30 +91,9 @@
       if(row.length>=6)spotPositions[room][row[0]]=[row[2],row[3]];
     }
   }
-  // The extra props are merged above for other rooms. Override only the
-  // foyer positions against the newly painted 1382x749 background; keep
-  // all existing object IDs, handlers, clue flags, and actions intact.
-  Object.assign(spotPositions.foyer,{
-    'foyer-wall-plaque':[20.9,35.7],
-    'foyer-moon-painting':[36.5,29.4],
-    'foyer-cat-banner-emblem':[75.3,26.0],
-    'foyer-four-lights':[75.9,43.7],
-    'foyer-armillary':[94.3,44.2],
-    'foyer-counter-ledger':[85.0,53.9],
-    'foyer-counter-pen':[79.8,55.0],
-    'foyer-counter-base':[85.4,76.7],
-    'foyer-side-table-drawer':[5.9,66.0],
-    'foyer-side-table-shelf':[6.0,72.8],
-    'foyer-floor-lantern':[8.0,61.5],
-    'foyer-right-sconce':[67.6,33.5],
-    'foyer-right-portrait':[96.1,26.7],
-    'foyer-door-crest':[54.9,23.2],
-    'foyer-blue-door-plaque':[90.6,27.1],
-    'foyer-vase':[5.5,51.0],
-    'foyer-sconce':[42.3,33.5],
-    'foyer-banner':[76.1,13.7],
-    'foyer-window':[8.5,31.0]
-  });
+  // The original extra-props positions still serve as SVG/3D fallbacks.
+  // This unified map overrides ALL foyer targets in the high-resolution view.
+  Object.assign(spotPositions.foyer,foyerArtTargets);
   const loaded=new Map();
   const art=document.createElement('div');
   art.className='storybook-layer';
