@@ -405,6 +405,12 @@ function render(){
  else if(view==='guide')root.innerHTML=guidePage();
  else if(view==='room'&&room)root.innerHTML=gameRoom();
  else if(view==='solo')root.innerHTML=soloGame();
+ const catResultVisible=view==='solo'&&solo?.finished&&!solo.resultDismissed;
+ if(catResultVisible&&window.MoyeoCatResult?.overlay){
+  root.insertAdjacentHTML('beforeend',window.MoyeoCatResult.overlay(catResultView(solo)));
+  root.querySelector('.cat-result-close')?.focus({preventScroll:true});
+ }
+ document.body.classList.toggle('cat-result-open',Boolean(catResultVisible));
  if(view==='room'&&room?.game==='doodle'&&room?.status!=='lobby')setupCanvas();
  // Replacing the view must never require a second click before typing again.
  if(field){
@@ -499,7 +505,7 @@ function catResultView(s){
 }
 function soloGame(){
  if(solo?.game==='rummikub'){
-  setNav('cat');return `<div class="page-wrap"><div class="breadcrumb"><button data-action="backCatHub">← 고양이 게임 목록</button><span>›</span>루미큐브<span>›</span>고양이를 이겨라</div><div class="panel">${solo.finished?catResultView(solo):''}${renderRummikubGame(soloRoom(solo),'player')}</div><div class="button-row" style="margin:16px 0">${btn('soloReset','↻ 고양이와 다시 하기','button-secondary')}</div></div>`;
+  setNav('cat');return `<div class="page-wrap"><div class="breadcrumb"><button data-action="backCatHub">← 고양이 게임 목록</button><span>›</span>루미큐브<span>›</span>고양이를 이겨라</div><div class="panel">${renderRummikubGame(soloRoom(solo),'player')}</div><div class="button-row" style="margin:16px 0">${btn('soloReset','↻ 고양이와 다시 하기','button-secondary')}</div></div>`;
  }
  const game=solo.game;setNav('cat');let content='';
  if(game==='wordchain'){
@@ -511,7 +517,7 @@ function soloGame(){
   let cells='';for(let y=0;y<15;y++)for(let x=0;x<15;x++){const v=solo.board[y*15+x];const edge=`${y===0?'top':''} ${y===14?'bottom':''} ${x===0?'left':''} ${x===14?'right':''}`;cells+=`<button class="omok-cell ${edge} ${solo.lastOpponentMove?.x===x&&solo.lastOpponentMove?.y===y&&v==='white'?'opponent-last':''}" data-action="soloPlace" data-x="${x}" data-y="${y}" ${v||solo.turn!=='player'||solo.finished?'disabled':''}>${v?`<span class="stone ${v}"></span>`:''}</button>`;}
   content=`<div class="game-topline"><span class="stage-badge">⚫ 나 vs ⚪ 🐱 고양이 · ${solo.stoneStyle==='crazy'?'미친 버전':'정상 버전'}</span><span class="time-badge">${solo.moves}수</span>${solo.turn==='player'&&!solo.finished?timeBar(solo.deadline,solo.timeSeconds):''}</div><div class="game-prompt"><strong>${esc(solo.msg)}</strong></div><div class="omok-wrapper"><div class="omok-board ${solo.stoneStyle==='crazy'?'crazy-board':''}">${cells}</div></div>`;
  }
- return `<div class="page-wrap"><div class="breadcrumb"><button data-action="home">홈</button><span>›</span><button data-action="backCatHub">고양이 게임 목록</button><span>›</span>고양이를 이겨라</div><div class="room-head"><h1>🐱 고양이를 이겨라</h1><div class="button-row">${btn('soloReset','↻ 처음부터','button-quiet')}${btn('backDetail','게임 선택','button-secondary')}</div></div><div style="max-width:760px;margin:17px auto" class="game-panel">${solo.finished?catResultView(solo):''}${content}</div></div>`;
+ return `<div class="page-wrap"><div class="breadcrumb"><button data-action="home">홈</button><span>›</span><button data-action="backCatHub">고양이 게임 목록</button><span>›</span>고양이를 이겨라</div><div class="room-head"><h1>🐱 고양이를 이겨라</h1><div class="button-row">${btn('soloReset','↻ 처음부터','button-quiet')}${btn('backDetail','게임 선택','button-secondary')}</div></div><div style="max-width:760px;margin:17px auto" class="game-panel">${content}</div></div>`;
 }
 function chooseCatWord(possible,difficulty='beginner'){
  const rank=[...possible].sort((a,b)=>(startCounts.get(a.at(-1))||0)-(startCounts.get(b.at(-1))||0));
@@ -959,6 +965,7 @@ document.addEventListener('click',async e=>{
  const b=e.target.closest('[data-action]');if(!b)return;
  const pregameMode=view==='catSetup'?'cat':pregameModesFor(selection).includes(pregameModes[selection])?pregameModes[selection]:pregameModesFor(selection)[0];
  const action=b.dataset.action==='lobbyStart'?(pregameMode==='cat'?'solo':'createRoom'):b.dataset.action;
+ if(action==='catResultDismiss'&&view==='solo'&&solo?.finished){solo.resultDismissed=true;render();return;}
  if(action==='home'){routeHome();return;}if(action==='homeConfirm'){if(confirm('현재 게임방을 나가고 홈으로 이동할까요?'))await leave();return;}
  if(action==='nick'){revealNickname();return;}if(action==='openLogin'){membership.open('login');return;}if(action==='openRegister'){membership.open('register');return;}if(action==='guide'){view='guide';render();scrollTo(0,0);return;}
  if(action==='openJoin'){
