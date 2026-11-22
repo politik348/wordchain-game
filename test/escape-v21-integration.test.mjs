@@ -162,8 +162,27 @@ test('foyer has an actual illustrated and clickable cat bed in both renderers',(
  assert.match(css,/\.hotspot\[data-object="catbed"\]/);
  assert.match(threeD,/catbed:\[-4\.45,\.33,1\.85\]/);
  assert.match(threeD,/box\(-4\.45,\.14,1\.85,2\.02,\.27,1\.56/);
- assert.match(html,/room3d\.js\?v=20261122bedvisible7/);
- assert.match(html,/game\.js\?v=20261122bedvisible7/);
+ assert.match(html,/room3d\.js\?v=20261122minimal8/);
+ assert.match(html,/game\.js\?v=20261122minimal8/);
+ new Function(game);
+ new Function(threeD);
+});
+
+test('foyer lock reveals neither paw graphic nor interpretation rules',()=>{
+ const lock=game.slice(game.indexOf('function foot(){'),game.indexOf('function step('));
+ assert.ok(lock.length>100);
+ assert.doesNotMatch(lock,/foyerPawSvg|foyer-lock-crest|modal-description|puzzle-helper|foyer-foot-progress/);
+ assert.doesNotMatch(lock,/발바닥을 본뜬|발끝 쪽에는/);
+ assert.match(lock,/Array\.from\(\{length:FOYER_FOOT_SEQUENCE\.length\}/);
+ assert.match(lock,/class="direction-pad"/);
+ assert.match(lock,/data-action="foot-back"/);
+ assert.match(lock,/data-action="foot-reset"/);
+ assert.match(game,/function catbedTrack\(\)/);
+ assert.match(game,/침대 옆의 낡은 표찰/);
+ assert.match(game,/foyerPawSvg\(true,'U',true\)/,'paw illustration belongs to bed inspection');
+ assert.match(game,/id="foyer-catbed-art"/,'pet bed has visible 2D art');
+ assert.match(threeD,/tall shaped headboard/,'pet bed has visible 3D geometry');
+ assert.doesNotMatch(game,/손잡이에 발바닥 모양 문양과 다섯 개의 빈 홈이 있다/);
  new Function(game);
  new Function(threeD);
 });
