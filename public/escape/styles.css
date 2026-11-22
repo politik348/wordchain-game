@@ -754,3 +754,49 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 /* A quick display transition prevents the dialog from feeling sluggish. */
 .modal-wrap{animation-duration:.11s;}
 .modal-overlay{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(8,16,36,.90);}
+
+
+/* EP01 v3.6 sub-objects: slightly tighter invisible touch areas near adjacent items.
+   All 6px location dots remain identical regardless of puzzle relevance. */
+#sceneCanvas .hotspot.detail{
+ width:33px!important;height:33px!important;min-width:33px!important;min-height:33px!important;
+}
+@media(max-width:600px), (pointer:coarse){
+ #sceneCanvas .hotspot.detail{
+  width:38px!important;height:38px!important;min-width:38px!important;min-height:38px!important;
+ }
+}
+/* Harmless four-glass wall toy, separate from the main room puzzle. */
+.wall-light-board{
+ display:grid;grid-template-columns:repeat(2,minmax(72px,86px));
+ gap:15px;justify-content:center;align-items:center;
+ margin:18px auto 20px;padding:22px;
+ max-width:270px;background:linear-gradient(135deg,#98795555,#4e415acb);
+ border:2px solid #bc976a;border-radius:19px;
+ box-shadow:inset 0 3px 15px #201a1c6e,0 12px 24px #0e162d6b;
+}
+.wall-light-switch{
+ width:75px;height:75px;border-radius:50%;border:3px solid #d8be98;
+ box-shadow:inset 0 4px 12px #141c35a8,0 3px 3px #1c19325c;
+ background:radial-gradient(circle at 35% 31%,#ffffff2f,var(--light-color) 68%,#353856 100%);
+ color:#fcf6d8;font-size:31px;cursor:pointer;
+ transition:filter .12s ease,transform .12s ease,box-shadow .12s ease;
+}
+.wall-light-switch.lit{
+ filter:brightness(1.4);box-shadow:0 0 22px 6px var(--light-color),inset 0 1px 12px #ffffff96;
+}
+.wall-light-switch:active{transform:scale(.95);}
+.wall-light-switch:focus-visible{outline:2px solid #fff4c9;outline-offset:4px;}
+.wall-light-feedback{
+ text-align:center;padding:13px 15px;border:1px solid #d4b99477;
+ border-radius:11px;background:#554d65a4;color:#f6e2b7;
+ font-size:15px;font-weight:750;line-height:1.8;
+}
+.wall-light-feedback small{display:block;margin-top:7px;color:#dcd3e0;font-size:11px;font-weight:450;}
+@media(max-width:460px){
+ .wall-light-board{gap:12px;padding:16px;grid-template-columns:repeat(2,74px);}
+ .wall-light-switch{width:70px;height:70px;}
+}
+@media(prefers-reduced-motion:reduce){
+ .wall-light-switch{transition:none!important;}
+}
