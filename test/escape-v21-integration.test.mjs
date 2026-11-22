@@ -81,66 +81,63 @@ test('EP01 story chapters reveal broad goals without giving away mechanics',()=>
  new Function(game);
 });
 
-test('foyer provides three different winding cat dog and human routes to the same bell',()=>{
- assert.match(game,/const FOYER_GRID_SIZE=9/);
+test('foyer three distinct species share start and finish, with exactly five moves and visible intersections',()=>{
+ assert.match(game,/const FOYER_GRID_SIZE=5/);
  assert.match(game,/function foyerDogSvg\(/);
  assert.match(game,/function foyerPawSvg\(/);
  assert.match(game,/function foyerBootSvg\(/);
  const routes=JSON.parse(game.match(/const FOYER_ROUTES=(\{[^;]+\});/)[1]);
  const starts=JSON.parse(game.match(/const FOYER_STARTS=(\{[^;]+\});/)[1]);
+ const destination=Number(game.match(/const FOYER_DESTINATION=(\d+)/)[1]);
  const sequence=game.match(/const FOYER_FOOT_SEQUENCE='([UDLR]+)'/)[1];
- const destination=40;
- const toMoves=(path)=>path.slice(1).map((cell,i)=>{
-  const before=path[i],dr=Math.floor(cell/9)-Math.floor(before/9),dc=cell%9-before%9;
-  if(dr===1&&dc===0)return 'D';
-  if(dr===-1&&dc===0)return 'U';
-  if(dr===0&&dc===1)return 'R';
-  if(dr===0&&dc===-1)return 'L';
-  throw Error('Not an orthogonal path');
- }).join('');
- const allTiles=new Set();
- const values=Object.values(routes);
- assert.equal(values.length,3);
- const originIds=new Set(values.map(path=>path[0]));
- assert.equal(originIds.size,3);
- assert.deepEqual(Object.keys(starts).map(Number).sort((a,b)=>a-b),[...originIds].sort((a,b)=>a-b));
- for(const [species,path] of Object.entries(routes)){
-  assert.equal(path.length,14,species);
-  assert.equal(path.at(-1),destination,species);
-  assert.equal(new Set(path).size,path.length,'no revisits '+species);
-  const moves=toMoves(path);
-  assert.equal(moves.length,13,species);
-  const turns=[...moves].slice(1).filter((d,i)=>d!==moves[i]).length;
-  assert.ok(turns>=7,species+' has fewer than seven turns');
-  for(const tile of path.slice(0,-1)){
-   assert.ok(!allTiles.has(tile),'overlap before destination '+tile);
-   allTiles.add(tile);
-  }
-  const trail=new Set(path.slice(1,-1)), seenRoutes=[];
-  function search(pos,visited,moves){
-   if(moves.length>13)return;
-   if(pos===destination){
-    seenRoutes.push(moves);return;
-   }
-   for(const [dr,dc,dir] of [[0,1,'R'],[0,-1,'L'],[1,0,'D'],[-1,0,'U']]){
-    const r=Math.floor(pos/9)+dr,c=pos%9+dc;
-    if(r<0||r>=9||c<0||c>=9)continue;
-    const next=9*r+c;
-    if(next!==destination&&!trail.has(next))continue;
-    if(visited.has(next))continue;
-    search(next,new Set([...visited,next]),moves+dir);
+ const moveFor=(a,b)=>{
+  const dr=Math.floor(b/5)-Math.floor(a/5),dc=b%5-a%5;
+  return dr===1&&dc===0?'D':dr===-1&&dc===0?'U':dr===0&&dc===1?'R':dr===0&&dc===-1?'L':null;
+ };
+ const perKind=Object.entries(routes);
+ assert.deepEqual(perKind.map(([kind])=>kind),['cat','dog','human']);
+ assert.equal(Object.keys(starts).length,1);
+ const startsFound=new Set(),codes=new Set(),tileUsage=new Map();
+ for(const [kind,path] of perKind){
+  assert.equal(path.length,6,kind);
+  assert.equal(new Set(path).size,6,'no revisits for '+kind);
+  assert.ok(path.every(i=>Number.isInteger(i)&&i>=0&&i<25),kind);
+  assert.equal(path.at(-1),destination,kind);
+  startsFound.add(path[0]);
+  const moves=path.slice(1).map((v,i)=>moveFor(path[i],v));
+  assert.ok(moves.every(Boolean),kind+' has broken adjacency');
+  const code=moves.join('');
+  assert.equal(code.length,5,kind);
+  assert.ok(moves.slice(1).filter((d,i)=>d!==moves[i]).length>=3,kind+' is too straight');
+  codes.add(code);
+  for(const tile of path.slice(1,-1))tileUsage.set(tile,[...(tileUsage.get(tile)||[]),kind]);
+  // There must be one non-repeating route along this kind's own prints.
+  const visible=new Set(path.slice(1,-1)),found=[];
+  function explore(pos,used,curr){
+   if(pos===destination){found.push(curr);return;}
+   if(curr.length>=5)return;
+   for(const delta of [1,-1,5,-5]){
+    const target=pos+delta;
+    if(target<0||target>=25||!moveFor(pos,target)||used.has(target))continue;
+    if(target!==destination&&!visible.has(target))continue;
+    explore(target,new Set([...used,target]),curr+moveFor(pos,target));
    }
   }
-  search(path[0],new Set([path[0]]),'');
-  assert.deepEqual(seenRoutes,[moves],'species-specific route uniqueness '+species);
+  explore(path[0],new Set([path[0]]),'');
+  assert.deepEqual(found,[code],kind+' trace must be unique');
  }
- assert.equal(sequence,toMoves(routes.cat));
- assert.ok(toMoves(routes.cat)!==toMoves(routes.dog));
- assert.ok(toMoves(routes.dog)!==toMoves(routes.human));
+ assert.equal(startsFound.size,1);
+ assert.equal(Number(Object.keys(starts)[0]),[...startsFound][0]);
+ assert.equal(codes.size,3);
+ assert.equal(sequence,routes.cat.slice(1).map((v,i)=>moveFor(routes.cat[i],v)).join(''));
+ const overlaps=[...tileUsage].filter(([,kinds])=>kinds.length>1);
+ assert.ok(overlaps.length>=2,'overlapping prints are intentionally present');
+ assert.match(game,/type:'mixed',prints/);
+ assert.match(game,/foyer-track-mix/);
+ assert.match(game,/g\.foyerRouteVersion!==4/);
  assert.match(game,/FOYER_FOOT_SEQUENCE.length/);
- assert.match(game,/data-action="foot-back"/);
- assert.match(game,/data-action="rug-tile-/);
- assert.match(css,/grid-template-columns:repeat\(9,minmax\(0,1fr\)\)/);
- assert.match(css,/foyer-dog-claws/);
+ assert.match(game,/g\.footInput\[i\]/);
+ assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(css,/foyer-track-mix/);
  new Function(game);
 });
