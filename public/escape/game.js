@@ -556,8 +556,10 @@ function mirror(){
   article('깨진 달 장식','문양 아래에는 은면이 결합되는 다섯 개의 받침이 있다. 한쪽 끝에는 등불을 끼울 홈이 보인다.');return;
  }
  if(!g.discMounted){modal('현관 · 조사','반쪽 달 장식','<p class="modal-description">황동 장식 옆에 은빛 원판과 크기가 비슷한 빈 홈이 있다. 가장자리에는 마모된 금속 가루가 남아 있다.</p>',[['원판을 홈에 대 보기','mirror-mount',true],['돌아가기','close']]);return;}
+ // Existing saves may already contain the correct arrangement with the former lamp off.
+ // Resolve it without requiring the removed beam-preview button.
+ if(traceMoonbeam().solved)return mirrorSolve();
  g.mirrorTiles??={A:'\\',B:'/',C:'/',D:'/',E:'\\'};
- const result=traceMoonbeam(),coordinates=result.points.map(([x,y])=>x+','+y).join(' ');
  const tileEntries=Object.entries(moonMirrors).map(([id,[x,y]])=>
    '<button type="button" class="moonbeam-mirror" data-action="mirror-turn-'+id+'" style="grid-column:'+(x+1)+';grid-row:'+(y+1)+'" title="은면 '+id+' 돌리기" aria-label="은면 '+id+' 돌리기"><small>'+id+'</small><b>'+(g.mirrorTiles[id]==='/'?'╱':'╲')+'</b></button>'
  ).join('');
@@ -566,22 +568,14 @@ function mirror(){
   '<div class="moonbeam-board" role="group" aria-label="은면 다섯 개가 놓인 빛의 장치">'+
   '<div class="moonbeam-squares">'+Array.from({length:25},(_,i)=>'<span></span>').join('')+'</div>'+
   '<div class="moonbeam-source" title="등불">✧</div><div class="moonbeam-destination" title="반쪽 달">☾</div>'+
-  (g.lampOn?'<svg viewBox="0 0 500 500" preserveAspectRatio="none" aria-hidden="true"><polyline class="moonbeam-light-glow" points="'+coordinates+'"/><polyline class="moonbeam-light" points="'+coordinates+'"/></svg>':'')+
   tileEntries+'</div>'+
-  '<div class="puzzle-buttons"><button data-action="mirror-switch">'+(g.lampOn?'등불 덮기':'등불 밝히기')+'</button></div>'+
   '<p class="puzzle-helper">장치의 가장자리에는 작은 그을음이 남아 있다. 은면마다 한쪽은 검게 변색되어 있다.</p>'
  );
 }
 function mirrorTurn(id){
  if(done('mirror')||!Object.hasOwn(moonMirrors,id))return;
  g.mirrorTiles[id]=g.mirrorTiles[id]==='/'?'\\':'/';
- tone('tap');save();if(g.lampOn&&traceMoonbeam().solved)return mirrorSolve();mirror();
-}
-function mirrorSwitch(){
- if(done('mirror'))return;
- g.lampOn=!g.lampOn;tone('tap');save();
- if(g.lampOn&&traceMoonbeam().solved)return mirrorSolve();
- mirror();
+ tone('tap');save();if(traceMoonbeam().solved)return mirrorSolve();mirror();
 }
 function mirrorSolve(){
  if(done('mirror'))return;
@@ -933,7 +927,7 @@ function talk(){let lines={foyer:['이 집에는 출입문이 너무 많아. 하
 function menu(){modal('PAUSE','탐험 메뉴',`<p class="modal-description">진행 내용은 자동 저장됩니다. 탐험 시간(추가 조사 시간 포함): ${pretty(elapsed())}</p>`,[['계속 탐험','close',true],['시작 화면','home']])}
 function handle(action){if(action==='wall-reset')return wallLightReset();if(action.startsWith('wall-light-'))return wallLightPress(Number(action.slice(11)));if(action==='invitation')return invitation();if(action==='invitation-flip')return invitationFlip();if(action.startsWith('item-flip-'))return itemFlip(action.slice(10));if(action==='mirror-mount'){if(has('silverDisc')&&has('lamp')){g.discMounted=true;save();return mirror()}return;}if(action==='sconce-touch')return sconceTouch();if(action.startsWith('ambient-open-'))return ambientInspect(action.slice(13));if(action==='bell-reset')return bellReset();if(action.startsWith('bell-note-'))return bellNote(Number(action.slice(10)));if(action.startsWith('ambient-next-'))return ambientNext(action.slice(13));if(action==='close')return hide();if(action==='home')return home();if(action==='really-new')return begin();if(action==='new-confirm')return modal('NEW GAME','처음부터 시작할까요?',`<p class="modal-description">이번 버전의 진행 데이터가 초기화됩니다.</p>`,[['취소','close'],['새로 시작','really-new',true]]);
 if(action==='pollen-rub'){if(done('light')&&g.flags.curtain){g.flags.blackout=true;clue('powder');save();return modal('GREENHOUSE · 관찰','희미한 발자국',`<p class="modal-description">은빛 가루를 쓸어내자 작고 둥근 발자국들이 선명해진다. 발자국은 꽃줄기 뒤편의 오래된 유리 용기 부근에서 끊겨 있다.</p>`,[['돌아가기','close',true]])}return}if(action.startsWith('step-'))return step(action.slice(5));if(action==='rug-pocket'){if(!has('photo'))item('photo');return modal('FOUND','오래된 사진',`<div class="collect-visual">▧</div><div class="letter">어린 미로와 루나가 함께 찍혀 있다.\n\n「우린 언제나 함께야」</div>`)}
-if(action.startsWith('mirror-turn-'))return mirrorTurn(action.slice(12));if(action==='mirror-switch')return mirrorSwitch();
+if(action.startsWith('mirror-turn-'))return mirrorTurn(action.slice(12));if(action==='mirror-switch')return; // Ignore stale buttons from earlier cached puzzle versions.
 if(action.startsWith('flip-')){let name=action.slice(5);if(Object.hasOwn(moonBooks,name)){g.booksFlipped??={};g.booksFlipped[name]=!g.booksFlipped[name];save();return books()}}
 if(action.startsWith('book-')){let name=action.slice(5);if(name==='reset'){g.booksPlaced=[null,null,null,null,null];save();return books()}if(name==='check')return bookCheck();if(Object.hasOwn(moonBooks,name)&&!g.booksPlaced.includes(name)){let slot=g.booksPlaced.indexOf(null);if(slot>=0){g.booksPlaced[slot]=name;save();}}return books()}
 if(action.startsWith('unbook-')){let slot=Number(action.slice(7));if(Number.isInteger(slot)&&slot>=0&&slot<5){g.booksPlaced[slot]=null;save()}return books()}
