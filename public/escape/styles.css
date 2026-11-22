@@ -48,8 +48,22 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 .investigation-actions button,.puzzle-buttons button,.film-controls button,.night-switch button{border:1px solid #9d8da2;border-radius:11px;background:#46506d;color:#f9efdf;padding:12px 15px;font-weight:800;font-size:13px}
 .investigation-actions button:hover,.puzzle-buttons button:hover,.film-controls button:hover,.night-switch button:hover{background:#626181}
 .trail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));max-width:306px;gap:5px;margin:19px auto;background:#6a566d;border:8px solid #d5af87;border-radius:14px;padding:5px}
-.trail-cell{height:57px;background:#a58c81;border:1px solid #e0c2a0;border-radius:5px;display:grid;place-items:center;font-weight:900;color:#6d5865}
-.trail-cell.pawmark{background:#e0c0a1;color:#5e4952}.trail-cell:first-child,.trail-cell:nth-child(11){background:#f2d8a9;color:#4e414a}
+.trail-cell{position:relative;overflow:hidden;height:57px;background:#a58c81;border:1px solid #e0c2a0;border-radius:5px;display:grid;place-items:center;font-weight:900;color:#6d5865}
+.trail-cell.trail-anchor{background:#f2d8a9;color:#4e414a}
+.trail-landmark{position:relative;z-index:1;font-size:16px}
+.trail-paw{position:absolute;font-size:20px;line-height:1;filter:grayscale(1) sepia(.55);opacity:.93;user-select:none}
+.trail-paw-one{top:5px;left:6px;transform:rotate(-23deg)}
+.trail-paw-two{bottom:5px;right:6px;transform:rotate(18deg)}
+.trail-cell:nth-child(6) .trail-paw-one{top:3px;left:15px;transform:rotate(73deg)}
+.trail-cell:nth-child(6) .trail-paw-two{bottom:3px;right:13px;transform:rotate(88deg)}
+.trail-cell:nth-child(7) .trail-paw-one{top:6px;left:4px;transform:rotate(-28deg)}
+.trail-cell:nth-child(7) .trail-paw-two{bottom:3px;right:7px;transform:rotate(13deg)}
+.trail-shoe{width:30px;height:43px;opacity:.62;filter:blur(.15px)}
+.trail-shoe-fill{fill:#63554e;stroke:#77655a;stroke-width:1.2}
+.trail-shoe-tread{fill:none;stroke:#b49a88;stroke-width:2;stroke-linecap:round}
+.trail-cell:nth-child(3) .trail-shoe{transform:rotate(35deg)}
+.trail-cell:nth-child(10) .trail-shoe{transform:rotate(-35deg)}
+.trail-cell:nth-child(15) .trail-shoe{transform:rotate(16deg)}
 .direction-pad{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:23px auto;max-width:340px}
 .direction-pad button{min-height:67px;border:1px solid #92819f;border-radius:13px;background:#374362;color:#ffdfa7;font-size:29px;box-shadow:inset 0 -5px #1f2944}
 .direction-pad button:active{transform:translateY(3px);box-shadow:inset 0 -2px #1f2944}.puzzle-counter{text-align:center;font-size:22px;letter-spacing:9px;color:#efcf9b;margin:13px}
