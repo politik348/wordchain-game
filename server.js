@@ -490,6 +490,8 @@ const MIME={'.avif':'image/avif','.webp':'image/webp','.png':'image/png','.html'
 const ESCAPE_TASTE_ASSETS=new Map([
  ['/taste/escape/index.html','escape/index.html'],
  ['/taste/escape/styles.css','escape/styles.css'],
+ ['/taste/escape/cinematics.css','escape/cinematics.css'],
+ ['/taste/escape/cinematics.js','escape/cinematics.js'],
  ['/taste/escape/game.js','escape/game.js'],
  ['/taste/escape/extra-props.js','escape/extra-props.js'],
  ['/taste/escape/room3d.js','escape/room3d.js'],
