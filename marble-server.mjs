@@ -40,6 +40,12 @@ function autoAdvance(r){
  else if(state.phase==='chance'){type='pickCard';payload={index:randomInt(0,3)};}
  else if(state.phase==='island')type='islandRoll';
  else if(state.phase==='choice')type='pass';
+ else if(state.phase==='liquidation'){
+  // Timed-out players automatically sell their least valuable property rather than stall.
+  const owned=Object.entries(state.properties).filter(([i,v])=>v.owner===p.id)
+   .sort((a,b)=>a[1].level-b[1].level||Number(a[0])-Number(b[0]));
+  if(owned.length){type='sellProperty';payload={index:Number(owned[0][0])};}
+ }
  const action=p.ai?(chooseCatAction(state)||{type,payload}):{type,payload};
  finishTurnAction(r,p.id,action.type,action.payload||{});
 }
@@ -97,7 +103,7 @@ export async function handleMarbleRequest(req,res,pathname){
   if(op==='action'){
    if(!r.state)throw fail(400,'게임을 시작해주세요.');
    const type=String(data.type||'');
-   if(!['roll','pass','buy','upgrade','takeover','travel','islandRoll','payBail','startBuild','olympic','pickCard','takeLoan'].includes(type))throw fail(400,'허용되지 않는 행동입니다.');
+   if(!['roll','pass','buy','upgrade','takeover','travel','islandRoll','payBail','startBuild','olympic','pickCard','takeLoan','sellProperty'].includes(type))throw fail(400,'허용되지 않는 행동입니다.');
    finishTurnAction(r,sid,type,data.payload||{});reply(res,200,visible(r));return true;
   }
   if(op==='leave'){
