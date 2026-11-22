@@ -441,7 +441,7 @@ function soloStart(game){
  if(game==='rummikub'){
   if(activeGomokuWorker){activeGomokuWorker.terminate();activeGomokuWorker=null;}
   const seconds=optionsFor(game).turnSeconds||60;
-  view='solo';selection=game;room=null;solo=createSoloRummikub(seconds,optionsFor(game).aiDifficulty||'beginner');render();return;
+  view='solo';selection=game;room=null;solo=createSoloRummikub(seconds,optionsFor(game).aiDifficulty||'beginner');solo.startedAt=Date.now();render();return;
  }
  if(activeGomokuWorker){activeGomokuWorker.terminate();activeGomokuWorker=null;}
  yutRouteChoice=null;yutRollSelection=null;yutRolling=null;
@@ -449,15 +449,56 @@ function soloStart(game){
  const aiDifficulty=['beginner','intermediate','advanced'].includes(opts.aiDifficulty)?opts.aiDifficulty:'beginner';
  view='solo';selection=game;room=null;
  solo=game==='wordchain'
-  ?{game,aiDifficulty,mode:opts.wordMode||'wordchain',history:[soloOpeningWord(opts.wordMode)],usedEndings:{player:[],ai:[]},playerLives:2,aiLives:2,turn:'player',round:1,deadline:Date.now()+seconds*1000,timeSeconds:seconds,score:0,finished:false,msg:'당신 차례입니다.',helpWords:null,oneShot:false}
+  ?{game,aiDifficulty,startedAt:Date.now(),mode:opts.wordMode||'wordchain',history:[soloOpeningWord(opts.wordMode)],usedEndings:{player:[],ai:[]},playerLives:2,aiLives:2,turn:'player',round:1,deadline:Date.now()+seconds*1000,timeSeconds:seconds,score:0,finished:false,msg:'당신 차례입니다.',helpWords:null,oneShot:false}
   :game==='yut'
-  ?{game,aiDifficulty,pieces:{player:freshYutPieces(),ai:freshYutPieces()},turn:'player',pending:null,rolls:[],phase:'throw',throwsRemaining:1,rollName:null,history:[],timeSeconds:seconds,deadline:Date.now()+seconds*1000,finished:false,msg:'윷을 던져 고양이와 한판 승부하세요!'}
-   :{game,aiDifficulty,stoneStyle:opts.stoneStyle||'normal',timeSeconds:seconds,deadline:Date.now()+seconds*1000,board:Array(225).fill(null),turn:'player',moves:0,lastOpponentMove:null,finished:false,msg:'흑돌을 먼저 놓으세요.'};
+  ?{game,aiDifficulty,startedAt:Date.now(),tossCounts:{player:0,ai:0},catches:{player:0,ai:0},pieces:{player:freshYutPieces(),ai:freshYutPieces()},turn:'player',pending:null,rolls:[],phase:'throw',throwsRemaining:1,rollName:null,history:[],timeSeconds:seconds,deadline:Date.now()+seconds*1000,finished:false,msg:'윷을 던져 고양이와 한판 승부하세요!'}
+   :{game,aiDifficulty,startedAt:Date.now(),stoneStyle:opts.stoneStyle||'normal',timeSeconds:seconds,deadline:Date.now()+seconds*1000,board:Array(225).fill(null),turn:'player',moves:0,lastOpponentMove:null,finished:false,msg:'흑돌을 먼저 놓으세요.'};
  render();
+}
+function catResultView(s){
+ if(!s?.finished)return '';
+ const r=window.MoyeoCatResult;
+ if(!r?.render)return '<div class="end-banner"><h2>'+esc(s.msg||'대국 종료')+'</h2></div>';
+ let outcome='draw',stats=[],score=null,game='';
+ const summary=s.game==='rummikub'?String(s.engine?.result||'게임 종료'):String(s.msg||'게임 종료');
+ const seconds=Number(s.startedAt)>0?Math.floor((Date.now()-s.startedAt)/1000):null;
+ if(s.game==='rummikub'){
+  game='루미큐브';outcome=s.engine?.winner==='cat'?'cat':s.engine?.winner==='player'?'player':'draw';
+  const a=s.engine?.scores||{};
+  if(Number.isFinite(a.player)&&Number.isFinite(a.cat))score={player:a.player,cat:a.cat};
+  stats=[{label:'진행 턴',value:Math.max(0,(s.engine?.turnNumber||1)-1)+'턴'},
+   {label:'내 남은 타일',value:(s.engine?.hands?.player?.length??0)+'개'},
+   {label:'고양이 남은 타일',value:(s.engine?.hands?.cat?.length??0)+'개'}];
+ }else if(s.game==='omok'){
+  game='오목';outcome=summary.includes('고양이 승리')?'cat':summary.includes('당신 승리')?'player':'draw';
+  stats=[{label:'전체 착수',value:s.moves+'수'},
+   {label:'내가 둔 수',value:s.board.filter(v=>v==='black').length+'수'},
+   {label:'고양이가 둔 수',value:s.board.filter(v=>v==='white').length+'수'}];
+ }else if(s.game==='yut'){
+  game='윷놀이';outcome=summary.includes('고양이 승리')?'cat':summary.includes('당신 승리')?'player':'draw';
+  const done=key=>s.pieces?.[key]?.filter(v=>v.done).length||0;
+  score={player:done('player')+'/4',cat:done('ai')+'/4'};
+  stats=[{label:'내 윷 던진 횟수',value:(s.tossCounts?.player||0)+'회'},
+   {label:'고양이 윷 던진 횟수',value:(s.tossCounts?.ai||0)+'회'},
+   {label:'내가 잡은 상대 말',value:(s.catches?.player||0)+'개'},
+   {label:'고양이가 잡은 말',value:(s.catches?.ai||0)+'개'}];
+ }else if(s.game==='wordchain'){
+  game=s.mode==='kungkungtta'?'쿵쿵따':'끝말잇기';outcome=summary.includes('고양이 승리')?'cat':summary.includes('당신 승리')?'player':'draw';
+  const turns=s.history?.length||0;
+  const catScore=(s.history||[]).reduce((sum,w,i)=>sum+(i>=2&&i%2===0?w.length*10:0),0);
+  score={player:s.score||0,cat:catScore};
+  stats=[{label:'나의 단어',value:Math.floor(turns/2)+'개'},
+   {label:'고양이 단어',value:Math.floor((turns-1)/2)+'개'},
+   {label:'전체 사용 단어',value:turns+'개'},
+   {label:'종료 후 남은 목숨',value:(s.playerLives||0)+'개'}];
+ }
+ if(seconds!==null)stats.push({label:'총 플레이 시간',value:Math.floor(seconds/60)+'분 '+String(seconds%60).padStart(2,'0')+'초'});
+ return r.render({game,outcome,summary,score,stats,actions:
+  '<button type="button" data-action="soloReset">↻ 다시 하기</button><button type="button" data-action="backCatHub">다른 게임 선택</button>'});
 }
 function soloGame(){
  if(solo?.game==='rummikub'){
-  setNav('cat');return `<div class="page-wrap"><div class="breadcrumb"><button data-action="backCatHub">← 고양이 게임 목록</button><span>›</span>루미큐브<span>›</span>고양이를 이겨라</div><div class="panel">${renderRummikubGame(soloRoom(solo),'player')}</div><div class="button-row" style="margin:16px 0">${btn('soloReset','↻ 고양이와 다시 하기','button-secondary')}</div></div>`;
+  setNav('cat');return `<div class="page-wrap"><div class="breadcrumb"><button data-action="backCatHub">← 고양이 게임 목록</button><span>›</span>루미큐브<span>›</span>고양이를 이겨라</div><div class="panel">${solo.finished?catResultView(solo):''}${renderRummikubGame(soloRoom(solo),'player')}</div><div class="button-row" style="margin:16px 0">${btn('soloReset','↻ 고양이와 다시 하기','button-secondary')}</div></div>`;
  }
  const game=solo.game;setNav('cat');let content='';
  if(game==='wordchain'){
@@ -469,7 +510,7 @@ function soloGame(){
   let cells='';for(let y=0;y<15;y++)for(let x=0;x<15;x++){const v=solo.board[y*15+x];const edge=`${y===0?'top':''} ${y===14?'bottom':''} ${x===0?'left':''} ${x===14?'right':''}`;cells+=`<button class="omok-cell ${edge} ${solo.lastOpponentMove?.x===x&&solo.lastOpponentMove?.y===y&&v==='white'?'opponent-last':''}" data-action="soloPlace" data-x="${x}" data-y="${y}" ${v||solo.turn!=='player'||solo.finished?'disabled':''}>${v?`<span class="stone ${v}"></span>`:''}</button>`;}
   content=`<div class="game-topline"><span class="stage-badge">⚫ 나 vs ⚪ 🐱 고양이 · ${solo.stoneStyle==='crazy'?'미친 버전':'정상 버전'}</span><span class="time-badge">${solo.moves}수</span>${solo.turn==='player'&&!solo.finished?timeBar(solo.deadline,solo.timeSeconds):''}</div><div class="game-prompt"><strong>${esc(solo.msg)}</strong></div><div class="omok-wrapper"><div class="omok-board ${solo.stoneStyle==='crazy'?'crazy-board':''}">${cells}</div></div>`;
  }
- return `<div class="page-wrap"><div class="breadcrumb"><button data-action="home">홈</button><span>›</span><button data-action="backCatHub">고양이 게임 목록</button><span>›</span>고양이를 이겨라</div><div class="room-head"><h1>🐱 고양이를 이겨라</h1><div class="button-row">${btn('soloReset','↻ 처음부터','button-quiet')}${btn('backDetail','게임 선택','button-secondary')}</div></div><div style="max-width:760px;margin:17px auto" class="game-panel">${content}${solo.finished?`<div class="end-banner"><div class="trophy">${solo.msg.includes('당신 승리')?'🏆':'🏁'}</div><h2>${esc(solo.msg)}</h2>${btn('soloReset','↻ 다시하기','button-primary')}</div>`:''}</div></div>`;
+ return `<div class="page-wrap"><div class="breadcrumb"><button data-action="home">홈</button><span>›</span><button data-action="backCatHub">고양이 게임 목록</button><span>›</span>고양이를 이겨라</div><div class="room-head"><h1>🐱 고양이를 이겨라</h1><div class="button-row">${btn('soloReset','↻ 처음부터','button-quiet')}${btn('backDetail','게임 선택','button-secondary')}</div></div><div style="max-width:760px;margin:17px auto" class="game-panel">${solo.finished?catResultView(solo):''}${content}</div></div>`;
 }
 function chooseCatWord(possible,difficulty='beginner'){
  const rank=[...possible].sort((a,b)=>(startCounts.get(a.at(-1))||0)-(startCounts.get(b.at(-1))||0));
@@ -664,7 +705,7 @@ function soloYutNext(turn,message){
 function soloYutRoll(){
  if(!solo||solo.game!=='yut'||solo.turn!=='player'||solo.finished||solo.phase!=='throw')return;
  const roll=rollYut(Math.random,false);
- solo.rolls.push(roll);solo.lastRoll=roll;solo.rollName=YUT_NAMES[roll];
+ solo.rolls.push(roll);solo.tossCounts.player++;solo.lastRoll=roll;solo.rollName=YUT_NAMES[roll];
  solo.throwsRemaining--;if(roll===4||roll===5)solo.throwsRemaining++;
  if(solo.rolls.length>=24)solo.throwsRemaining=0;
  solo.deadline=Date.now()+solo.timeSeconds*1000;
@@ -688,7 +729,7 @@ function soloYutApply(side,index,shortcut=true,rollIndices=[0]){
  try{result=applyYutMove(mine,solo.pieces[side==='player'?'ai':'player'],index,steps,shortcut);}
  catch{toast('이동할 수 없는 말입니다.');return;}
  solo.lastMove={sid:side,index,to:result.to,at:Date.now(),shortcut};
- solo.pieces[side]=result.mine;solo.pieces[side==='player'?'ai':'player']=result.enemy;
+ solo.pieces[side]=result.mine;solo.pieces[side==='player'?'ai':'player']=result.enemy;solo.catches[side]+=result.caught;
  const name=side==='player'?'나':'🐱 고양이';
  const message=name+': '+usedNames+' → '+(index+1)+'번 말'+(result.caught?' · 상대 말 '+result.caught+'개 잡기!':'')+(result.done?' · 완주!':'');
  solo.history.push(message);solo.history=solo.history.slice(-8);
@@ -730,7 +771,7 @@ function soloYutAiTurn(delay=750){
     if(solo!==current||current.turn!=='ai'||current.finished||current.phase!=='throw')return;
     yutRolling=null;
     const roll=rollYut(Math.random,true);
-    current.rolls.push(roll);current.lastRoll=roll;current.rollName=YUT_NAMES[roll];
+    current.rolls.push(roll);current.tossCounts.ai++;current.lastRoll=roll;current.rollName=YUT_NAMES[roll];
     current.throwsRemaining--;if(roll===4||roll===5)current.throwsRemaining++;
     if(current.rolls.length>=24)current.throwsRemaining=0;
     current.history.push('🐱 고양이: '+current.rollName+' 던짐');current.history=current.history.slice(-8);
