@@ -499,6 +499,7 @@ function catResultView(s){
    {label:'전체 사용 단어',value:turns+'개'},
    {label:'종료 후 남은 목숨',value:(s.playerLives||0)+'개'}];
  }
+ stats.unshift({label:'고양이 AI 난이도',value:({beginner:'초급',intermediate:'중급',advanced:'고급'})[s.aiDifficulty]||'미설정'});
  if(seconds!==null)stats.push({label:'총 플레이 시간',value:Math.floor(seconds/60)+'분 '+String(seconds%60).padStart(2,'0')+'초'});
  return r.render({game,outcome,summary,score,stats,actions:
   '<button type="button" data-action="soloReset">↻ 다시 하기</button><button type="button" data-action="backCatHub">다른 게임 선택</button>'});
