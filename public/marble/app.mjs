@@ -224,7 +224,7 @@ function liquidationPopup(s){
   '<div class="mm-liquidation-amounts"><span>납부액 <b>'+formatM(debt.amount||0)+'</b></span><span>현재 현금 <b>'+formatM(p.cash)+'</b></span><span>부족 <b>'+formatM(difference)+'</b></span></div>'+
   '<p>어떤 부동산을 매각할지 선택하세요. 매각가는 현재 가치의 70%이며, 납부액이 모이면 자동 결제됩니다.'+
   (total<difference?' 모든 부동산을 팔아도 부족하면 파산할 수 있습니다.':'')+'</p>'+
-  saleChoices(s,p)+'</section></div>';
+  saleChoices(s,p)+(!p.loanUsed?'<div class="mm-liquidation-loan">'+button('takeLoan','🏦 은행 대출 +'+formatM(BANK_LOAN)+' (상환 '+formatM(BANK_REPAY)+')','mm-neutral',inFlight||!!scene)+'</div>':'')+'</section></div>';
 }
 function marbleIntroMarkup(){
  return '<div class="mm-intro-overlay" role="dialog" aria-modal="true" aria-label="모여마블 게임 시작 연출">'+
