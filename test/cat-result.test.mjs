@@ -55,3 +55,22 @@ test('여섯 고양이 대전 모드가 공통 결과 시스템을 연결한다'
  assert.match(marble,/MoyeoCatResult\\.render/);
  assert.match(tetris,/MoyeoCatResult\\.render/);
 });
+
+test('결과창은 현재 화면 정중앙에 고정되고 닫을 수 있다',()=>{
+ const html=context.window.MoyeoCatResult.overlay(render({game:'오목',outcome:'cat'}));
+ assert.match(html,/class="cat-result-overlay"/);
+ assert.match(html,/role="dialog"/);
+ assert.match(html,/aria-modal="true"/);
+ assert.match(html,/data-action="catResultDismiss"/);
+ const css=read('cat-result.css');
+ assert.match(css,/\.cat-result-overlay\{position:fixed;inset:0;z-index:10000/);
+});
+test('오목·윷놀이·끝말잇기·루미큐브 결과는 페이지 상단 대신 레이어로 표시한다',()=>{
+ const app=read('app.js');
+ assert.match(app,/root\.insertAdjacentHTML\('beforeend',window\.MoyeoCatResult\.overlay\(catResultView\(solo\)\)\)/);
+ assert.match(app,/catResultDismiss/);
+ const marble=read('marble/app.mjs');
+ assert.match(marble,/MoyeoCatResult\.overlay\(marbleCatResult\(s\)\)/);
+ const tetris=read('tetris/index.html');
+ assert.match(tetris,/cat-result-overlay cat-tetris-result-layer/);
+});
