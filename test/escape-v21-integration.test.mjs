@@ -81,33 +81,66 @@ test('EP01 story chapters reveal broad goals without giving away mechanics',()=>
  new Function(game);
 });
 
-test('foyer has two distinct six-step footprint routes converging on the bell',()=>{
- assert.match(game,/const FOYER_FOOT_SEQUENCE='RDDRRD'/);
- const cat=JSON.parse(game.match(/const FOYER_CAT_PRINTS=(\{[^;]+\});/)[1]);
- const boots=JSON.parse(game.match(/const FOYER_BOOT_PRINTS=(\{[^;]+\});/)[1]);
- function routes(tiles){
-  const result=[];
-  function visit(i,steps){
-   if(steps.length===6){if(i===18)result.push(steps);return;}
-   for(const [dr,dc,step] of [[0,1,'R'],[1,0,'D'],[0,-1,'L'],[-1,0,'U']]){
-    const row=Math.floor(i/5)+dr,col=(i%5)+dc;
-    if(row<0||row>4||col<0||col>4)continue;
-    const next=row*5+col;
-    if(next===18||tiles.has(next))visit(next,steps+step);
+test('foyer provides three different winding cat dog and human routes to the same bell',()=>{
+ assert.match(game,/const FOYER_GRID_SIZE=9/);
+ assert.match(game,/function foyerDogSvg\(/);
+ assert.match(game,/function foyerPawSvg\(/);
+ assert.match(game,/function foyerBootSvg\(/);
+ const routes=JSON.parse(game.match(/const FOYER_ROUTES=(\{[^;]+\});/)[1]);
+ const starts=JSON.parse(game.match(/const FOYER_STARTS=(\{[^;]+\});/)[1]);
+ const sequence=game.match(/const FOYER_FOOT_SEQUENCE='([UDLR]+)'/)[1];
+ const destination=40;
+ const toMoves=(path)=>path.slice(1).map((cell,i)=>{
+  const before=path[i],dr=Math.floor(cell/9)-Math.floor(before/9),dc=cell%9-before%9;
+  if(dr===1&&dc===0)return 'D';
+  if(dr===-1&&dc===0)return 'U';
+  if(dr===0&&dc===1)return 'R';
+  if(dr===0&&dc===-1)return 'L';
+  throw Error('Not an orthogonal path');
+ }).join('');
+ const allTiles=new Set();
+ const values=Object.values(routes);
+ assert.equal(values.length,3);
+ const originIds=new Set(values.map(path=>path[0]));
+ assert.equal(originIds.size,3);
+ assert.deepEqual(Object.keys(starts).map(Number).sort((a,b)=>a-b),[...originIds].sort((a,b)=>a-b));
+ for(const [species,path] of Object.entries(routes)){
+  assert.equal(path.length,14,species);
+  assert.equal(path.at(-1),destination,species);
+  assert.equal(new Set(path).size,path.length,'no revisits '+species);
+  const moves=toMoves(path);
+  assert.equal(moves.length,13,species);
+  const turns=[...moves].slice(1).filter((d,i)=>d!==moves[i]).length;
+  assert.ok(turns>=7,species+' has fewer than seven turns');
+  for(const tile of path.slice(0,-1)){
+   assert.ok(!allTiles.has(tile),'overlap before destination '+tile);
+   allTiles.add(tile);
+  }
+  const trail=new Set(path.slice(1,-1)), seenRoutes=[];
+  function search(pos,visited,moves){
+   if(moves.length>13)return;
+   if(pos===destination){
+    seenRoutes.push(moves);return;
+   }
+   for(const [dr,dc,dir] of [[0,1,'R'],[0,-1,'L'],[1,0,'D'],[-1,0,'U']]){
+    const r=Math.floor(pos/9)+dr,c=pos%9+dc;
+    if(r<0||r>=9||c<0||c>=9)continue;
+    const next=9*r+c;
+    if(next!==destination&&!trail.has(next))continue;
+    if(visited.has(next))continue;
+    search(next,new Set([...visited,next]),moves+dir);
    }
   }
-  visit(0,'');return result;
+  search(path[0],new Set([path[0]]),'');
+  assert.deepEqual(seenRoutes,[moves],'species-specific route uniqueness '+species);
  }
- assert.deepEqual(routes(new Set(Object.keys(cat).map(Number))),['RDDRRD']);
- assert.deepEqual(routes(new Set(Object.keys(boots).map(Number))),['DDDRRR']);
- assert.equal(Object.keys(cat).length,5);
- assert.equal(Object.keys(boots).length,5);
- assert.deepEqual(Object.keys(cat).filter(i=>Object.hasOwn(boots,i)),[]);
- assert.doesNotMatch(game,/FOYER_OTHER_PRINTS/);
- assert.match(game,/function foyerTrailDetail\(i\)/);
+ assert.equal(sequence,toMoves(routes.cat));
+ assert.ok(toMoves(routes.cat)!==toMoves(routes.dog));
+ assert.ok(toMoves(routes.dog)!==toMoves(routes.human));
+ assert.match(game,/FOYER_FOOT_SEQUENCE.length/);
+ assert.match(game,/data-action="foot-back"/);
  assert.match(game,/data-action="rug-tile-/);
- assert.match(game,/function catbedTrack\(\)/);
- assert.match(game,/g\.footInput\.length===6/);
- assert.match(css,/grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(css,/grid-template-columns:repeat\(9,minmax\(0,1fr\)\)/);
+ assert.match(css,/foyer-dog-claws/);
  new Function(game);
 });
