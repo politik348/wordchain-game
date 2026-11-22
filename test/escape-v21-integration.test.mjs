@@ -194,11 +194,11 @@ test('integrated foyer image contains Miro bed and retains all game interactions
  assert.ok(img.length>=20000,'integrated AVIF asset must not be an empty placeholder');
  assert.match(storybook,/foyer:'foyer-scene-integrated\.avif'/);
  assert.match(storybook,/catbed:\[16\.0,79\.2\]/,'bed hotspot is on painted cat bed');
- assert.match(storybook,/foyer:new Set\(\[\]\)/,'the catbed hotspot is not hidden');
+ assert.match(storybook,/foyer:new Set\(\['cat'\]\)/,'only the unpainted Miro body hotspot is hidden');
  assert.doesNotMatch(storybook,/storybook-catbed-art/,'do not paste a second bed over new background');
  assert.doesNotMatch(css,/\.storybook-catbed-art\{/,'no stray old foreground illustration');
  assert.match(storybook,/data-object="catbed"\]\{width:17%!important;height:20%!important/);
- assert.match(html,/storybook\.js\?v=20261122integrated10/,'asset cache bust');
+ assert.match(html,/storybook\.js\?v=20261122hotspots11/,'asset cache bust');
  assert.match(html,/styles\.css\?v=20261122integrated10/,'css cache bust');
  for(const id of ['invitation','catbed','rug','cabinet','crescent','study','cat','foyer-bell',
     'foyer-main-door','foyer-vase','foyer-chandelier','foyer-sconce','foyer-banner',
@@ -230,4 +230,72 @@ test('new integrated foyer image is served through both official and taste route
  assert.match(server,/\['\/taste\/escape\/foyer-scene-integrated\.avif','escape\/foyer-scene-integrated\.avif'\]/);
  assert.match(server,/if\(protectedEscape\)await requireEscapeAccess\(req\)/,'official route stays permission protected');
  assert.match(server,/if\(isEscapeTaste&&!tasteFile\)throw err\(404/,'taste preview remains restricted to allowlisted files');
+});
+
+test('all 29 foyer hitboxes match the integrated painted scene without bell-book collisions',()=>{
+ const start=storybook.indexOf('const foyerArtTargets=Object.freeze({');
+ assert.ok(start>=0,'one canonical foyer overlay map must exist');
+ const end=storybook.indexOf('});',start);
+ assert.ok(end>start);
+ const part=storybook.slice(start,end);
+ const actual=Object.fromEntries([...part.matchAll(/(?:'([^']+)'|([a-z][\w-]*)):\[([\d.]+),([\d.]+)\]/g)]
+   .map(([,quoted,bare,x,y])=>[quoted||bare,[Number(x),Number(y)]]));
+ const expected={
+   invitation:[18,41],catbed:[16,79.2],rug:[54,87.3],
+   cabinet:[81,67],crescent:[34.1,33.1],study:[20.9,54.1],cat:[75.4,22.2],
+   'foyer-bell':[83.7,51.8],'foyer-main-door':[55.1,54.2],
+   'foyer-vase':[5.4,50.5],'foyer-chandelier':[50.7,8.5],
+   'foyer-sconce':[42.1,32.7],'foyer-banner':[76.1,13.7],
+   'foyer-window':[8.5,31],'foyer-wall-plaque':[21.6,30.1],
+   'foyer-moon-painting':[29.8,44.8],'foyer-cat-banner-emblem':[75.8,23.5],
+   'foyer-four-lights':[76,42.5],'foyer-armillary':[94.2,43.8],
+   'foyer-counter-ledger':[89.8,50.8],'foyer-counter-pen':[88.3,56],
+   'foyer-counter-base':[86.6,70.4],
+   'foyer-side-table-drawer':[7.6,64.5],
+   'foyer-side-table-shelf':[4.1,77.8],
+   'foyer-floor-lantern':[8.9,55.1],
+   'foyer-right-sconce':[67.5,32.8],
+   'foyer-right-portrait':[97.5,27.7],
+   'foyer-door-crest':[54.2,22.7],
+   'foyer-blue-door-plaque':[91.7,22.6]
+ };
+ assert.deepEqual(actual,expected,'all physical inspection anchors should be kept in a single verified map');
+ assert.equal(Object.keys(actual).length,29);
+ assert.match(storybook,/Object\.assign\(spotPositions\.foyer,foyerArtTargets\)/);
+ assert.match(storybook,/foyer:new Set\(\['cat'\]\)/);
+ const deskPairs=[['foyer-bell','foyer-counter-ledger'],['foyer-bell','foyer-counter-pen'],
+   ['foyer-counter-ledger','foyer-counter-pen']];
+ for(const [a,b] of deskPairs){
+   const [x,y]=actual[a],[u,v]=actual[b];
+   const distancePx=Math.hypot((x-u)*12,(y-v)*6.5);
+   assert.ok(distancePx>37,a+' and '+b+' accidentally overlap: '+distancePx);
+ }
+ assert.match(html,/storybook\.js\?v=20261122hotspots11/);
+ assert.match(html,/extra-props\.js\?v=20261122hotspots11/);
+ assert.match(html,/game\.js\?v=20261122hotspots11/);
+ const props=file('public/escape/extra-props.js');
+ for(const absent of ['접수대의 짧은 펜','꽃병 탁자의 작은 서랍','꽃병 탁자의 아래 선반',
+  '창가 바닥의 작은 등','오른쪽 벽의 둥근 액자','푸른 문의 황동 명판']){
+   assert.ok(!props.includes(absent),'the new scene has no pictured '+absent);
+ }
+ for(const present of ['접수대 위쪽의 장부','접수대 아래쪽의 책',
+   '꽃병 탁자의 금빛 테두리','꽃병 탁자의 조각 다리',
+   '꽃병 옆의 작은 등','푸른 문 옆 담쟁이']){
+   assert.ok(props.includes(present),'new art hotspot exists '+present);
+ }
+ assert.match(game,/접수대 위에 황동 종 하나가 놓여 있다/);
+ assert.match(game,/액자 속 초대장/);
+ assert.match(game,/달빛 그림의 금빛 테두리/);
+ assert.match(html,/id="catTalkBtn"/,'Miro dialog remains available despite absent on-picture Miro');
+ assert.match(game,/const FOYER_FOOT_SEQUENCE='UULRD'/,'puzzle answer unchanged');
+ assert.match(game,/function foyerBell\(\)/,'bell toy preserved');
+ assert.match(game,/case 'catbed':return catbedTrack\(\)/,'catbed clue preserved');
+ assert.match(storybook,/if\(direction==='left'\)/);
+ assert.match(storybook,/if\(direction==='right'\)/);
+ assert.match(storybook,/if\(direction==='reset'\)/);
+ assert.match(storybook,/if\(direction==='in'\)/);
+ assert.match(storybook,/if\(direction==='out'\)/);
+ new Function(storybook);
+ new Function(props);
+ new Function(game);
 });
