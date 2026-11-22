@@ -332,6 +332,99 @@ h1,h2,h3,h4,h5,strong,b{color:inherit}
 }
 .moonbeam-source{left:-21px;top:70%;transform:translateY(-50%)}
 .moonbeam-destination{left:90%;top:-20px;transform:translateX(-50%);background:#615978;color:#f6e3ca}
+
+/* Episode 01, Room 01: nine-mirror maze; visual rails, no visible beam trace. */
+.moonbeam-board--nine{
+ grid-template-columns:repeat(9,minmax(0,1fr));
+ grid-template-rows:repeat(9,minmax(0,1fr));
+ width:min(100%,460px);
+}
+.moonbeam-board--nine .moonbeam-squares{
+ grid-template-columns:repeat(9,minmax(0,1fr));
+ grid-template-rows:repeat(9,minmax(0,1fr));
+}
+.moonbeam-board--nine .moonbeam-source{top:72.2222%}
+.moonbeam-board--nine .moonbeam-destination{left:72.2222%}
+.moonbeam-board--nine .moonbeam-mirror{
+ width:86%;height:86%;border-radius:7px;
+ background:linear-gradient(145deg,#c7d7e1,#7087a3);
+ border-color:#e6eaf4;color:#1f3552;
+ box-shadow:inset 0 2px 4px #ffffff77,0 3px 8px #07132a8a;
+}
+.moonbeam-board--nine .moonbeam-mirror b{
+ font-size:clamp(15px,3vw,25px);line-height:1;
+ color:#253b55;text-shadow:0 1px #ffffff66;
+}
+.moonbeam-board--nine .moonbeam-mirror small{
+ color:#25364c;font-size:clamp(8px,1vw,10px);font-weight:900;
+}
+.moonbeam-board--nine .moonbeam-mirror--brass{
+ background:linear-gradient(145deg,#f2dc9b,#b18b4e 70%,#96723e);
+ border-color:#ffebbe;
+ box-shadow:inset 0 1px 4px #fff4d4a8,0 3px 9px #312214aa;
+}
+.moonbeam-track{
+ position:relative;z-index:1;align-self:center;justify-self:stretch;
+ height:14px;margin-inline:3px;pointer-events:none;
+ border:1px solid #f0d5a6a8;border-radius:5px;
+ background:linear-gradient(to bottom,#4a3b33 0%,#a67f49 38%,#e0bd83 52%,#655038 75%,#493d34 100%);
+ box-shadow:0 2px 7px #070d1d8c;
+}
+.moonbeam-track::before{
+ content:"";position:absolute;inset:2px 3px;
+ background:repeating-linear-gradient(to right,transparent 0,transparent calc(33.333% - 2px),#fff6e2a6 calc(33.333% - 2px),#fff6e2a6 33.333%);
+ opacity:.75;pointer-events:none;
+}
+.moonbeam-track--b{grid-column:2/span 3;grid-row:8;}
+.moonbeam-track--d{grid-column:6/span 3;grid-row:6;}
+.moonbeam-inscription{
+ padding:15px 14px;margin:12px 0 15px;text-align:center;
+ color:#f5dfb2;font-family:Georgia,'Noto Serif KR',serif;
+ font-size:clamp(15px,2.4vw,19px);line-height:1.8;
+ border-top:1px solid #e9cda653;border-bottom:1px solid #e9cda653;
+}
+.moonbeam-inspect-actions{
+ display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin:10px 0 13px;
+}
+.moonbeam-inspect-actions button{
+ border:1px solid #b0a080aa;border-radius:9px;background:#343b58;color:#f3deb6;
+ padding:9px 11px;font-size:12px;font-weight:750;cursor:pointer;
+}
+.moonbeam-inspect-actions button:hover,
+.moonbeam-inspect-actions button:focus-visible{background:#505576}
+.moonbeam-rail-controls{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:10px;margin:14px auto;max-width:470px;
+}
+.moonbeam-rail-row{
+ display:flex;align-items:center;justify-content:center;gap:7px;
+ padding:8px 9px;border:1px solid #b99c6c88;border-radius:10px;background:#2b3451;
+ color:#e8dcc7;font-size:12px;white-space:nowrap;
+}
+.moonbeam-rail-row b{color:#efd097;font-size:12px}
+.moonbeam-rail-row span{min-width:54px;text-align:center;color:#d6c8b0;font-size:11px}
+.moonbeam-rail-row button{
+ display:grid;place-items:center;min-width:36px;min-height:36px;
+ border:1px solid #cab68c;border-radius:8px;background:#5b4c3e;color:#fff2cd;
+ font-size:17px;cursor:pointer;
+}
+.moonbeam-rail-row button:hover:not(:disabled),
+.moonbeam-rail-row button:focus-visible{background:#806745}
+.moonbeam-rail-row button:disabled{opacity:.35;cursor:not-allowed}
+.moonbeam-rotation-grid{display:none;}
+@media(max-width:620px){
+ .moonbeam-board--nine{width:min(100%,420px);border-width:6px;margin:16px auto 12px}
+ .moonbeam-board--nine .moonbeam-mirror{width:92%;height:92%;padding:0}
+ .moonbeam-rail-controls{grid-template-columns:1fr}
+ .moonbeam-rail-row button{min-width:44px;min-height:42px}
+ .moonbeam-rotation-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:10px auto}
+ .moonbeam-rotation-grid button{min-height:42px;border:1px solid #aebad0;border-radius:9px;background:#3b4868;color:#f7e7ca;font-size:14px;font-weight:800}
+ .moonbeam-rotation-grid button:focus-visible,.moonbeam-rotation-grid button:hover{background:#536184}
+}
+@media(prefers-reduced-motion:reduce){
+ .moonbeam-board--nine .moonbeam-mirror{transition:none}
+}
+
 .rune-book-ends{
  display:flex;align-items:center;justify-content:space-between;gap:10px;margin:17px 0 5px;
  color:#f5d3a0;
