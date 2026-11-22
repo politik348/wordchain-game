@@ -35,7 +35,7 @@ const seals={path:['❖','길의 인장'],echo:['♫','소리의 인장'],light:
 const clueText={
  invitation:['발신인 없는 편지','달빛 저택에 와 주세요. 멈춘 시계가 다시 움직이기 전에 사라진 기억을 찾아 주세요. 봉투의 금속 인장에는 발신인 이름이 없다.'],
  lock9:['현관 출입 기록','현관문이 닫히는 자동 시각은 매일 밤 9시다. 기록지 마지막 줄에 당일의 날짜가 남아 있다.'],
- track:['양탄자 아래의 발자국','작은 고양이 발자국과 커다란 신발 밑창 자국이 침대 쪽에서 시작해 종 근처에서 만난다. 양쪽 흔적은 서로 다른 모양을 하고 있다.'],
+ track:['양탄자 아래의 발자국','고양이와 개로 보이는 두 종류의 동물 발자국, 그리고 넓은 신발 밑창이 서로 다른 방향으로 이어져 종 근처에서 만난다.'],
  portrait:['서재의 초상화','미로와 한 어린 소녀가 함께 앉아 있다. 금빛 액자 아래쪽에 작은 흠집이 보인다.'],
  dust:['서가의 황동 문양','책등마다 두 개의 문양이 다른 높이에 있다. 서가 양 끝은 높아 손이 쉽게 닿지 않지만 오래된 황동 장식이 남아 있다.'],
  shelfEnds:['높은 서가의 양 끝','사다리로 올려다보니 서가 왼편 끝에는 별(✦), 오른편 끝에는 초승달(☾) 모양이 남아 있다.'],
@@ -52,10 +52,10 @@ const clueText={
 };
 const hints={
  foot:[
-  '양탄자에 남은 크고 작은 발자국은 어디로 향할까요? 침대 근처에도 오래된 자국이 있습니다.',
-  '작은 발과 신발 밑창이 각각 이어진 흔적을 남겼습니다. 침대의 발바닥 자국도 확대해 보세요.',
-  '두 줄 모두 종에 닿지만, 침대의 반달 모양으로 패인 뒤꿈치와 일치하는 것은 작은 발자국입니다.',
-  '정답: 고양이 발자국은 오른쪽 → 아래 → 아래 → 오른쪽 → 오른쪽 → 아래(RDDRRD)입니다. 신발 자국도 아래 → 아래 → 아래 → 오른쪽 → 오른쪽 → 오른쪽(DDDRRR)으로 종까지 이어지지만, 침대에 남은 흔적은 고양이의 것입니다.'
+  '바닥의 흔적은 꼭 같은 곳에서 시작된 것은 아닙니다. 침대 부근도 다시 살펴볼 수 있습니다.',
+  '발톱이 찍힌 동물 발자국, 둥근 동물 발자국, 신발 밑창을 각각 구별해 보세요.',
+  '세 종류의 흔적이 모두 종에 닿습니다. 침대의 반달 모양으로 패인 뒤꿈치와 같은 흔적을 따라 방향을 읽어 보세요.',
+  '정답: 고양이 발자국은 오른쪽 → 위 → 위 → 위 → 왼쪽 → 위 → 위 → 위 → 오른쪽 → 오른쪽 → 아래 → 오른쪽 → 아래(RUUULUUURRDRD)입니다. 발톱이 있는 개의 흔적과 신발 자국도 각각 다른 출발점에서 종까지 이어집니다.'
  ],
  mirror:[
   '반쪽 달 장식의 문장과 등불 받침에 남은 흔적을 살펴보세요. 장치 위의 달은 창문과 떨어져 있습니다.',
@@ -632,13 +632,30 @@ function flowerPattern(){
   [['다른 곳 둘러보기','close',true]]);
 }
 
-/* Foyer footprint deduction: two complete six-step trails converge on the bell.
-   Miro's chipped paw impression near the bed distinguishes cat from boot.
-   Both routes are walkable; only the cat route opens the lock. */
-const FOYER_FOOT_SEQUENCE='RDDRRD';
-const FOYER_CAT_PRINTS={"1":"R","6":"D","11":"D","12":"R","13":"R"};
-// A complete six-step second route (DDDRRR) leads to the same bell.
-const FOYER_BOOT_PRINTS={"5":180,"10":180,"15":90,"16":90,"17":90};
+/* Three complete trails converge on the bell: cat, dog and human.
+   Different start positions prevent using one shared origin as a shortcut.
+   A trace is identified by its footprint, not by a highlighted path. */
+const FOYER_GRID_SIZE=9;
+const FOYER_DESTINATION=40;
+const FOYER_ROUTES={"cat":[73,74,65,56,47,46,37,28,19,20,21,30,31,40],"dog":[1,10,11,12,3,4,5,14,15,24,33,32,41,40],"human":[7,16,25,26,35,44,43,52,51,60,59,58,49,40]};
+const FOYER_STARTS={"73":"침대","1":"문간","7":"계단"};
+const FOYER_FOOT_SEQUENCE='RUUULUUURRDRD';
+function foyerRouteDir(route,i){
+ const here=route[i],next=route[i+1];
+ if(next===here+FOYER_GRID_SIZE)return 'D';
+ if(next===here-FOYER_GRID_SIZE)return 'U';
+ if(Math.floor(next/FOYER_GRID_SIZE)===Math.floor(here/FOYER_GRID_SIZE)){
+  if(next===here+1)return 'R';
+  if(next===here-1)return 'L';
+ }
+ throw Error('Disconnected foyer trail');
+}
+function foyerRouteMarks(route){
+ return Object.fromEntries(route.slice(1,-1).map((cell,i)=>[cell,foyerRouteDir(route,i+1)]));
+}
+const FOYER_CAT_PRINTS=foyerRouteMarks(FOYER_ROUTES.cat);
+const FOYER_DOG_PRINTS=foyerRouteMarks(FOYER_ROUTES.dog);
+const FOYER_BOOT_PRINTS=foyerRouteMarks(FOYER_ROUTES.human);
 function foyerPawSvg(chipped,dir='U',large=false){
  const rotation={U:0,R:90,D:180,L:270}[dir]||0;
  const pad=chipped?
@@ -648,6 +665,14 @@ function foyerPawSvg(chipped,dir='U',large=false){
   '<ellipse cx="9" cy="18" rx="4.5" ry="6.6"/><ellipse cx="18" cy="11" rx="4.5" ry="6.3"/>'+
   '<ellipse cx="28" cy="11" rx="4.5" ry="6.3"/><ellipse cx="38" cy="18" rx="4.5" ry="6.6"/>'+
   '<path d="'+pad+'"/></svg>';
+}
+function foyerDogSvg(dir='U',large=false){
+ const rotation={U:0,R:90,D:180,L:270}[dir]||0;
+ return '<svg class="foyer-dog-print'+(large?' large':'')+'" viewBox="0 -5 48 57" aria-hidden="true" style="transform:rotate('+rotation+'deg)">'+
+  '<path class="foyer-dog-claws" d="M7 10 L4 2 M17 3 L16 -3 M29 3 L31 -3 M39 10 L43 2"/>'+
+  '<ellipse cx="9" cy="18" rx="4.8" ry="6.8"/><ellipse cx="18" cy="11" rx="4.8" ry="6.5"/>'+
+  '<ellipse cx="29" cy="11" rx="4.8" ry="6.5"/><ellipse cx="39" cy="18" rx="4.8" ry="6.8"/>'+
+  '<path d="M11 39 Q10 30 19 25 Q25 22 30 25 Q39 30 36 39 Q34 46 24 44 Q15 46 11 39 Z"/></svg>';
 }
 function foyerBootSvg(angle=0,large=false){
  return '<svg class="foyer-boot-print'+(large?' large':'')+'" viewBox="0 0 40 64" aria-hidden="true" style="transform:rotate('+angle+'deg)">'+
@@ -662,64 +687,71 @@ function catbedTrack(){
   '<p class="puzzle-helper">작은 발자국이 양탄자 쪽으로 이어진다.</p>');
 }
 function foyerTrailTile(i){
- if(i===0)return {type:'anchor',text:'침대'};
- if(i===18)return {type:'anchor',text:'종'};
+ if(Object.hasOwn(FOYER_STARTS,i))return {type:'anchor',text:FOYER_STARTS[i]};
+ if(i===FOYER_DESTINATION)return {type:'anchor',text:'종'};
  if(Object.hasOwn(FOYER_CAT_PRINTS,i))return {type:'cat',chipped:true,dir:FOYER_CAT_PRINTS[i]};
- if(Object.hasOwn(FOYER_BOOT_PRINTS,i))return {type:'boot',angle:FOYER_BOOT_PRINTS[i]};
+ if(Object.hasOwn(FOYER_DOG_PRINTS,i))return {type:'dog',dir:FOYER_DOG_PRINTS[i]};
+ if(Object.hasOwn(FOYER_BOOT_PRINTS,i))return {type:'boot',dir:FOYER_BOOT_PRINTS[i]};
  return {type:'dust'};
 }
 function foyerTrailGraphic(t,large=false){
  if(t.type==='anchor')return '<span class="trail-landmark">'+t.text+'</span>';
  if(t.type==='cat')return foyerPawSvg(t.chipped,t.dir,large);
- if(t.type==='boot')return foyerBootSvg(t.angle,large);
+ if(t.type==='dog')return foyerDogSvg(t.dir,large);
+ if(t.type==='boot')return foyerBootSvg({U:0,R:90,D:180,L:270}[t.dir],large);
  return '<span class="foyer-dust-mark" aria-hidden="true">·</span>';
 }
 function foyerTrailDetail(i){
  const t=foyerTrailTile(i);
- const desc=t.type==='anchor'?'글자가 새겨진 오래된 도자기 타일이다.':
-  t.type==='cat'?(t.chipped?
-   '네 개의 발가락과 뒤꿈치 한쪽에 반달 모양으로 패인 가장자리가 보인다.':
-   '네 개의 발가락이 뚜렷하다. 뒤꿈치 테두리는 둥글고 끊어진 곳이 없다.'):
-  t.type==='boot'?'가로 홈이 반복되는 커다란 신발 밑창이다. 눌린 방향이 고양이 흔적과는 다르다.':
+ const desc=t.type==='anchor'?'바닥 가장자리의 오래된 표식이다.':
+  t.type==='cat'?'네 개의 둥근 발가락 자국. 뒤꿈치 오른쪽 가장자리에 반달처럼 패인 흔적이 있다.':
+  t.type==='dog'?'네 개의 발가락 자국 끝에 가늘고 뾰족한 발톱 자국이 남아 있다. 뒤꿈치는 둥글다.':
+  t.type==='boot'?'넓은 뒤꿈치와 가로로 반복된 밑창 홈이 보인다.':
   '먼지가 엷게 쌓여 있지만 뚜렷한 발자국은 없다.';
  return '<div class="foyer-track-detail"><div class="foyer-track-magnify" aria-hidden="true">'+foyerTrailGraphic(t,true)+'</div>'+
   '<p>'+desc+'</p></div>';
 }
 function rug(selected=-1){
  g.flags.rug=true;clue('track');
- const tiles=Array.from({length:25},(_,i)=>{
-  const t=foyerTrailTile(i),shown=t.type==='anchor'?(i===0?'침대':'종'):
-   t.type==='cat'?'작은 발자국':t.type==='boot'?'신발 자국':'빈 타일';
+ const tiles=Array.from({length:FOYER_GRID_SIZE*FOYER_GRID_SIZE},(_,i)=>{
+  const t=foyerTrailTile(i);
+  const shown=t.type==='anchor'?t.text:t.type==='cat'?'작은 동물 발자국':
+   t.type==='dog'?'발톱이 보이는 동물 발자국':t.type==='boot'?'신발 자국':'빈 타일';
   return '<button type="button" class="trail-cell'+(t.type==='anchor'?' trail-anchor':'')+
-   (selected===i?' selected':'')+'" data-action="rug-tile-'+i+'" aria-label="'+(Math.floor(i/5)+1)+'행 '+(i%5+1)+'열, '+shown+
+   (selected===i?' selected':'')+'" data-action="rug-tile-'+i+'" aria-label="'+(Math.floor(i/FOYER_GRID_SIZE)+1)+'행 '+(i%FOYER_GRID_SIZE+1)+'열, '+shown+
    '" aria-pressed="'+(selected===i)+'">'+foyerTrailGraphic(t)+'</button>';
  }).join('');
  modal('현관 홀 · 조사','들춰진 양탄자',
-  '<p class="modal-description">먼지를 털어내자 작은 고양이 발자국과 커다란 신발 밑창 자국이 드러난다. 두 종류의 자국이 각기 다른 방향으로 이어져 있다.</p>'+
-  '<div class="trail-grid" role="group" aria-label="다섯 행 다섯 열 바닥 타일. 누르면 흔적을 확대한다">'+tiles+'</div>'+
-  (selected>=0&&selected<25?foyerTrailDetail(selected):
-   '<p class="foyer-track-instruction">타일을 누르면 표면을 확대해서 볼 수 있다.</p>')+
+  '<p class="modal-description">양탄자 밑에서 작은 동물 발자국과 발톱 자국, 무거운 신발 자국이 뒤섞인 타일이 드러난다. 서로 다른 곳에서 시작된 흔적들이 오래된 종 앞에 모여 있다.</p>'+
+  '<div class="foyer-board-scroll" role="region" tabindex="0" aria-label="발자국 9행 9열 조사판, 작은 화면에서는 좌우로 이동 가능"><div class="trail-grid" role="group" aria-label="아홉 행 아홉 열 바닥 타일. 누르면 흔적을 확대한다">'+tiles+'</div></div>'+
+  (selected>=0&&selected<FOYER_GRID_SIZE*FOYER_GRID_SIZE?foyerTrailDetail(selected):
+   '<p class="foyer-track-instruction">타일을 누르면 표면을 확대할 수 있다. 작은 화면에서는 바닥을 좌우로 이동해 볼 수 있다.</p>')+
   '<div class="investigation-actions"><button data-action="rug-pocket">'+(has('photo')?'살펴본 안감 다시 보기':'접힌 안감도 조사한다 · +10초')+'</button></div>'+
   '<p class="puzzle-helper">타일마다 자국의 크기와 방향이 다르다.</p>');
  save();
 }
 function foot(){
  g.activePuzzle='foot';
+ if(!done('foot')&&g.foyerRouteVersion!==3){
+  g.footInput='';g.foyerRouteVersion=3;save();
+ }
  if(done('foot')){article('열린 수납장','방향 자물쇠는 이미 풀려 있다.');return;}
  modal('ROOM 01 · 퍼즐 1','지워진 발걸음',
-  '<p class="modal-description">수납장 손잡이에는 고양이 발 모양의 금속 장식이 달려 있다. 여섯 개의 둥근 홈은 비어 있고, 아래에 방향 버튼 네 개가 있다.</p>'+
+  '<p class="modal-description">수납장 손잡이에는 고양이 발 모양의 금속 장식이 있다. 여러 개의 둥근 홈은 비어 있고, 아래에 방향 버튼 네 개가 있다.</p>'+
   '<div class="direction-pad">'+[['↑','up'],['←','left'],['↓','down'],['→','right']].map(([t,v])=>'<button data-action="step-'+v+'" aria-label="'+v+'">'+t+'</button>').join('')+'</div>'+
-  '<div class="puzzle-counter">'+'●'.repeat(g.footInput.length)+'○'.repeat(6-g.footInput.length)+'</div>'+
-  '<div class="foyer-foot-actions"><button data-action="foot-reset">입력 지우기</button></div>'+
+  '<div class="foyer-foot-counter" role="status" aria-label="이동 방향 '+g.footInput.length+'/'+FOYER_FOOT_SEQUENCE.length+'개 입력">'+
+    Array.from({length:FOYER_FOOT_SEQUENCE.length},(_,i)=>'<span class="foyer-foot-dot'+(i<g.footInput.length?' filled':'')+'"></span>').join('')+
+    '<span class="foyer-foot-progress">'+g.footInput.length+' / '+FOYER_FOOT_SEQUENCE.length+'</span></div>'+
+  '<div class="foyer-foot-actions"><button data-action="foot-back" '+(!g.footInput.length?'disabled':'')+'>한 걸음 취소</button><button data-action="foot-reset">전체 지우기</button></div>'+
   '<p class="puzzle-helper">현관에서 발견한 흔적을 다시 확인할 수 있다.</p>');
 }
 function step(v){
  if(done('foot'))return;
  const code={right:'R',left:'L',up:'U',down:'D'}[v];
  if(!code)return;
- g.footInput=(g.footInput||'').slice(0,5)+code;
+ g.footInput=(g.footInput||'').slice(0,FOYER_FOOT_SEQUENCE.length-1)+code;
  tone();
- if(g.footInput.length===6){
+ if(g.footInput.length===FOYER_FOOT_SEQUENCE.length){
   if(g.footInput===FOYER_FOOT_SEQUENCE){
    g.flags.foot=true;g.activePuzzle='mirror';
    notify('수납장의 방향 자물쇠가 풀렸다!');tone('gain');render();
@@ -1202,7 +1234,7 @@ function talk(){
 }
 function menu(){modal('PAUSE','탐험 메뉴',`<p class="modal-description">진행 내용은 자동 저장됩니다. 탐험 시간(추가 조사 시간 포함): ${pretty(elapsed())}</p>`,[['계속 탐험','close',true],['시작 화면','home']])}
 function handle(action){if(action==='flower-pattern')return flowerPattern();if(action==='cabinet-search'){if(!done('foot')||has('silverDisc'))return;coreOneOff('cabinet-search',10);item('silverDisc');item('lamp');item('brassKey');clue('lock9');return modal('OPEN','열린 황동 수납장',`<div class="collect-visual">◐</div><div class="letter">은면 원판, 작은 등불, 황동 열쇠를 꺼냈다.\n안쪽 접힌 기록에 「현관문 자동 잠금 · 매일 밤 9:00」가 적혀 있다.</div>`);}if(action.startsWith('core-deep-'))return coreDeep(action.slice(10));if(action==='wall-reset')return wallLightReset();if(action.startsWith('wall-light-'))return wallLightPress(Number(action.slice(11)));if(action==='invitation')return invitation();if(action==='invitation-flip')return invitationFlip();if(action.startsWith('item-flip-'))return itemFlip(action.slice(10));if(action==='mirror-mount'){if(has('silverDisc')&&has('lamp')){if(!g.discMounted)coreOneOff('mirror-mount',5);g.discMounted=true;save();return mirror()}return;}if(action==='sconce-touch')return sconceTouch();if(action.startsWith('ambient-open-'))return ambientInspect(action.slice(13));if(action==='bell-reset')return bellReset();if(action.startsWith('bell-note-'))return bellNote(Number(action.slice(10)));if(action.startsWith('ambient-next-'))return ambientNext(action.slice(13));if(action==='close')return hide();if(action.startsWith('room-intro-'))return showRoomIntro(action.slice(11));if(action==='home')return home();if(action==='really-new')return begin();if(action==='new-confirm')return modal('NEW GAME','처음부터 시작할까요?',`<p class="modal-description">이번 버전의 진행 데이터가 초기화됩니다.</p>`,[['취소','close'],['새로 시작','really-new',true]]);
-if(action==='pollen-rub'){if(done('light')&&g.flags.curtain){coreOneOff('pollen-rub',10);g.flags.blackout=true;clue('powder');save();return modal('GREENHOUSE · 관찰','희미한 발자국',`<p class="modal-description">은빛 가루를 쓸어내자 작고 둥근 발자국들이 선명해진다. 발자국은 꽃줄기 뒤편의 오래된 유리 용기 부근에서 끊겨 있다.</p>`,[['돌아가기','close',true]])}return}if(action.startsWith('rug-tile-')){const i=Number(action.slice(9));if(Number.isInteger(i)&&i>=0&&i<25)return rug(i);return;}if(action==='foot-reset'){g.footInput='';save();return foot();}if(action.startsWith('step-'))return step(action.slice(5));if(action==='rug-pocket'){if(!g.flags.rug)return;if(!has('photo'))coreOneOff('rug-pocket',10);if(!has('photo'))item('photo');return modal('FOUND','오래된 사진',`<div class="collect-visual">▧</div><div class="letter">어린 미로 곁에 얼굴이 희미한 사람이 서 있다.\n\n「우린 언제나 함께야」</div>`)}
+if(action==='pollen-rub'){if(done('light')&&g.flags.curtain){coreOneOff('pollen-rub',10);g.flags.blackout=true;clue('powder');save();return modal('GREENHOUSE · 관찰','희미한 발자국',`<p class="modal-description">은빛 가루를 쓸어내자 작고 둥근 발자국들이 선명해진다. 발자국은 꽃줄기 뒤편의 오래된 유리 용기 부근에서 끊겨 있다.</p>`,[['돌아가기','close',true]])}return}if(action.startsWith('rug-tile-')){const i=Number(action.slice(9));if(Number.isInteger(i)&&i>=0&&i<FOYER_GRID_SIZE*FOYER_GRID_SIZE)return rug(i);return;}if(action==='foot-back'){g.footInput=(g.footInput||'').slice(0,-1);save();return foot();}if(action==='foot-reset'){g.footInput='';save();return foot();}if(action.startsWith('step-'))return step(action.slice(5));if(action==='rug-pocket'){if(!g.flags.rug)return;if(!has('photo'))coreOneOff('rug-pocket',10);if(!has('photo'))item('photo');return modal('FOUND','오래된 사진',`<div class="collect-visual">▧</div><div class="letter">어린 미로 곁에 얼굴이 희미한 사람이 서 있다.\n\n「우린 언제나 함께야」</div>`)}
 if(action==='mirror-open')return mirror();if(action==='mirror-test')return mirrorTest();if(action.startsWith('mirror-inspect-'))return mirrorInspect(action.slice(15));if(action.startsWith('mirror-slide-')){const parts=action.split('-');return mirrorSlide(parts[2],parts[3]);}if(action.startsWith('mirror-turn-'))return mirrorTurn(action.slice(12));if(action==='mirror-switch')return; // Ignore stale buttons from earlier cached puzzle versions.
 if(action.startsWith('flip-')){let name=action.slice(5);if(Object.hasOwn(moonBooks,name)){g.booksFlipped??={};g.booksFlipped[name]=!g.booksFlipped[name];save();return books()}}
 if(action.startsWith('book-')){let name=action.slice(5);if(name==='reset'){g.booksPlaced=[null,null,null,null,null];save();return books()}if(name==='check')return bookCheck();if(Object.hasOwn(moonBooks,name)&&!g.booksPlaced.includes(name)){let slot=g.booksPlaced.indexOf(null);if(slot>=0){g.booksPlaced[slot]=name;save();}}return books()}
