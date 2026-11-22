@@ -74,3 +74,24 @@ test('오목·윷놀이·끝말잇기·루미큐브 결과는 페이지 상단 �
  const tetris=read('tetris/index.html');
  assert.match(tetris,/cat-result-overlay cat-tetris-result-layer/);
 });
+
+test('새 비웃는 고양이 그림은 작은 저화질 리소스가 아닌 고화질 WebP로 제공된다',()=>{
+ const css=read('cat-result.css');
+ const m=css.match(/\.cat-final-photo--cat\{background-image:url\("data:image\/webp;base64,([A-Za-z0-9+/=]+)"\)\}/);
+ assert.ok(m,'victory art not found');
+ const picture=Buffer.from(m[1],'base64');
+ assert.ok(picture.length>=20_000,'high-resolution victory image must be at least 20 KB');
+ assert.equal(picture.toString('ascii',0,4),'RIFF');
+ assert.equal(picture.toString('ascii',8,12),'WEBP');
+ assert.equal(picture.readUInt32LE(4)+8,picture.length);
+});
+test('고양이 대전 전체의 결과창에 선택된 AI 난이도를 표시한다',()=>{
+ const root=read('app.js'),marble=read('marble/app.mjs'),tetris=read('tetris/index.html');
+ assert.match(root,/label:'고양이 AI 난이도'/);
+ assert.match(root,/s\.aiDifficulty/);
+ assert.match(marble,/label:'고양이 AI 난이도'/);
+ assert.match(marble,/\[aiDifficulty\]/);
+ assert.match(tetris,/label:'고양이 AI 난이도'/);
+ assert.match(tetris,/\[catStrength\]/);
+ assert.match(tetris,/label:'게임 속도'/);
+});
