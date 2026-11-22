@@ -142,3 +142,14 @@ test('foyer B reads five paw facing directions, not cat travel directions',()=>{
  assert.match(css,/foyer-lock-crest/);
  new Function(game);
 });
+
+test('foyer clue discovery does not narrate footprint route solution',()=>{
+ assert.doesNotMatch(game,/침대에서 종까지 이어지는 동물 발자국 두 종류가 보인다/);
+ assert.doesNotMatch(game,/고양이와 개 발자국은 침대 부근에서 시작해 각각 종까지 이어진다/);
+ assert.doesNotMatch(game,/타일을 눌러 겹친 자국을 확대해 볼 수 있다/);
+ assert.match(game,/미로의 발자국을 따라 종까지 와 줘/);
+ assert.match(game,/function invitation\(\)/);
+ assert.match(game,/발신인 없는 초대장/);
+ assert.match(game,/타일을 눌러 자세히 관찰할 수 있다/);
+ new Function(game);
+});
