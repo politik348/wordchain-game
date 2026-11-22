@@ -85,7 +85,7 @@ const hints={
   '정답: 길 2칸, 소리 1칸, 빛 3칸으로 바퀴를 맞물린 뒤 붉은 고정쇠를 풀면 됩니다.'
  ]
 };
-const state=()=>({v:21,room:'foyer',visited:['foyer'],showMarkers:true,inspectedObjects:[],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,ambientSteps:{},ambientFlags:{},sideGames:{bell:false,wallLights:false},wallLights:[false,false,false,false],bellInput:[],combinedFindings:[],itemSides:{},discMounted:false,catMood:'curious',booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[1,2,1,2],glassA:{r:1,x:-1},glassB:{r:2,x:1},pinLevels:[0,0,0],pinReady:false,night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
+const state=()=>({v:21,room:'foyer',visited:['foyer'],showMarkers:true,inspectedObjects:[],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,ambientSteps:{},ambientSpent:{},ambientFlags:{},sideGames:{bell:false,wallLights:false},wallLights:[false,false,false,false],bellInput:[],combinedFindings:[],itemSides:{},discMounted:false,catMood:'curious',booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[1,2,1,2],glassA:{r:1,x:-1},glassB:{r:2,x:1},pinLevels:[0,0,0],pinReady:false,night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
 let g=null,modalOpen=false,audio=null,catTurns=0;
 const has=id=>g.inventory.includes(id), done=id=>!!g.flags[id], elapsed=()=>Math.floor((Date.now()-(g?.startedAt||Date.now()))/1000)+(g?.elapsedCarry||0), pretty=s=>{let v=Math.max(0,s);return `${String(Math.floor(v/3600)).padStart(2,'0')}:${String(Math.floor(v%3600/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`};
 function save(){if(!g)return;try{store.setItem(SAVE,JSON.stringify({...g,elapsedCarry:elapsed(),startedAt:null}));}catch(e){}}
@@ -156,7 +156,7 @@ function seal(id){if(g.seals.includes(id))return;g.seals.push(id);notify('인장
 function clearRoom(id){return ({foyer:()=>done('foot')&&done('mirror')&&has('brassKey'),study:()=>done('books')&&done('piano'),greenhouse:()=>done('water')&&done('light'),tower:()=>done('clock')&&done('pin')})[id]();}
 function canEnter(id){let n=rooms.indexOf(id);return n===0||n>0&&rooms.slice(0,n).every(clearRoom)}
 function begin(){g=state();save();showGame();modal('PROLOGUE','13번째 종소리',`<div class="letter">달빛 저택으로 와 주세요.\n멈춘 시계가 다시 움직이기 전에, 사라진 기억을 찾아 주셨으면 합니다.\n\n— 발신인 미상</div><p class="modal-description">눈을 떠보니 현관문이 잠겨 있습니다. 고양이 미로가 마치 오래 기다렸다는 듯 말을 겁니다.</p><p class="story-voice">"여기 나가려면 인장 세 개를 찾아야 해. 근데… 내가 기다리던 사람이 누구였더라?"</p>`,[['현관 조사 시작','close',true]])}
-function resume(){try{let s=JSON.parse(store.getItem(SAVE));if(!s||s.v!==21||!s.flags)throw Error('version');g={...state(),...s,flags:{...state().flags,...s.flags},mirrorTiles:{...state().mirrorTiles,...s.mirrorTiles},booksFlipped:{...s.booksFlipped},ambientSteps:{...(s.ambientSteps||{})},ambientFlags:{...(s.ambientFlags||{})},sideGames:{bell:false,wallLights:false,...(s.sideGames||{})},wallLights:Array.isArray(s.wallLights)&&s.wallLights.length===4?s.wallLights:[false,false,false,false],bellInput:Array.isArray(s.bellInput)?s.bellInput:[],combinedFindings:Array.isArray(s.combinedFindings)?s.combinedFindings:[],itemSides:{...(s.itemSides||{})},showMarkers:typeof s.showMarkers==='boolean'?s.showMarkers:true,inspectedObjects:Array.isArray(s.inspectedObjects)?s.inspectedObjects:[]};if(!Array.isArray(g.booksPlaced)||g.booksPlaced.length!==5)g.booksPlaced=[null,null,null,null,null];g.elapsedCarry=Number(s.elapsedCarry)||0;g.startedAt=Date.now();if(!canEnter(g.room))g.room='foyer';showGame();if(g.ending)ending(g.ending)}catch(e){store.removeItem(SAVE);notify('저장 기록을 읽지 못했습니다. 새로 시작해 주세요.') }}
+function resume(){try{let s=JSON.parse(store.getItem(SAVE));if(!s||s.v!==21||!s.flags)throw Error('version');g={...state(),...s,flags:{...state().flags,...s.flags},mirrorTiles:{...state().mirrorTiles,...s.mirrorTiles},booksFlipped:{...s.booksFlipped},ambientSteps:{...(s.ambientSteps||{})},ambientSpent:{...(s.ambientSpent||{})},ambientFlags:{...(s.ambientFlags||{})},sideGames:{bell:false,wallLights:false,...(s.sideGames||{})},wallLights:Array.isArray(s.wallLights)&&s.wallLights.length===4?s.wallLights:[false,false,false,false],bellInput:Array.isArray(s.bellInput)?s.bellInput:[],combinedFindings:Array.isArray(s.combinedFindings)?s.combinedFindings:[],itemSides:{...(s.itemSides||{})},showMarkers:typeof s.showMarkers==='boolean'?s.showMarkers:true,inspectedObjects:Array.isArray(s.inspectedObjects)?s.inspectedObjects:[]};if(!Array.isArray(g.booksPlaced)||g.booksPlaced.length!==5)g.booksPlaced=[null,null,null,null,null];g.elapsedCarry=Number(s.elapsedCarry)||0;g.startedAt=Date.now();if(!canEnter(g.room))g.room='foyer';showGame();if(g.ending)ending(g.ending)}catch(e){store.removeItem(SAVE);notify('저장 기록을 읽지 못했습니다. 새로 시작해 주세요.') }}
 function showGame(){$('homeScreen').classList.add('hidden');$('gameScreen').classList.remove('hidden');hide();render();tick()}
 function home(){save();hide();$('gameScreen').classList.add('hidden');$('homeScreen').classList.remove('hidden');$('continueBtn').classList.toggle('hidden',!store.getItem(SAVE))}
 function hide(){modalOpen=false;$('modalOverlay').classList.add('hidden')}
@@ -292,31 +292,48 @@ for(const [room,entries] of Object.entries(window.MoyeoExtraProps||{})){
  ambientScenes[room].push(...entries);
 }
 const ambientLookup=Object.fromEntries(Object.values(ambientScenes).flat().map(o=>[o[0],{id:o[0],name:o[1],x:o[2],y:o[3],description:o[4],steps:o[5]}]));
-function ambientInspect(id,justAdvanced=false){
+/* One optional search action = one estimated in-game duration, never a real wait.
+   Older v21 saves used 10 seconds per completed ambient step. Their historical
+   elapsed time stays untouched, while new actions add their own chosen duration. */
+const AMBIENT_SECONDS=[5,10,15];
+function ambientStepSeconds(object,index){
+ const value=Number(object?.steps?.[index]?.[2]);
+ return AMBIENT_SECONDS.includes(value)?value:10;
+}
+function ambientTimeSpent(id,level){
+ const stored=Number(g.ambientSpent?.[id]);
+ if(g.ambientSpent&&Object.hasOwn(g.ambientSpent,id)&&Number.isFinite(stored)&&stored>=0)return stored;
+ return level*10; // historical v21 inspection progress: never retroactively recalculate it
+}
+function ambientInspect(id,chargedSeconds=0){
  const object=ambientLookup[id];if(!object)return;
  const level=Math.max(0,Math.min(object.steps.length,Number(g.ambientSteps?.[id])||0));
  const result=level===0?object.description:object.steps[level-1][1];
  const action=object.steps[level]?.[0];
- const progress=level?'<div class="ambient-time-note">탐험 중에 '+level*10+'초가 흘렀다.</div>':'';
- const actions=action?[[action+' · +10초','ambient-next-'+id,true],['그만 살펴보기','close']]:[['돌아가기','close',true]];
+ const seconds=action?ambientStepSeconds(object,level):0;
+ const spent=ambientTimeSpent(id,level);
+ const progress=level?'<div class="ambient-time-note">이 사물의 심화 조사 시간: '+spent+'초</div>':'';
+ const actions=action?[[action+' · +'+seconds+'초','ambient-next-'+id,true],['그만 살펴보기','close']]:[['돌아가기','close',true]];
  if(id==='foyer-sconce')actions.unshift([g.ambientFlags?.sconceHeat?'등잔에 손을 댔던 기억':'불꽃 가까이 손 넣어보기','sconce-touch',false]);
  modal('저택 · 주변 조사',object.name,
   '<div class="ambient-description">'+result+'</div>'+progress+
   (level>=object.steps.length?'<p class="puzzle-helper">여기서는 더 살펴볼 것이 보이지 않는다.</p>':''),
   actions
  );
- if(justAdvanced){tick();notify('탐험 시간 +10초');}
+ if(chargedSeconds>0){tick();notify('탐험 시간 +'+chargedSeconds+'초');}
 }
 function ambientNext(id){
  const object=ambientLookup[id];if(!object)return;
  g.ambientSteps??={};
  const level=Math.max(0,Math.min(object.steps.length,Number(g.ambientSteps[id])||0));
  if(level>=object.steps.length){ambientInspect(id);return;}
+ const seconds=ambientStepSeconds(object,level);
+ g.ambientSpent??={};
+ g.ambientSpent[id]=ambientTimeSpent(id,level)+seconds;
  g.ambientSteps[id]=level+1;
- g.elapsedCarry=(Number(g.elapsedCarry)||0)+10;
- save();ambientInspect(id,true);
+ g.elapsedCarry=(Number(g.elapsedCarry)||0)+seconds;
+ save();ambientInspect(id,seconds);
 }
-
 
 /* Optional foyer bell toy: a real, replayable four-note interaction, not a required seal. */
 const bellScore=['◆','☾','❖','✦'];
@@ -378,14 +395,14 @@ function bellReset(){
 function sconceTouch(){
  g.ambientFlags??={};
  const first=!g.ambientFlags.sconceHeat;
- if(first){g.ambientFlags.sconceHeat=true;g.elapsedCarry+=10;tick();}
+ if(first){g.ambientFlags.sconceHeat=true;g.elapsedCarry=(Number(g.elapsedCarry)||0)+5;tick();}
  tone('bad');
  $('catDialog').textContent='아이쿠! 불꽃에 손을 너무 가까이 댔잖아. 조심해!';
  g.catMood='startled';render();
  modal('저택 · 작은 사고','아이쿠, 너무 뜨거워요!',
   '<div class="ambient-warmth"><span aria-hidden="true">♨</span><p>깜짝 놀라 손을 뺐다. 다친 곳은 없지만 손끝이 잠깐 화끈거린다.</p>'+
   '<small>미로가 눈을 동그랗게 뜨고 쳐다본다.</small></div>'+
-  (first?'<div class="ambient-time-note">탐험 시간 +10초</div>':'<p class="puzzle-helper">전에 만져 봤던 등잔이다.</p>'),
+  (first?'<div class="ambient-time-note">탐험 시간 +5초</div>':'<p class="puzzle-helper">전에 만져 봤던 등잔이다.</p>'),
   [['등잔 다시 보기','ambient-open-foyer-sconce',true],['돌아가기','close']]);
 }
 
