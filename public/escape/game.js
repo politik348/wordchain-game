@@ -35,7 +35,7 @@ const seals={path:['❖','길의 인장'],echo:['♫','소리의 인장'],light:
 const clueText={
  invitation:['발신인 없는 편지','달빛 저택에 와 주세요. 멈춘 시계가 다시 움직이기 전에 사라진 기억을 찾아 주세요. 봉투의 금속 인장에는 발신인 이름이 없다.'],
  lock9:['현관 출입 기록','현관문이 닫히는 자동 시각은 매일 밤 9시다. 기록지 마지막 줄에 당일의 날짜가 남아 있다.'],
- track:['양탄자 아래의 발자국','고양이와 개로 보이는 두 종류의 동물 발자국, 그리고 넓은 신발 밑창이 서로 다른 방향으로 이어져 종 근처에서 만난다.'],
+ track:['양탄자 아래의 발자국','문턱에서 시작된 두 종류의 동물 발자국과 신발 밑창 자국이 종으로 향한다. 몇몇 타일에는 다른 종류의 자국이 함께 남아 있다.'],
  portrait:['서재의 초상화','미로와 한 어린 소녀가 함께 앉아 있다. 금빛 액자 아래쪽에 작은 흠집이 보인다.'],
  dust:['서가의 황동 문양','책등마다 두 개의 문양이 다른 높이에 있다. 서가 양 끝은 높아 손이 쉽게 닿지 않지만 오래된 황동 장식이 남아 있다.'],
  shelfEnds:['높은 서가의 양 끝','사다리로 올려다보니 서가 왼편 끝에는 별(✦), 오른편 끝에는 초승달(☾) 모양이 남아 있다.'],
@@ -52,10 +52,10 @@ const clueText={
 };
 const hints={
  foot:[
-  '바닥의 흔적은 꼭 같은 곳에서 시작된 것은 아닙니다. 침대 부근도 다시 살펴볼 수 있습니다.',
-  '발톱이 찍힌 동물 발자국, 둥근 동물 발자국, 신발 밑창을 각각 구별해 보세요.',
-  '세 종류의 흔적이 모두 종에 닿습니다. 침대의 반달 모양으로 패인 뒤꿈치와 같은 흔적을 따라 방향을 읽어 보세요.',
-  '정답: 고양이 발자국은 오른쪽 → 위 → 위 → 위 → 왼쪽 → 위 → 위 → 위 → 오른쪽 → 오른쪽 → 아래 → 오른쪽 → 아래(RUUULUUURRDRD)입니다. 발톱이 있는 개의 흔적과 신발 자국도 각각 다른 출발점에서 종까지 이어집니다.'
+  '문턱부터 종까지 작은 발자국들이 이어집니다. 중간에 서로 다른 모양의 자국이 겹친 곳도 있습니다.',
+  '발톱이 남은 자국, 둥근 발바닥, 신발 밑창은 서로 다릅니다. 침대에서 발견한 자국과 비교해 보세요.',
+  '세 종류 모두 같은 문턱에서 시작하지만 중간에 서로 다른 길을 택합니다. 침대의 반달 모양 뒤꿈치와 같은 인상을 연결해 보세요.',
+  '정답: 고양이의 다섯 걸음은 오른쪽 → 위 → 오른쪽 → 아래 → 아래(RURDD)입니다. 개는 아래 → 오른쪽 → 아래 → 오른쪽 → 위(DRDRU), 사람은 위 → 오른쪽 → 아래 → 아래 → 오른쪽(URDDR)으로 종까지 이동합니다.'
  ],
  mirror:[
   '반쪽 달 장식의 문장과 등불 받침에 남은 흔적을 살펴보세요. 장치 위의 달은 창문과 떨어져 있습니다.',
@@ -632,14 +632,14 @@ function flowerPattern(){
   [['다른 곳 둘러보기','close',true]]);
 }
 
-/* Three complete trails converge on the bell: cat, dog and human.
-   Different start positions prevent using one shared origin as a shortcut.
-   A trace is identified by its footprint, not by a highlighted path. */
-const FOYER_GRID_SIZE=9;
-const FOYER_DESTINATION=40;
-const FOYER_ROUTES={"cat":[73,74,65,56,47,46,37,28,19,20,21,30,31,40],"dog":[1,10,11,12,3,4,5,14,15,24,33,32,41,40],"human":[7,16,25,26,35,44,43,52,51,60,59,58,49,40]};
-const FOYER_STARTS={"73":"침대","1":"문간","7":"계단"};
-const FOYER_FOOT_SEQUENCE='RUUULUUURRDRD';
+/* Three different five-move tracks share one doorway origin and one bell.
+   Some tiles hold two different species' overlapping impressions. Show BOTH.
+   Correct route is identified by the chipped cat paw observed at the bed. */
+const FOYER_GRID_SIZE=5;
+const FOYER_DESTINATION=12;
+const FOYER_ROUTES={"cat":[5,6,1,2,7,12],"dog":[5,10,11,16,17,12],"human":[5,0,1,6,11,12]};
+const FOYER_STARTS={"5":"문턱"};
+const FOYER_FOOT_SEQUENCE='RURDD';
 function foyerRouteDir(route,i){
  const here=route[i],next=route[i+1];
  if(next===here+FOYER_GRID_SIZE)return 'D';
@@ -689,12 +689,15 @@ function catbedTrack(){
 function foyerTrailTile(i){
  if(Object.hasOwn(FOYER_STARTS,i))return {type:'anchor',text:FOYER_STARTS[i]};
  if(i===FOYER_DESTINATION)return {type:'anchor',text:'종'};
- if(Object.hasOwn(FOYER_CAT_PRINTS,i))return {type:'cat',chipped:true,dir:FOYER_CAT_PRINTS[i]};
- if(Object.hasOwn(FOYER_DOG_PRINTS,i))return {type:'dog',dir:FOYER_DOG_PRINTS[i]};
- if(Object.hasOwn(FOYER_BOOT_PRINTS,i))return {type:'boot',dir:FOYER_BOOT_PRINTS[i]};
- return {type:'dust'};
+ const prints=[];
+ if(Object.hasOwn(FOYER_CAT_PRINTS,i))prints.push({type:'cat',chipped:true,dir:FOYER_CAT_PRINTS[i]});
+ if(Object.hasOwn(FOYER_DOG_PRINTS,i))prints.push({type:'dog',dir:FOYER_DOG_PRINTS[i]});
+ if(Object.hasOwn(FOYER_BOOT_PRINTS,i))prints.push({type:'boot',dir:FOYER_BOOT_PRINTS[i]});
+ return prints.length>1?{type:'mixed',prints}:prints[0]||{type:'dust'};
 }
 function foyerTrailGraphic(t,large=false){
+ if(t.type==='mixed')return '<span class="foyer-track-mix" aria-hidden="true">'+
+  t.prints.map(p=>'<span class="foyer-mix-print">'+foyerTrailGraphic(p,large)+'</span>').join('')+'</span>';
  if(t.type==='anchor')return '<span class="trail-landmark">'+t.text+'</span>';
  if(t.type==='cat')return foyerPawSvg(t.chipped,t.dir,large);
  if(t.type==='dog')return foyerDogSvg(t.dir,large);
@@ -703,44 +706,48 @@ function foyerTrailGraphic(t,large=false){
 }
 function foyerTrailDetail(i){
  const t=foyerTrailTile(i);
+ const description=p=>p.type==='cat'?'둥근 발가락 네 개와 반달처럼 패인 뒤꿈치 가장자리.':
+  p.type==='dog'?'네 개의 발가락 끝에 가늘고 뾰족한 발톱 자국이 있다.':
+  p.type==='boot'?'넓은 밑창과 반복되는 가로 홈이 있다.':'';
  const desc=t.type==='anchor'?'바닥 가장자리의 오래된 표식이다.':
-  t.type==='cat'?'네 개의 둥근 발가락 자국. 뒤꿈치 오른쪽 가장자리에 반달처럼 패인 흔적이 있다.':
-  t.type==='dog'?'네 개의 발가락 자국 끝에 가늘고 뾰족한 발톱 자국이 남아 있다. 뒤꿈치는 둥글다.':
-  t.type==='boot'?'넓은 뒤꿈치와 가로로 반복된 밑창 홈이 보인다.':
-  '먼지가 엷게 쌓여 있지만 뚜렷한 발자국은 없다.';
- return '<div class="foyer-track-detail"><div class="foyer-track-magnify" aria-hidden="true">'+foyerTrailGraphic(t,true)+'</div>'+
-  '<p>'+desc+'</p></div>';
+  t.type==='mixed'?'이 타일에는 서로 다른 흔적이 겹쳐 있다. '+t.prints.map(description).join(' '):
+  t.type==='dust'?'먼지가 엷게 쌓여 있지만 뚜렷한 발자국은 없다.':description(t);
+ return '<div class="foyer-track-detail"><div class="foyer-track-magnify'+(t.type==='mixed'?' mixed':'')+'" aria-hidden="true">'+
+  foyerTrailGraphic(t,true)+'</div><p>'+desc+'</p></div>';
 }
 function rug(selected=-1){
  g.flags.rug=true;clue('track');
  const tiles=Array.from({length:FOYER_GRID_SIZE*FOYER_GRID_SIZE},(_,i)=>{
   const t=foyerTrailTile(i);
   const shown=t.type==='anchor'?t.text:t.type==='cat'?'작은 동물 발자국':
-   t.type==='dog'?'발톱이 보이는 동물 발자국':t.type==='boot'?'신발 자국':'빈 타일';
+   t.type==='dog'?'발톱이 보이는 동물 발자국':t.type==='boot'?'신발 자국':
+   t.type==='mixed'?'서로 다른 발자국이 겹친 타일':'빈 타일';
   return '<button type="button" class="trail-cell'+(t.type==='anchor'?' trail-anchor':'')+
    (selected===i?' selected':'')+'" data-action="rug-tile-'+i+'" aria-label="'+(Math.floor(i/FOYER_GRID_SIZE)+1)+'행 '+(i%FOYER_GRID_SIZE+1)+'열, '+shown+
    '" aria-pressed="'+(selected===i)+'">'+foyerTrailGraphic(t)+'</button>';
  }).join('');
  modal('현관 홀 · 조사','들춰진 양탄자',
-  '<p class="modal-description">양탄자 밑에서 작은 동물 발자국과 발톱 자국, 무거운 신발 자국이 뒤섞인 타일이 드러난다. 서로 다른 곳에서 시작된 흔적들이 오래된 종 앞에 모여 있다.</p>'+
-  '<div class="foyer-board-scroll" role="region" tabindex="0" aria-label="발자국 9행 9열 조사판, 작은 화면에서는 좌우로 이동 가능"><div class="trail-grid" role="group" aria-label="아홉 행 아홉 열 바닥 타일. 누르면 흔적을 확대한다">'+tiles+'</div></div>'+
+  '<p class="modal-description">문턱에서 종으로 향하는 서로 다른 발자국이 보인다. 일부는 같은 타일에 겹쳐 있다.</p>'+
+  '<div class="foyer-board-scroll" role="region" aria-label="발자국 5행 5열 조사판"><div class="trail-grid" role="group" aria-label="다섯 행 다섯 열 타일. 누르면 자국을 확대한다">'+tiles+'</div></div>'+
   (selected>=0&&selected<FOYER_GRID_SIZE*FOYER_GRID_SIZE?foyerTrailDetail(selected):
-   '<p class="foyer-track-instruction">타일을 누르면 표면을 확대할 수 있다. 작은 화면에서는 바닥을 좌우로 이동해 볼 수 있다.</p>')+
+   '<p class="foyer-track-instruction">타일을 눌러 겹친 자국을 확대해 볼 수 있다.</p>')+
   '<div class="investigation-actions"><button data-action="rug-pocket">'+(has('photo')?'살펴본 안감 다시 보기':'접힌 안감도 조사한다 · +10초')+'</button></div>'+
   '<p class="puzzle-helper">타일마다 자국의 크기와 방향이 다르다.</p>');
  save();
 }
 function foot(){
  g.activePuzzle='foot';
- if(!done('foot')&&g.foyerRouteVersion!==3){
-  g.footInput='';g.foyerRouteVersion=3;save();
+ if(!done('foot')&&g.foyerRouteVersion!==4){
+  g.footInput='';g.foyerRouteVersion=4;save();
  }
  if(done('foot')){article('열린 수납장','방향 자물쇠는 이미 풀려 있다.');return;}
  modal('ROOM 01 · 퍼즐 1','지워진 발걸음',
-  '<p class="modal-description">수납장 손잡이에는 고양이 발 모양의 금속 장식이 있다. 여러 개의 둥근 홈은 비어 있고, 아래에 방향 버튼 네 개가 있다.</p>'+
+  '<p class="modal-description">수납장 손잡이에 발바닥 모양의 낡은 문양이 남아 있다. 다섯 개의 표시등은 꺼져 있고 그 아래로 방향 버튼 네 개가 있다.</p>'+
   '<div class="direction-pad">'+[['↑','up'],['←','left'],['↓','down'],['→','right']].map(([t,v])=>'<button data-action="step-'+v+'" aria-label="'+v+'">'+t+'</button>').join('')+'</div>'+
   '<div class="foyer-foot-counter" role="status" aria-label="이동 방향 '+g.footInput.length+'/'+FOYER_FOOT_SEQUENCE.length+'개 입력">'+
-    Array.from({length:FOYER_FOOT_SEQUENCE.length},(_,i)=>'<span class="foyer-foot-dot'+(i<g.footInput.length?' filled':'')+'"></span>').join('')+
+    Array.from({length:FOYER_FOOT_SEQUENCE.length},(_,i)=>
+      '<span class="foyer-foot-dot'+(i<g.footInput.length?' filled':'')+'" aria-hidden="true">'+
+      ({U:'↑',D:'↓',L:'←',R:'→'}[g.footInput[i]]||'·')+'</span>').join('')+
     '<span class="foyer-foot-progress">'+g.footInput.length+' / '+FOYER_FOOT_SEQUENCE.length+'</span></div>'+
   '<div class="foyer-foot-actions"><button data-action="foot-back" '+(!g.footInput.length?'disabled':'')+'>한 걸음 취소</button><button data-action="foot-reset">전체 지우기</button></div>'+
   '<p class="puzzle-helper">현관에서 발견한 흔적을 다시 확인할 수 있다.</p>');
@@ -757,7 +764,7 @@ function step(v){
    notify('수납장의 방향 자물쇠가 풀렸다!');tone('gain');render();
    modal('PUZZLE SOLVED','열리는 수납장','<div class="collect-visual">⌑</div><p class="modal-description">철컥, 수납장의 걸쇠가 풀렸다. 수납장 안을 직접 조사해 보세요.</p>');save();return;
   }
-  g.footInput='';error('금속 홈 여섯 개가 다시 어두워졌다.');
+  g.footInput='';error('금속 표시등 다섯 개가 다시 꺼졌다.');
  }
  foot();save();
 }
