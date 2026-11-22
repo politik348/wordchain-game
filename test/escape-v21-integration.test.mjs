@@ -6,6 +6,7 @@ const file=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const html=file('public/escape/index.html');
 const game=file('public/escape/game.js');
 const threeD=file('public/escape/room3d.js');
+const storybook=file('public/escape/storybook.js');
 const css=file('public/escape/styles.css');
 
 test('EP01 v2.1 has its own save keys, ten puzzle hint trees and three endings',()=>{
@@ -185,4 +186,19 @@ test('foyer lock reveals neither paw graphic nor interpretation rules',()=>{
  assert.doesNotMatch(game,/손잡이에 발바닥 모양 문양과 다섯 개의 빈 홈이 있다/);
  new Function(game);
  new Function(threeD);
+});
+
+test('illustrated foyer renders Miro bed over AVIF and allows clicking its clue',()=>{
+ assert.match(storybook,/foyer:'foyer-scene\.avif'/);
+ assert.match(storybook,/catbed:\[19\.5,85\]/,'bed hotspot aligns with rendered bed');
+ assert.match(storybook,/foyer:new Set\(\[\]\)/,'storybook no longer suppresses bed');
+ assert.doesNotMatch(storybook,/foyer:new Set\(\['catbed'\]\)/);
+ assert.match(storybook,/className='storybook-catbed-art'/);
+ assert.match(storybook,/art\.appendChild\(bed\)/,'bed drawn on pan/zoom artwork');
+ assert.match(storybook,/viewBox="0 0 300 206"/,'bed illustration has vector geometry');
+ assert.match(storybook,/data-object="catbed"\]\{width:18%!important;height:24%!important/,'click target spans bed');
+ assert.match(css,/storybook-ready\[data-room="foyer"\] \.storybook-catbed-art\{display:block;\}/);
+ assert.match(html,/storybook\.js\?v=20261122visiblebed9/);
+ assert.match(game,/case 'catbed':return catbedTrack\(\)/);
+ new Function(storybook);
 });
