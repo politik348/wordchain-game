@@ -62,27 +62,21 @@ test('통행료 부족 시 매각 순서를 플레이어가 정하고 전액 지
  assert.ok(s.players.every(p=>p.cash>=0));
 });
 
-test('보유 부동산을 전부 팔아도 세금을 못 내면 기존 파산 규칙 적용',()=>{
+test('보유 부동산을 전부 팔아도 빚을 못 갚으면 파산한다',()=>{
  let s=fresh();
- s.players[0].position=7;s.players[0].cash=0;
+ s.players[0].cash=0;s.players[0].position=3;
  s.properties[1]={owner:'human',level:0};
- // Property itself is cheap, but other property values may force a large tax.
- s.properties[2]={owner:'human',level:4};
- s.properties[4]={owner:'human',level:4};
- s.properties[7]={owner:'human',level:4};
- // Shortage created via expensive opponent toll; enforce far larger than all sale values.
- s.properties[5]={owner:'other',level:4};
- s.players[0].position=3; // +2 => expensive opponent's city
- s=applyAction(s,'human','roll',{},rollTwo);
+ s.properties[5]={owner:'other',level:4};s.olympics[5]=5; // large toll
+ s=applyAction(s,'human','roll',{},rollTwo); // lands on 5
  assert.equal(s.phase,'liquidation');
- let guard=0;
- while(s.phase==='liquidation'&&guard++<8){
-  const index=Object.keys(s.properties).map(Number).find(i=>s.properties[i].owner==='human');
-  assert.notEqual(index,undefined);
-  s=applyAction(s,'human','sellProperty',{index});
- }
- assert.notEqual(s.phase,'liquidation');
- assert.ok(s.players.every(p=>p.cash>=0));
+ const deficit=s.pending.amount;
+ assert.ok(deficit>saleValue(s,1));
+ s=applyAction(s,'human','sellProperty',{index:1});
+ assert.ok(s.players[0].bankrupt);
+ assert.equal(s.players[0].cash,0);
+ assert.equal(s.phase,'finished');
+ assert.equal(s.winner,'other');
+ assert.equal(s.players[1].cash,1900+saleValue({...s,properties:{1:{owner:'human',level:0}}},1));
 });
 
 test('고양이 AI는 기존대로 자금 부족 시 자동 매각한다',()=>{
