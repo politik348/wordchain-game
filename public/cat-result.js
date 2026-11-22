@@ -19,5 +19,10 @@
    (actions?'<div class="cat-final-actions">'+actions+'</div>':'')+
    '</div></section>';
  }
- global.MoyeoCatResult={render};
+ function overlay(content,{closeAction='catResultDismiss'}={}){
+  return '<div class="cat-result-overlay" role="dialog" aria-modal="true" aria-label="경기 종료 결과">'+
+   '<div class="cat-result-dialog"><button type="button" class="cat-result-close" data-action="'+escapeHtml(closeAction)+'" aria-label="결과창 닫고 게임판 보기">×</button>'+
+    content+'</div></div>';
+ }
+ global.MoyeoCatResult={render,overlay};
 })(window);
