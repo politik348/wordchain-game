@@ -58,10 +58,10 @@ const hints={
   '정답: 오른쪽 → 아래 → 오른쪽 → 아래(RDRD). 작은 고양이 발자국이 침대에서 종까지 이어지는 순서입니다.'
  ],
  mirror:[
-  '황동 벽 장식의 표면은 은면을 댈 만한 곳이 여러 군데 있습니다.',
-  '장치의 시작점과 반쪽 달의 위치를 비교하고, 은면마다 놓일 수 있는 두 방향을 생각해 보세요.',
-  '반사된 빛이 다음 은면으로 이어지도록 회전 각도를 바꿔 보세요. 길이 끊어지는 은면을 먼저 조사해 보세요.',
-  '정답: A(/), B(/), C(＼), D(＼), E(/)입니다. 다섯 반사면이 모두 제자리를 향하도록 돌리면 반쪽 달 장치가 반응합니다.'
+  '반쪽 달 장식의 문장과 등불 받침에 남은 흔적을 살펴보세요. 장치 위의 달은 창문과 떨어져 있습니다.',
+  '은빛 받침은 둥글게 닳았고 황동 받침 두 곳에는 기다란 마모 자국이 있습니다. 황동의 색이 다른 이유가 있을까요?',
+  '빛은 은면에 닿을 때 직각으로 꺾입니다. 일반 은면은 회전하고 황동 B·D는 레일을 따라 움직일 수도 있습니다. 빛의 출발점에서 경로를 차례로 추적해 보세요.',
+  '정답: B는 레일 두 번째 자리(x=2), D는 첫 번째 자리(x=5). 은면 A╲ B╲ C╱ D╲ E╲ F╱ G╱ H╲ I╲. 빛은 A→B→C→D→E→F→G→H→I를 거쳐 달에 닿습니다.'
  ],
  books:[
   '서가 양 끝에 새겨진 문양과 책등의 양 끝을 비교해 보세요.',
@@ -112,7 +112,7 @@ const hints={
   '정답: 길 2칸, 소리 1칸, 빛 3칸으로 바퀴를 맞물린 뒤 붉은 고정쇠를 풀면 됩니다.'
  ]
 };
-const state=()=>({v:21,room:'foyer',visited:['foyer'],roomIntroSeen:{},showMarkers:true,inspectedObjects:[],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,coreInvestigations:{},coreActionCosts:{},ambientSteps:{},ambientSpent:{},ambientFlags:{},sideGames:{bell:false,wallLights:false},wallLights:[false,false,false,false],bellInput:[],combinedFindings:[],itemSides:{},discMounted:false,catMood:'curious',booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorTiles:{A:'\\',B:'/',C:'/',D:'/',E:'\\'},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[1,2,1,2],glassA:{r:1,x:-1},glassB:{r:2,x:1},pinLevels:[0,0,0],pinReady:false,night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
+const state=()=>({v:21,room:'foyer',visited:['foyer'],roomIntroSeen:{},showMarkers:true,inspectedObjects:[],inventory:[],clues:[],seals:[],flags:{foot:false,mirror:false,books:false,piano:false,film:false,water:false,light:false,blackout:false,clock:false,pin:false,valves:false,rug:false,curtain:false},selected:null,coreInvestigations:{},coreActionCosts:{},ambientSteps:{},ambientSpent:{},ambientFlags:{},sideGames:{bell:false,wallLights:false},wallLights:[false,false,false,false],bellInput:[],combinedFindings:[],itemSides:{},discMounted:false,catMood:'curious',booksPlaced:[null,null,null,null,null],booksFlipped:{},drumOffset:0,drumPlayed:false,mirrorVersion:2,mirrorTiles:{A:'/',B:'/',C:'/',D:'/',E:'/',F:'/',G:'/',H:'/',I:'/'},mirrorRails:{B:1,D:7},lampOn:false,footInput:'',pianoInput:[],digits:'',mirrorAngle:0,mirrorA:0,mirrorB:0,filmRotate:1,filmShift:-1,waterValues:[1,2,1,2],glassA:{r:1,x:-1},glassB:{r:2,x:1},pinLevels:[0,0,0],pinReady:false,night:false,hour:12,minute:0,activePuzzle:'foot',hintLevels:{},hintsUsed:0,errors:0,startedAt:Date.now(),elapsedCarry:0,sound:true,ending:null});
 let g=null,modalOpen=false,audio=null,catTurns=0;
 const has=id=>g.inventory.includes(id), done=id=>!!g.flags[id], elapsed=()=>Math.floor((Date.now()-(g?.startedAt||Date.now()))/1000)+(g?.elapsedCarry||0), pretty=s=>{let v=Math.max(0,s);return `${String(Math.floor(v/3600)).padStart(2,'0')}:${String(Math.floor(v%3600/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`};
 function save(){if(!g)return;try{store.setItem(SAVE,JSON.stringify({...g,elapsedCarry:elapsed(),startedAt:null}));}catch(e){}}
@@ -192,7 +192,7 @@ function showRoomIntro(id){
    '<p class="modal-description"><b>현재 목표</b> · '+chapter.goal+'</p>',
    [['탐험 시작하기','close',true],['탐험 수첩','journal-rooms']]);
 }
-function resume(){try{let s=JSON.parse(store.getItem(SAVE));if(!s||s.v!==21||!s.flags)throw Error('version');g={...state(),...s,roomIntroSeen:{...(s.roomIntroSeen||{})},flags:{...state().flags,...s.flags},mirrorTiles:{...state().mirrorTiles,...s.mirrorTiles},booksFlipped:{...s.booksFlipped},coreInvestigations:{...(s.coreInvestigations||{})},coreActionCosts:{...(s.coreActionCosts||{})},ambientSteps:{...(s.ambientSteps||{})},ambientSpent:{...(s.ambientSpent||{})},ambientFlags:{...(s.ambientFlags||{})},sideGames:{bell:false,wallLights:false,...(s.sideGames||{})},wallLights:Array.isArray(s.wallLights)&&s.wallLights.length===4?s.wallLights:[false,false,false,false],bellInput:Array.isArray(s.bellInput)?s.bellInput:[],combinedFindings:Array.isArray(s.combinedFindings)?s.combinedFindings:[],itemSides:{...(s.itemSides||{})},showMarkers:typeof s.showMarkers==='boolean'?s.showMarkers:true,inspectedObjects:Array.isArray(s.inspectedObjects)?s.inspectedObjects:[]};
+function resume(){try{let s=JSON.parse(store.getItem(SAVE));if(!s||s.v!==21||!s.flags)throw Error('version');g={...state(),...s,roomIntroSeen:{...(s.roomIntroSeen||{})},flags:{...state().flags,...s.flags},mirrorVersion:2,mirrorTiles:s.mirrorVersion===2?Object.fromEntries(Object.entries(state().mirrorTiles).map(([id,initial])=>[id,s.mirrorTiles?.[id]===String.fromCharCode(92)?String.fromCharCode(92):s.mirrorTiles?.[id]==='/'?'/':initial])):state().mirrorTiles,mirrorRails:{B:s.mirrorVersion===2&&[1,2,3].includes(s.mirrorRails?.B)?s.mirrorRails.B:1,D:s.mirrorVersion===2&&[5,6,7].includes(s.mirrorRails?.D)?s.mirrorRails.D:7},booksFlipped:{...s.booksFlipped},coreInvestigations:{...(s.coreInvestigations||{})},coreActionCosts:{...(s.coreActionCosts||{})},ambientSteps:{...(s.ambientSteps||{})},ambientSpent:{...(s.ambientSpent||{})},ambientFlags:{...(s.ambientFlags||{})},sideGames:{bell:false,wallLights:false,...(s.sideGames||{})},wallLights:Array.isArray(s.wallLights)&&s.wallLights.length===4?s.wallLights:[false,false,false,false],bellInput:Array.isArray(s.bellInput)?s.bellInput:[],combinedFindings:Array.isArray(s.combinedFindings)?s.combinedFindings:[],itemSides:{...(s.itemSides||{})},showMarkers:typeof s.showMarkers==='boolean'?s.showMarkers:true,inspectedObjects:Array.isArray(s.inspectedObjects)?s.inspectedObjects:[]};
 if(!Object.hasOwn(s,'coreInvestigations')){
  // Previously inspected mechanisms must not acquire a new fee on legacy saves.
  for(const id of s.inspectedObjects||[])if(Object.hasOwn(coreInspections,id))g.coreInvestigations[id]=true;
@@ -611,24 +611,29 @@ function rug(){g.flags.rug=true;clue('track');modal('현관 홀 · 조사','들�
 function foot(){g.activePuzzle='foot';if(done('foot')){article('열린 수납장','방향 자물쇠는 이미 풀려 있다.');return}modal('ROOM 01 · 퍼즐 1','네 번의 걸음',`<p class="modal-description">수납장 손잡이에 고양이 발자국과 네 방향의 작은 홈이 있다. 네 칸의 표시등은 아직 꺼져 있다.</p><div class="direction-pad">${[['↑','up'],['←','left'],['↓','down'],['→','right']].map(([t,v])=>`<button data-action="step-${v}" aria-label="${v}">${t}</button>`).join('')}</div><div class="puzzle-counter">${'●'.repeat(g.footInput.length)}${'○'.repeat(4-g.footInput.length)}</div><p class="puzzle-helper">현관의 다른 부분도 살펴볼 수 있다.</p>`)}
 function step(v){if(done('foot'))return;let code={right:'R',left:'L',up:'U',down:'D'}[v];g.footInput+=code;tone();if(g.footInput.length===4){if(g.footInput==='RDRD'){g.flags.foot=true;g.activePuzzle='mirror';notify('수납장의 방향 자물쇠가 풀렸다!');tone('gain');render();modal('PUZZLE SOLVED','열리는 수납장',`<div class="collect-visual">⌑</div><p class="modal-description">철컥, 수납장의 걸쇠가 풀렸다. 수납장 안을 직접 조사해 보세요.</p>`);return}g.footInput='';error('걸쇠가 원래 위치로 돌아갔다.')}foot();save()}
 
-const moonMirrors={A:[1,3],B:[1,1],C:[3,1],D:[3,4],E:[4,4]};
+// Nine distinct mirrors: two brass bases slide horizontally on visible rails.
+// No star checkpoint, no preview beam, and no hidden "inspected clue" gate.
+const moonMirrors={A:[2,6],B:[1,7],C:[5,7],D:[7,5],E:[4,5],F:[4,2],G:[7,2],H:[7,1],I:[6,1]};
+const moonMirrorRails={B:[1,3],D:[5,7]};
+function moonMirrorPosition(id){
+ const pos=moonMirrors[id];
+ return [Object.hasOwn(moonMirrorRails,id)?g.mirrorRails[id]:pos[0],pos[1]];
+}
 const moonBooks={
  '가을':['✦','◆'],'여름':['✿','◆'],'겨울':['✿','◈'],'자정':['❖','◈'],
  '봄':['❖','☾'],'미로':['♣','◇']
 };
 const moonBookNames=['봄','여름','가을','겨울','자정','미로'];
 function traceMoonbeam(){
- const positions=Object.fromEntries(Object.entries(moonMirrors).map(([id,pos])=>[pos.join(','),id]));
- let x=-1,y=3,dx=1,dy=0,points=[[0,350]],visited=new Set();
- for(let n=0;n<35;n++){
+ const positions=Object.fromEntries(Object.keys(moonMirrors).map(id=>[moonMirrorPosition(id).join(','),id]));
+ let x=-1,y=6,dx=1,dy=0;
+ const visited=new Set(),reflections=[];
+ for(let n=0;n<100;n++){
   x+=dx;y+=dy;
-  if(x<0||x>=5||y<0||y>=5){
-   points.push([Math.max(0,Math.min(500,(x+.5)*100)),Math.max(0,Math.min(500,(y+.5)*100))]);
-   return {points,solved:x===4&&y===-1};
-  }
-  points.push([(x+.5)*100,(y+.5)*100]);
+  if(x<0||y<0||x>=9||y>=9)return {solved:x===6&&y===-1,reflections};
   const id=positions[x+','+y];
   if(id){
+   reflections.push(id);
    const slash=g.mirrorTiles[id]==='/';
    [dx,dy]=slash?[-dy,-dx]:[dy,dx];
   }
@@ -636,40 +641,66 @@ function traceMoonbeam(){
   if(visited.has(key))break;
   visited.add(key);
  }
- return {points,solved:false};
+ return {solved:false,reflections};
 }
 function mirror(){
  g.activePuzzle='mirror';
  if(done('mirror')){article('완성된 달','갈라진 달 문양이 다시 밝게 빛난다. 길의 인장을 떼어낸 홈만 남았다.');return;}
  if(!has('silverDisc')||!has('lamp')){
-  article('깨진 달 장식','문양 아래에는 은면이 결합되는 다섯 개의 받침이 있다. 한쪽 끝에는 등불을 끼울 홈이 보인다.');return;
+  article('깨진 달 장식','문양 아래에는 은면을 고정하는 아홉 개의 작은 받침이 있다. 한쪽에는 등불을 끼우는 홈, 다른 쪽에는 반쪽 달이 남아 있다.');return;
  }
- if(!g.discMounted){modal('현관 · 조사','반쪽 달 장식','<p class="modal-description">황동 장식 옆에 은빛 원판과 크기가 비슷한 빈 홈이 있다. 가장자리에는 마모된 금속 가루가 남아 있다.</p>',[['원판을 홈에 대 보기 · +5초','mirror-mount',true],['돌아가기','close']]);return;}
- // Existing saves may already contain the correct arrangement with the former lamp off.
- // Resolve it without requiring the removed beam-preview button.
- if(traceMoonbeam().solved)return mirrorSolve();
- g.mirrorTiles??={A:'\\',B:'/',C:'/',D:'/',E:'\\'};
- const tileEntries=Object.entries(moonMirrors).map(([id,[x,y]])=>
-   '<button type="button" class="moonbeam-mirror" data-action="mirror-turn-'+id+'" style="grid-column:'+(x+1)+';grid-row:'+(y+1)+'" title="은면 '+id+' 돌리기" aria-label="은면 '+id+' 돌리기"><small>'+id+'</small><b>'+(g.mirrorTiles[id]==='/'?'╱':'╲')+'</b></button>'
- ).join('');
+ if(!g.discMounted){
+  modal('현관 · 조사','반쪽 달 장식','<p class="modal-description">황동 장식 옆에 은빛 원판과 크기가 비슷한 빈 홈이 있다. 가장자리에는 마모된 금속 가루가 남아 있다.</p>',[['원판을 홈에 대 보기 · +5초','mirror-mount',true],['돌아가기','close']]);
+  return;
+ }
+ const mirrors=Object.keys(moonMirrors).map(id=>{
+  const pos=moonMirrorPosition(id),brass=Object.hasOwn(moonMirrorRails,id);
+  return '<button type="button" class="moonbeam-mirror '+(brass?'moonbeam-mirror--brass':'')+'" data-action="mirror-turn-'+id+'" style="grid-column:'+(pos[0]+1)+';grid-row:'+(pos[1]+1)+'" title="'+id+' 은면 회전" aria-label="'+id+' 은면 회전, 현재 '+(g.mirrorTiles[id]==='/'?'오른쪽으로 기운':'왼쪽으로 기운')+' 방향"><small>'+id+'</small><b>'+(g.mirrorTiles[id]==='/'?'╱':'╲')+'</b></button>';
+ }).join('');
+ const rails=Object.entries(moonMirrorRails).map(([id,range])=>{
+  const pos=g.mirrorRails[id];
+  return '<div class="moonbeam-rail-row"><b>황동 '+id+'</b><button type="button" data-action="mirror-slide-'+id+'-left" aria-label="'+id+' 황동 은면 왼쪽으로 밀기" '+(pos===range[0]?'disabled':'')+'>←</button><span aria-live="polite">레일 '+(pos-range[0]+1)+' / 3</span><button type="button" data-action="mirror-slide-'+id+'-right" aria-label="'+id+' 황동 은면 오른쪽으로 밀기" '+(pos===range[1]?'disabled':'')+'>→</button></div>';
+ }).join('');
  modal('ROOM 01 · 퍼즐 2','빛이 잊은 길',
-  '<p class="modal-description">수납장의 은면 원판을 분리하니 얇은 반사 조각 다섯 개가 나타났다. 오래된 벽 장식 아래에 누군가 작은 등불을 놓아두었다. 은면은 손가락으로 돌릴 수 있다.</p>'+
-  '<div class="moonbeam-board" role="group" aria-label="은면 다섯 개가 놓인 빛의 장치">'+
-  '<div class="moonbeam-squares">'+Array.from({length:25},(_,i)=>'<span></span>').join('')+'</div>'+
-  '<div class="moonbeam-source" title="등불">✧</div><div class="moonbeam-destination" title="반쪽 달">☾</div>'+
-  tileEntries+'</div>'+
-  '<p class="puzzle-helper">장치의 가장자리에는 작은 그을음이 남아 있다. 은면마다 한쪽은 검게 변색되어 있다.</p>'
+  '<p class="moonbeam-inscription">“창을 닫은 밤에도, 이곳의 달은 늘 온전했다.”</p>'+
+  '<p class="modal-description">은면 원판을 끼우자 아홉 개의 작은 반사면이 펼쳐진다. 왼쪽의 등불 받침에는 그을음이, 윗부분의 달에는 오래된 빛 자국이 있다. 은빛 받침에는 둥근 마모 자국, 황동 받침 아래에는 길게 닳은 자국이 보인다.</p>'+
+  '<div class="moonbeam-board moonbeam-board--nine" role="group" aria-label="은면 아홉 개와 황동 이동 레일이 있는 빛의 장치">'+
+  '<div class="moonbeam-squares">'+Array.from({length:81},()=>'<span></span>').join('')+'</div>'+
+  '<div class="moonbeam-track moonbeam-track--b" aria-hidden="true"></div>'+
+  '<div class="moonbeam-track moonbeam-track--d" aria-hidden="true"></div>'+
+  '<div class="moonbeam-source" title="등불" aria-hidden="true">✧</div><div class="moonbeam-destination" title="반쪽 달" aria-hidden="true">☾</div>'+
+  mirrors+'</div>'+
+  '<div class="moonbeam-inspect-actions"><button type="button" data-action="mirror-inspect-silver">은빛 받침 살펴보기</button><button type="button" data-action="mirror-inspect-brass">황동 받침 살펴보기</button></div>'+
+  '<div class="moonbeam-rail-controls" aria-label="황동 은면 위치 조정">'+rails+'</div>'+
+  '<p class="puzzle-helper">은면을 눌러 회전시킬 수 있다. 나머지 움직임은 장치에 남은 흔적을 살펴보자. 실험할 때마다 빛의 길이 드러나지는 않는다.</p>',
+  [['장치 작동 시험','mirror-test',true],['돌아가기','close']]
  );
+}
+function mirrorInspect(kind){
+ if(kind==='silver')return modal('현관 · 받침 관찰','둥근 마모 자국','<div class="ambient-description">은빛 받침의 가장자리가 원형으로 닳았다. 손끝으로 살짝 건드리자 반사면이 제자리에서 돌아간다.</div>',[['장치로 돌아가기','mirror-open',true]]);
+ if(kind==='brass')return modal('현관 · 받침 관찰','길게 닳은 황동','<div class="ambient-description">황동 받침 아래에는 좌우로 긁힌 두 줄의 홈이 있다. 양쪽 끝에는 먼지가 쌓였지만 홈 가운데는 유난히 매끄럽다. 손끝으로 살짝 밀자 받침이 한 칸 미끄러진다.</div>',[['장치로 돌아가기','mirror-open',true]]);
 }
 function mirrorTurn(id){
  if(done('mirror')||!Object.hasOwn(moonMirrors,id))return;
- g.mirrorTiles[id]=g.mirrorTiles[id]==='/'?'\\':'/';
- tone('tap');save();if(traceMoonbeam().solved)return mirrorSolve();mirror();
+ g.mirrorTiles[id]=g.mirrorTiles[id]==='/'?String.fromCharCode(92):'/';
+ tone('tap');save();mirror();
+}
+function mirrorSlide(id,direction){
+ if(done('mirror')||!Object.hasOwn(moonMirrorRails,id)||!['left','right'].includes(direction))return;
+ const [min,max]=moonMirrorRails[id],pos=g.mirrorRails[id],next=Math.max(min,Math.min(max,pos+(direction==='left'?-1:1)));
+ if(next===pos)return;
+ g.mirrorRails[id]=next;tone('tap');save();mirror();
+}
+function mirrorTest(){
+ if(done('mirror'))return;
+ if(traceMoonbeam().solved)return mirrorSolve();
+ tone('bad');
+ modal('현관 · 장치 시험','빛이 닿지 않았다','<p class="modal-description">등불이 잠깐 밝아지고 금속판 안에서 짧은 마찰음이 들린다. 달의 빈 곳은 그대로다.</p>',[['은면 다시 조정하기','mirror-open',true]]);
 }
 function mirrorSolve(){
  if(done('mirror'))return;
  g.flags.mirror=true;seal('path');
- solved('mirror','빛이 은면 사이를 몇 차례 꺾여 지나가자, 벽의 반쪽 달에 나머지 반쪽이 드러났습니다. 황동 벽장식 안쪽에서 길의 인장을 획득했습니다.');
+ solved('mirror','등불에서 나온 빛이 아홉 은면 사이를 꺾여 지나가자, 벽의 반쪽 달에 나머지 반쪽이 드러났습니다. 황동 벽장식 안쪽에서 길의 인장을 획득했습니다.');
 }
 function bookSides(name){
  const pair=moonBooks[name];
@@ -1040,7 +1071,7 @@ function talk(){
 function menu(){modal('PAUSE','탐험 메뉴',`<p class="modal-description">진행 내용은 자동 저장됩니다. 탐험 시간(추가 조사 시간 포함): ${pretty(elapsed())}</p>`,[['계속 탐험','close',true],['시작 화면','home']])}
 function handle(action){if(action==='flower-pattern')return flowerPattern();if(action==='cabinet-search'){if(!done('foot')||has('silverDisc'))return;coreOneOff('cabinet-search',10);item('silverDisc');item('lamp');item('brassKey');clue('lock9');return modal('OPEN','열린 황동 수납장',`<div class="collect-visual">◐</div><div class="letter">은면 원판, 작은 등불, 황동 열쇠를 꺼냈다.\n안쪽 접힌 기록에 「현관문 자동 잠금 · 매일 밤 9:00」가 적혀 있다.</div>`);}if(action.startsWith('core-deep-'))return coreDeep(action.slice(10));if(action==='wall-reset')return wallLightReset();if(action.startsWith('wall-light-'))return wallLightPress(Number(action.slice(11)));if(action==='invitation')return invitation();if(action==='invitation-flip')return invitationFlip();if(action.startsWith('item-flip-'))return itemFlip(action.slice(10));if(action==='mirror-mount'){if(has('silverDisc')&&has('lamp')){if(!g.discMounted)coreOneOff('mirror-mount',5);g.discMounted=true;save();return mirror()}return;}if(action==='sconce-touch')return sconceTouch();if(action.startsWith('ambient-open-'))return ambientInspect(action.slice(13));if(action==='bell-reset')return bellReset();if(action.startsWith('bell-note-'))return bellNote(Number(action.slice(10)));if(action.startsWith('ambient-next-'))return ambientNext(action.slice(13));if(action==='close')return hide();if(action.startsWith('room-intro-'))return showRoomIntro(action.slice(11));if(action==='home')return home();if(action==='really-new')return begin();if(action==='new-confirm')return modal('NEW GAME','처음부터 시작할까요?',`<p class="modal-description">이번 버전의 진행 데이터가 초기화됩니다.</p>`,[['취소','close'],['새로 시작','really-new',true]]);
 if(action==='pollen-rub'){if(done('light')&&g.flags.curtain){coreOneOff('pollen-rub',10);g.flags.blackout=true;clue('powder');save();return modal('GREENHOUSE · 관찰','희미한 발자국',`<p class="modal-description">은빛 가루를 쓸어내자 작고 둥근 발자국들이 선명해진다. 발자국은 꽃줄기 뒤편의 오래된 유리 용기 부근에서 끊겨 있다.</p>`,[['돌아가기','close',true]])}return}if(action.startsWith('step-'))return step(action.slice(5));if(action==='rug-pocket'){if(!g.flags.rug)return;if(!has('photo'))coreOneOff('rug-pocket',10);if(!has('photo'))item('photo');return modal('FOUND','오래된 사진',`<div class="collect-visual">▧</div><div class="letter">어린 미로 곁에 얼굴이 희미한 사람이 서 있다.\n\n「우린 언제나 함께야」</div>`)}
-if(action.startsWith('mirror-turn-'))return mirrorTurn(action.slice(12));if(action==='mirror-switch')return; // Ignore stale buttons from earlier cached puzzle versions.
+if(action==='mirror-open')return mirror();if(action==='mirror-test')return mirrorTest();if(action.startsWith('mirror-inspect-'))return mirrorInspect(action.slice(15));if(action.startsWith('mirror-slide-')){const parts=action.split('-');return mirrorSlide(parts[2],parts[3]);}if(action.startsWith('mirror-turn-'))return mirrorTurn(action.slice(12));if(action==='mirror-switch')return; // Ignore stale buttons from earlier cached puzzle versions.
 if(action.startsWith('flip-')){let name=action.slice(5);if(Object.hasOwn(moonBooks,name)){g.booksFlipped??={};g.booksFlipped[name]=!g.booksFlipped[name];save();return books()}}
 if(action.startsWith('book-')){let name=action.slice(5);if(name==='reset'){g.booksPlaced=[null,null,null,null,null];save();return books()}if(name==='check')return bookCheck();if(Object.hasOwn(moonBooks,name)&&!g.booksPlaced.includes(name)){let slot=g.booksPlaced.indexOf(null);if(slot>=0){g.booksPlaced[slot]=name;save();}}return books()}
 if(action.startsWith('unbook-')){let slot=Number(action.slice(7));if(Number.isInteger(slot)&&slot>=0&&slot<5){g.booksPlaced[slot]=null;save()}return books()}
