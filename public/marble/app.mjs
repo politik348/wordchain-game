@@ -216,6 +216,16 @@ function saleChoices(s,p){
    '<span class="mm-sale-price">매각 +'+formatM(cash)+'</span></button>';
  }).join('')+'</div>';
 }
+function liquidationPopup(s){
+ const p=current(s),debt=s.pending||{},difference=Math.max(0,(debt.amount||0)-p.cash);
+ const total=Object.entries(s.properties).filter(([i,v])=>v.owner===p.id).reduce((sum,[i])=>sum+saleValue(s,Number(i)),0);
+ return '<div class="mm-liquidation-overlay" role="dialog" aria-modal="true" aria-label="매각할 부동산 선택"><section class="mm-liquidation-dialog">'+
+  '<span class="mm-eyebrow">EMERGENCY · 자산 매각</span><h2>결제 자금이 부족해요!</h2>'+
+  '<div class="mm-liquidation-amounts"><span>납부액 <b>'+formatM(debt.amount||0)+'</b></span><span>현재 현금 <b>'+formatM(p.cash)+'</b></span><span>부족 <b>'+formatM(difference)+'</b></span></div>'+
+  '<p>어떤 부동산을 매각할지 선택하세요. 매각가는 현재 가치의 70%이며, 납부액이 모이면 자동 결제됩니다.'+
+  (total<difference?' 모든 부동산을 팔아도 부족하면 파산할 수 있습니다.':'')+'</p>'+
+  saleChoices(s,p)+'</section></div>';
+}
 function marbleIntroMarkup(){
  return '<div class="mm-intro-overlay" role="dialog" aria-modal="true" aria-label="모여마블 게임 시작 연출">'+
   '<div class="mm-intro-card"><div class="mm-intro-sparkles" aria-hidden="true">✦ ✧ ✦</div>'+
@@ -237,15 +247,7 @@ function beginMarbleIntro(){
 }
 function actionPanel(s){
  const p=current(s),yourTurn=(onlineRoom?p.id===SID:!p.ai)&&!scene;
- if(s.phase==='liquidation'){
-  const debt=s.pending||{},difference=Math.max(0,(debt.amount||0)-p.cash);
-  const total=Object.entries(s.properties).filter(([i,v])=>v.owner===p.id).reduce((sum,[i])=>sum+saleValue(s,Number(i)),0);
-  return '<div class="mm-liquidation"><span class="mm-eyebrow">EMERGENCY · 자산 매각</span><h2>결제 자금이 부족해요!</h2>'+
-   '<p>납부할 금액 <b>'+formatM(debt.amount||0)+'</b> · 현금 <b>'+formatM(p.cash)+'</b> · 부족 <b>'+formatM(difference)+'</b></p>'+
-   '<p>어떤 부동산을 팔지 직접 선택하세요. 매각액은 현재 부동산 가치의 70%입니다. 필요한 금액이 모이면 결제가 자동으로 완료됩니다.'+
-   (total<difference?' 보유 부동산을 모두 팔아도 부족하면 파산합니다.':'')+'</p>'+
-   saleChoices(s,p)+'</div>';
- }
+ if(s.phase==='liquidation')return '<div class="mm-status-line">💵 결제 자금 부족</div><p class="mm-status-sub">화면 중앙에서 매각할 부동산을 선택하세요.</p>';
  if(s.phase==='finished'){
   const ranking=winnerRanking(s),winner=s.players.find(x=>x.id===s.winner);
   if(catChallenge&&window.MoyeoCatResult?.render){
@@ -313,6 +315,8 @@ function render(){
  const s=getState();if(s)consumeEvents(s);
  if(onlineRoom){if(!onlineRoom.state)renderWaiting();else renderGame(onlineRoom.state);}else if(localGame)renderGame(localGame);else renderLobby();
  if(introActive&&s&&s.phase!=='finished')root.insertAdjacentHTML('beforeend',marbleIntroMarkup());
+ if(s?.phase==='liquidation'&&(!onlineRoom||current(s).id===SID)&&!introActive)
+  root.insertAdjacentHTML('beforeend',liquidationPopup(s));
  updateClock();
  const showCatResult=catChallenge&&mode==='ai'&&s?.phase==='finished'&&!s.catResultDismissed&&window.MoyeoCatResult?.overlay;
  if(showCatResult){
