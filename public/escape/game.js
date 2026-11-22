@@ -35,7 +35,7 @@ const seals={path:['❖','길의 인장'],echo:['♫','소리의 인장'],light:
 const clueText={
  invitation:['발신인 없는 편지','달빛 저택에 와 주세요. 멈춘 시계가 다시 움직이기 전에 사라진 기억을 찾아 주세요. 봉투의 금속 인장에는 발신인 이름이 없다.'],
  lock9:['현관 출입 기록','현관문이 닫히는 자동 시각은 매일 밤 9시다. 기록지 마지막 줄에 당일의 날짜가 남아 있다.'],
- track:['양탄자 아래의 발자국','고양이와 개 발자국은 침대 부근에서 시작해 각각 종까지 이어진다. 사람의 신발 자국은 다른 곳에서 나타난다. 일부 칸에는 여러 자국이 남아 있다.'],
+ track:['양탄자 아래의 발자국','양탄자 아래 타일에 여러 형태의 흔적이 남아 있다. 각각의 모양은 확대해서 확인할 수 있다.'],
  portrait:['서재의 초상화','미로와 한 어린 소녀가 함께 앉아 있다. 금빛 액자 아래쪽에 작은 흠집이 보인다.'],
  dust:['서가의 황동 문양','책등마다 두 개의 문양이 다른 높이에 있다. 서가 양 끝은 높아 손이 쉽게 닿지 않지만 오래된 황동 장식이 남아 있다.'],
  shelfEnds:['높은 서가의 양 끝','사다리로 올려다보니 서가 왼편 끝에는 별(✦), 오른편 끝에는 초승달(☾) 모양이 남아 있다.'],
@@ -734,12 +734,11 @@ function rug(selected=-1){
    '" aria-pressed="'+(selected===i)+'">'+foyerTrailGraphic(t)+'</button>';
  }).join('');
  modal('현관 홀 · 조사','들춰진 양탄자',
-  '<p class="modal-description">침대에서 종까지 이어지는 동물 발자국 두 종류가 보인다. 사람의 신발 자국은 다른 곳에서 나타난다. 일부 타일에는 서로 다른 흔적이 겹쳐 있다.</p>'+
   '<div class="foyer-board-scroll" role="region" aria-label="발자국 5행 5열 조사판"><div class="trail-grid" role="group" aria-label="다섯 행 다섯 열 타일. 누르면 자국을 확대한다">'+tiles+'</div></div>'+
   (selected>=0&&selected<FOYER_GRID_SIZE*FOYER_GRID_SIZE?foyerTrailDetail(selected):
-   '<p class="foyer-track-instruction">타일을 눌러 겹친 자국을 확대해 볼 수 있다.</p>')+
+   '<p class="foyer-track-instruction">타일을 눌러 자세히 관찰할 수 있다.</p>')+
   '<div class="investigation-actions"><button data-action="rug-pocket">'+(has('photo')?'살펴본 안감 다시 보기':'접힌 안감도 조사한다 · +10초')+'</button></div>'+
-  '<p class="puzzle-helper">타일마다 자국의 크기와 방향이 다르다.</p>');
+  '<p class="puzzle-helper">오래된 먼지 사이로 희미한 흔적이 남아 있다.</p>');
  save();
 }
 function foot(){
