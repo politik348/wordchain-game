@@ -19,7 +19,7 @@
   // Illustration dimensions match the 1200:650 scene aspect ratio.
   const spotPositions={
     foyer:{
-      invitation:[69.1,57.5],catbed:[8,81],rug:[48.5,91],
+      invitation:[69.1,57.5],catbed:[19.5,85],rug:[48.5,91],
       cabinet:[76.1,69.8],crescent:[49.7,35.7],
       study:[24.9,59.1], // LEFT PURPLE DOOR: brass handle, not panel center
       cat:[93.3,82.6],
@@ -64,10 +64,9 @@
   };
   // Some storyline objects are absent from the paintings. Study/greenhouse exits
   // remain available via room navigation and Next Room; Miro via her dialog card.
-  // The optional cat-bed observation has no pictured bed; its trail is still
-  // accessible by lifting the rug. Never pin such IDs to unrelated scenery.
+  // Cat bed is visibly rendered as a foreground prop OVER the AVIF.
   const unpaintedHotspots={
-    foyer:new Set(['catbed']),
+    foyer:new Set([]),
     study:new Set(['greenhouse','cat']),
     greenhouse:new Set(['tower']),
     tower:new Set([])
@@ -85,12 +84,41 @@
   art.className='storybook-layer';
   art.setAttribute('aria-hidden','true');
   scene.appendChild(art);
+  // Painted foreground cat bed, paired with the hotspot on the same image layer.
+  // It follows every pan/zoom of the high-resolution AVIF background.
+  const bed=document.createElement('div');
+  bed.className='storybook-catbed-art';
+  bed.setAttribute('aria-hidden','true');
+  bed.innerHTML=[
+    '<svg viewBox="0 0 300 206" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">',
+    '<defs>',
+      '<linearGradient id="miroBedFrame" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dbaf90"/><stop offset=".44" stop-color="#a36e7d"/><stop offset="1" stop-color="#554264"/></linearGradient>',
+      '<linearGradient id="miroBedCushion" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#f5ded1"/><stop offset=".53" stop-color="#baa0b6"/><stop offset="1" stop-color="#7e688e"/></linearGradient>',
+      '<linearGradient id="miroBedFront" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#d7a58d"/><stop offset="1" stop-color="#6c4c65"/></linearGradient>',
+      '<filter id="miroBedShadow" x="-30%" y="-60%" width="160%" height="230%"><feGaussianBlur stdDeviation="10"/></filter>',
+    '</defs>',
+    '<ellipse cx="154" cy="180" rx="133" ry="17" fill="#12162b" opacity=".66" filter="url(#miroBedShadow)"/>',
+    '<path d="M38 94 Q31 53 67 40 Q94 22 150 25 Q218 20 253 49 Q271 68 261 106 L253 149 Q149 187 48 145 Z" fill="url(#miroBedFrame)" stroke="#ecd2a8" stroke-width="6" stroke-linejoin="round"/>',
+    '<path d="M51 96 Q51 62 87 51 Q150 37 218 55 Q247 64 251 94 L243 130 Q148 158 60 130 Z" fill="#4d3c62" stroke="#c08d89" stroke-width="5"/>',
+    '<ellipse cx="150" cy="112" rx="111" ry="52" fill="#3f3455" opacity=".7"/>',
+    '<path d="M55 111 Q48 81 99 75 Q135 64 153 78 Q178 65 221 79 Q249 91 246 115 Q215 145 155 139 Q85 150 55 111 Z" fill="url(#miroBedCushion)" stroke="#ebd2ba" stroke-width="5"/>',
+    '<path d="M87 101 Q119 83 154 96 Q181 80 210 99" fill="none" stroke="#fff0d8" stroke-width="5" stroke-linecap="round" opacity=".66"/>',
+    '<path d="M31 109 Q54 133 143 139 Q232 140 273 111 L265 155 Q231 185 150 185 Q64 184 38 157 Z" fill="url(#miroBedFront)" stroke="#d9ae94" stroke-width="6" stroke-linejoin="round"/>',
+    '<path d="M57 151 Q147 169 248 150" fill="none" stroke="#f0caa1" stroke-width="4" stroke-linecap="round" opacity=".76"/>',
+    '<rect x="115" y="153" width="73" height="23" rx="6" fill="#c7a077" stroke="#f0d3a7" stroke-width="3"/>',
+    '<text x="151" y="169" text-anchor="middle" font-size="15" font-weight="bold" fill="#50384f" font-family="Georgia,serif" letter-spacing="1.5">MIRO</text>',
+    '</svg>'
+  ].join('');
+  art.appendChild(bed);
   const css=[
     '#sceneCanvas.storybook-ready .room-3d,#sceneCanvas.storybook-ready .scene-artwork{visibility:hidden!important}',
     '#sceneCanvas .storybook-layer{display:none;position:absolute;inset:0;z-index:1;background-repeat:no-repeat;background-size:100% 100%;background-position:center;transform-origin:50% 50%;pointer-events:none}',
     '#sceneCanvas.storybook-ready .storybook-layer{display:block;transform:translateX(var(--storybook-pan,0%)) scale(var(--storybook-zoom,1.025));transition:transform .46s cubic-bezier(.22,.61,.36,1)}',
     '#sceneCanvas.storybook-ready .hotspot-layer{transform:translateX(var(--storybook-pan,0%)) scale(var(--storybook-zoom,1.025));transform-origin:center;transition:transform .46s cubic-bezier(.22,.61,.36,1);z-index:4}',
     '#sceneCanvas.storybook-ready .hotspot{opacity:1!important;visibility:visible!important}',
+    // Invisible clickable area spans the entire cushion. Other room props
+    // still use the same small neutral investigation dots.
+    '#sceneCanvas.storybook-ready[data-room="foyer"] .hotspot[data-object="catbed"]{width:18%!important;height:24%!important;min-width:0!important;min-height:0!important;}',
     '#sceneCanvas.storybook-ready .camera-controls{z-index:5}',
     '#sceneCanvas.storybook-ready{cursor:default;touch-action:pan-y}',
     '#sceneCanvas.storybook-ready:active{cursor:default}',
