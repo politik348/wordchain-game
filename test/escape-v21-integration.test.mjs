@@ -81,10 +81,10 @@ test('EP01 story chapters reveal broad goals without giving away mechanics',()=>
  new Function(game);
 });
 
-test('foyer chipped-heel route has one six-step solution and several decoys',()=>{
+test('foyer has two distinct six-step footprint routes converging on the bell',()=>{
  assert.match(game,/const FOYER_FOOT_SEQUENCE='RDDRRD'/);
  const cat=JSON.parse(game.match(/const FOYER_CAT_PRINTS=(\{[^;]+\});/)[1]);
- const other=JSON.parse(game.match(/const FOYER_OTHER_PRINTS=(\{[^;]+\});/)[1]);
+ const boots=JSON.parse(game.match(/const FOYER_BOOT_PRINTS=(\{[^;]+\});/)[1]);
  function routes(tiles){
   const result=[];
   function visit(i,steps){
@@ -99,7 +99,11 @@ test('foyer chipped-heel route has one six-step solution and several decoys',()=
   visit(0,'');return result;
  }
  assert.deepEqual(routes(new Set(Object.keys(cat).map(Number))),['RDDRRD']);
- assert.ok(routes(new Set([...Object.keys(cat),...Object.keys(other)].map(Number))).length>1);
+ assert.deepEqual(routes(new Set(Object.keys(boots).map(Number))),['DDDRRR']);
+ assert.equal(Object.keys(cat).length,5);
+ assert.equal(Object.keys(boots).length,5);
+ assert.deepEqual(Object.keys(cat).filter(i=>Object.hasOwn(boots,i)),[]);
+ assert.doesNotMatch(game,/FOYER_OTHER_PRINTS/);
  assert.match(game,/function foyerTrailDetail\(i\)/);
  assert.match(game,/data-action="rug-tile-/);
  assert.match(game,/function catbedTrack\(\)/);
