@@ -195,6 +195,7 @@ function marbleCatResult(s){
  const me=s.players.find(x=>!x.ai)||s.players[0];
  const cat=s.players.find(x=>x.ai)||s.players.find(x=>x.id==='moyeo-cat');
  const stats=[
+  {label:'고양이 AI 난이도',value:({beginner:'초급',intermediate:'중급',advanced:'고급'})[aiDifficulty]||'미설정'},
   {label:'진행 라운드',value:s.round+'라운드'},
   {label:'내 소유 도시',value:Object.values(s.properties||{}).filter(p=>p.owner===me?.id).length+'개'},
   {label:'고양이 소유 도시',value:Object.values(s.properties||{}).filter(p=>p.owner===cat?.id).length+'개'}];
