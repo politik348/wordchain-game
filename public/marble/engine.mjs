@@ -68,19 +68,18 @@ export function propertyValue(i,level){
  return value;
 }
 export function maxBuildLevel(s,id,index){
- const p=s.players.find(p=>p.id===id);if(!p||TILES[index]?.kind!=='city')return 0;
+ // Build from the first turn: no lap requirement. A landmark still follows a hotel.
+ if(!s.players.some(p=>p.id===id)||TILES[index]?.kind!=='city')return 0;
  const existing=property(s,index)?.level||0;
- return existing>=3?4:Math.min(3,1+p.laps);
+ return existing>=3?4:3;
 }
 export const colorComplete=(s,id,group)=>TILES.every((t,i)=>t.kind!=='city'||t.group!==group||property(s,i)?.owner===id);
 export const countMonopolies=(s,id)=>GROUPS.filter((_,g)=>colorComplete(s,id,g)).length;
-export const tourismComplete=(s,id)=>TILES.every((t,i)=>t.kind!=='tourist'||property(s,i)?.owner===id);
 export function toll(s,i){
  if(!isProperty(i))return 0;
  const t=TILES[i],v=property(s,i);if(!v)return 0;
  let n=t.kind==='tourist'?roundMoney(t.price*.44):roundMoney(t.price*.26*TOLL_MULTIPLIERS[v.level]);
  if(t.kind==='city'&&colorComplete(s,v.owner,t.group))n*=2;
- if(t.kind==='tourist'&&tourismComplete(s,v.owner))n*=2;
  if(s.olympics?.[i])n*=s.olympics[i];
  if(s.festival?.index===i&&s.turnCount<s.festival.expires)n*=2;
  if(s.maxRounds===ENDLESS_ROUNDS){
@@ -102,7 +101,6 @@ function checkVictory(s){
   if(countMonopolies(s,p.id)>=3){s.winner=p.id;s.reason='트리플 컬러 독점';s.phase='finished';return true;}
   const edges=[[1,2,4,5],[7,8,10,11],[13,14,16,17],[19,20,22,23]];
   if(edges.some(edge=>edge.every(i=>property(s,i)?.owner===p.id))){s.winner=p.id;s.reason='라인 독점';s.phase='finished';return true;}
-  if(tourismComplete(s,p.id)){s.winner=p.id;s.reason='관광지 독점';s.phase='finished';return true;}
  }
  return false;
 }
@@ -360,7 +358,7 @@ export function applyAction(input,id,type,payload={},rng=Math.random){
  if(pending.kind==='purchase'&&type==='buy'){
   const t=TILES[pending.index],target=payload.targetLevel===undefined?0:Number(payload.targetLevel);
   if(property(s,pending.index))throw Error('이미 소유자가 있는 곳입니다.');
-  if(!Number.isInteger(target)||(t.kind==='tourist'?target!==0:target<0||target>Math.min(3,1+p.laps)))throw Error('현재 바퀴 수에서 지을 수 없는 건물입니다.');
+  if(!Number.isInteger(target)||(t.kind==='tourist'?target!==0:target<0||target>3))throw Error('구매할 수 없는 건설 단계입니다.');
   const cost=t.price+(target>0?upgradeCost(pending.index,0,target):0);
   if(p.cash<cost)throw Error('구매와 건설 비용이 부족합니다.');
   p.cash-=cost;s.properties[pending.index]={owner:id,level:target};
