@@ -426,7 +426,7 @@ function beginScene(){
  const ev=sceneQueue.shift();scene={event:ev,stage:ev.dice?'dice':'outcome',position:ev.from,step:0};
  clearTimeout(sceneTimer);
  if(ev.dice && ev.from!==ev.to && !ev.travel && ev.to===(ev.from+ev.dice.total)%24){
-  sceneTimer=setTimeout(()=>{if(!scene||scene.event.seq!==ev.seq)return;scene.stage='move';scene.position=ev.from;paintScene();stepScene(0);},sceneTiming().dice);
+  sceneTimer=setTimeout(()=>{if(!scene||scene.event.seq!==ev.seq)return;scene.stage='move';scene.position=ev.from;scene.step=0;render();paintScene();stepScene(0);},sceneTiming().dice);
  }else if(ev.type==='pickCard'&&ev.card){
   // In local games the fortune stays until the player reads and confirms it.
   // Online games have a maximum hold so a 15-second turn cannot be blocked.
