@@ -286,18 +286,55 @@ test('fortune card effects: angel, discount, free construction, and instant star
  assert.equal(s.players[0].cash,START_CASH+PASS_BONUS);
 });
 
-test('angel prevents toll, 50 percent card cuts toll and is consumed once',()=>{
+test('human with a toll waiver can pay normally and save it for later',()=>{
  let s=newGame();s.properties[2]={owner:'bob',level:3};s.players[0].angel=1;
+ const fee=toll(s,2);
  s=landOn(s,'alice',2);
+ assert.equal(s.phase,'tollDefense');
+ assert.deepEqual(s.pending,{kind:'tollDefense',index:2,charge:fee});
+ assert.equal(s.players[0].angel,1,'card is not automatically consumed');
+ assert.equal(s.players[0].cash,START_CASH,'payment waits for a decision');
+ s=applyAction(s,'alice','payToll',{},low);
+ assert.equal(s.players[0].angel,1,'full payment saves the card');
+ assert.equal(s.players[0].cash,START_CASH-fee);
+ assert.equal(s.players[1].cash,START_CASH+fee);
+});
+test('human decides when to use the angel waiver or half-price card',()=>{
+ let s=newGame();s.properties[2]={owner:'bob',level:3};s.players[0].angel=1;s.players[0].discountCards=1;
+ s=landOn(s,'alice',2);
+ assert.throws(()=>applyAction(s,'alice','pass',{},low),/결제 방법/);
+ s=applyAction(s,'alice','useAngel',{},low);
  assert.equal(s.players[0].angel,0);
+ assert.equal(s.players[0].discountCards,1,'unused discount is retained');
  assert.equal(s.players[0].cash,START_CASH);
  assert.equal(s.players[1].cash,START_CASH);
- s=newGame();s.properties[2]={owner:'bob',level:3};s.players[0].discountCards=1;
+ s=newGame();s.properties[2]={owner:'bob',level:3};s.players[0].angel=1;s.players[0].discountCards=1;
  const expected=Math.round(toll(s,2)*.5/5)*5;
  s=landOn(s,'alice',2);
+ s=applyAction(s,'alice','useDiscount',{},low);
  assert.equal(s.players[0].cash,START_CASH-expected);
  assert.equal(s.players[0].discountCards,0);
+ assert.equal(s.players[0].angel,1,'unused angel card is retained');
  assert.equal(s.players[1].cash,START_CASH+expected);
+});
+test('AI keeps automatic defensive card behavior',()=>{
+ let s=createGame({players:[{id:'alice',name:'고양이',ai:true},players[1]],maxRounds:8});
+ s.properties[2]={owner:'bob',level:3};s.players[0].angel=1;s.players[0].discountCards=1;
+ s=landOn(s,'alice',2);
+ assert.notEqual(s.phase,'tollDefense');
+ assert.equal(s.players[0].angel,0);
+ assert.equal(s.players[0].discountCards,1);
+ assert.equal(s.players[0].cash,START_CASH);
+});
+test('a pending toll choice accepts a loan but rejects cards not held',()=>{
+ let s=newGame();s.properties[2]={owner:'bob',level:3};s.players[0].discountCards=1;
+ s=landOn(s,'alice',2);
+ assert.equal(s.phase,'tollDefense');
+ assert.throws(()=>applyAction(s,'alice','useAngel',{},low),/면제 카드/);
+ s=applyAction(s,'alice','takeLoan',{},low);
+ assert.equal(s.phase,'tollDefense');
+ assert.equal(s.players[0].bankDebt,540);
+ assert.equal(s.players[0].discountCards,1);
 });
 
 test('one-time bank loan works in a choice, gets repaid from salary and cannot be duplicated',()=>{
