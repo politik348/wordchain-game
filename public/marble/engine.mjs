@@ -208,9 +208,16 @@ function arrive(s,index,rng){
    }else{log(s,`${p.name}님의 안전한 ${tile.name}!`);nextTurn(s);}return;
   }
   const owner=s.players.find(x=>x.id===held.owner),charge=toll(s,index);
+  if(!p.ai&&(p.angel>0||p.discountCards>0)){
+   // A human chooses when to consume a defensive card. AI keeps its quick
+   // automatic behavior so local challenges and timed turns never get stuck.
+   s.phase='tollDefense';s.pending={kind:'tollDefense',index,charge};
+   log(s,`${p.name}님 ${tile.name} 통행료 ${charge}M · 면제/할인권 사용 여부를 선택하세요.`);
+   return;
+  }
   let paid=0,defense='';
-  if(p.angel>0){p.angel--;defense='천사카드 면제';}
-  else if(p.discountCards>0){p.discountCards--;defense='50% 할인권';paid=spend(s,p,roundMoney(charge*.5),owner,{kind:'toll',index,defense});}
+  if(p.ai&&p.angel>0){p.angel--;defense='천사카드 면제';}
+  else if(p.ai&&p.discountCards>0){p.discountCards--;defense='50% 할인권';paid=spend(s,p,roundMoney(charge*.5),owner,{kind:'toll',index,defense});}
   else paid=spend(s,p,charge,owner,{kind:'toll',index});
   if(paid===null)return;
   log(s,defense==='천사카드 면제'?`${p.name}님이 천사카드로 ${tile.name} 통행료 ${charge}M 면제!`:`${p.name}님이 ${owner?.name||'상대'}님에게 ${tile.name} 통행료 ${paid}M 지불${defense?' · '+defense:''}!`);
@@ -316,12 +323,41 @@ export function applyAction(input,id,type,payload={},rng=Math.random){
  if(s.phase==='liquidation'&&type!=='takeLoan')throw Error('먼저 매각할 부동산을 선택하세요.');
  if(type==='takeLoan'){
   if(p.loanUsed)throw Error('은행 대출은 한 판에 한 번만 가능합니다.');
-  if(!['roll','choice','island','travel','chance','liquidation'].includes(s.phase))throw Error('현재는 대출을 이용할 수 없습니다.');
+  if(!['roll','choice','island','travel','chance','tollDefense','liquidation'].includes(s.phase))throw Error('현재는 대출을 이용할 수 없습니다.');
   p.cash+=BANK_LOAN;p.bankDebt=BANK_REPAY;p.loanUsed=true;
   log(s,`${p.name}님 은행 대출 +${BANK_LOAN}M · 상환 예정 ${BANK_REPAY}M (출발지 보너스부터 자동 상환)`);
   if(s.phase==='liquidation'){
    const debt=s.pending;
    if(p.cash>=debt.amount||ownTiles(s,id).length===0)settleLiquidation(s,p,debt);
+  }
+  return commit();
+ }
+ if(s.phase==='tollDefense'){
+  if(!['payToll','useAngel','useDiscount'].includes(type))throw Error('통행료 결제 방법을 먼저 선택하세요.');
+  if(pending?.kind!=='tollDefense'||!validIndex(pending.index))throw Error('통행료 결제 정보가 없습니다.');
+  const index=pending.index,held=property(s,index);
+  if(!held||held.owner===id)throw Error('상대 소유 부동산이 아닙니다.');
+  const owner=s.players.find(x=>x.id===held.owner),charge=pending.charge;
+  if(!Number.isFinite(charge)||charge<0)throw Error('잘못된 통행료입니다.');
+  if(type==='useAngel'){
+   if(p.angel<1)throw Error('통행료 면제 카드가 없습니다.');
+   p.angel--;
+   s.pending=null;s.phase='roll';
+   log(s,`${p.name}님이 원할 때 천사카드를 사용해 ${TILES[index].name} 통행료 ${charge}M 면제!`);
+   afterToll(s,p,index);
+   return commit();
+  }
+  if(type==='useDiscount'){
+   if(p.discountCards<1)throw Error('50% 할인권이 없습니다.');
+   p.discountCards--;
+  }
+  const defense=type==='useDiscount'?'50% 할인권':'';
+  const amount=type==='useDiscount'?roundMoney(charge*.5):charge;
+  s.pending=null;s.phase='roll';
+  const paid=spend(s,p,amount,owner,{kind:'toll',index,defense});
+  if(paid!==null){
+   log(s,`${p.name}님이 ${owner?.name||'상대'}님에게 ${TILES[index].name} 통행료 ${paid}M 지불${defense?' · '+defense:''}!`);
+   afterToll(s,p,index);
   }
   return commit();
  }
