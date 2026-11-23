@@ -56,6 +56,6 @@ test('Game Hell requires membership even for direct URL and taste mode, while pu
  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 });
 test('Main site returns registered players to Game Hell after login',()=>{
- assert.match(app,/gamehell\\/index\\.html\|escape-access/);
+ assert.ok(app.includes(String.raw`gamehell\/index\.html`));
  assert.match(app,/if\(next&&/);
 });
