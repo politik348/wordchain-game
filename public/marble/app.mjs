@@ -38,7 +38,24 @@ let lastDice=null,turnHint='';
 let scene=null,sceneTimer=null,sceneQueue=[],seenActionSeq=0,inspectedCity=null;
 let effectsOn=localStorage.getItem('moyeo-marble-effects')!=='off';
 const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches||false;
-const moveDelay=()=>reducedMotion?20:effectsOn?105:22;
+// Readable gameplay is the default. The selector changes presentation only, never
+// dice outcomes, turn deadlines, AI logic, or the authoritative online game state.
+const PLAYBACK_PACES=['relaxed','normal','fast'];
+let playbackPace=PLAYBACK_PACES.includes(localStorage.getItem('moyeo-marble-playback-pace'))?
+ localStorage.getItem('moyeo-marble-playback-pace'):'relaxed';
+const paceLabel={relaxed:'천천히',normal:'보통',fast:'빠르게'};
+const sceneTiming=()=>{
+ if(reducedMotion||!effectsOn)return {dice:100,step:35,result:350,other:400,ai:300};
+ const t={
+  relaxed:{dice:1050,step:360,result:2600,other:2050,ai:1650},
+  normal:{dice:750,step:235,result:1850,other:1450,ai:1100},
+  fast:{dice:400,step:115,result:1000,other:850,ai:550}
+ }[playbackPace];
+ // Online matches keep server-owned 15/30/45-second turns: only visual playback slows.
+ return onlineRoom?{...t,dice:Math.min(t.dice,650),step:Math.min(t.step,225),
+  result:Math.min(t.result,1450),other:Math.min(t.other,1100)}:t;
+};
+const moveDelay=()=>sceneTiming().step;
 const colorName=i=>GROUPS[i]?.name||'';
 const ownerAvatar=(s,id)=>{const i=s.players.findIndex(p=>p.id===id);return characterArt(i);};
 const ownerColor=(s,id)=>{const i=s.players.findIndex(p=>p.id===id);return paint[i]||'#92929a';};
@@ -144,7 +161,12 @@ function sceneMarkup(s){
  if(!scene)return '';
  const ev=scene.event;
  const emoji=['roll','islandRoll'].includes(ev.type)?'🎲':ev.type==='buy'?'🏙️':['upgrade','startBuild'].includes(ev.type)?'🏗️':ev.type==='takeover'?'⚔️':ev.type==='travel'?'✈️':ev.type==='olympic'?'🏅':ev.type==='payBail'?'🏝️':ev.type==='pickCard'?(ev.card?.emoji||'💌'):ev.type==='takeLoan'?'🏦':'💬';
- const stageTitle=scene.stage==='dice'&&ev.dice?`주사위 ${ev.dice.a} + ${ev.dice.b} = ${ev.dice.total}`:scene.stage==='move'?'캐릭터 이동 중!':ev.message;
+ const stageTitle=scene.stage==='dice'&&ev.dice?`🎲 ${ev.actorName} · ${ev.dice.a} + ${ev.dice.b} = ${ev.dice.total}칸`:scene.stage==='move'?`${ev.actorName} 이동 중`:ev.message;
+ const moving=scene.stage==='move',rolling=scene.stage==='dice';
+ const progress=moving?`<div class="mm-move-progress" aria-label="말 이동 진행도"><strong data-scene-progress>${scene.step||0} / ${Math.min(24,ev.dice?.total||0)}칸</strong><span data-scene-where>${escapeHTML(TILES[scene.position]?.name||'출발')} 통과 중</span></div>`:'';
+ const arrival=scene.stage==='outcome'&&['roll','islandRoll','travel'].includes(ev.type)&&ev.to!==undefined?
+  `<div class="mm-arrival-highlight">📍 ${escapeHTML(TILES[ev.to]?.name||'목적지')} 도착</div>`:'';
+ const aiThought=ev.ai&&ev.thought&&!moving&&!rolling?`<div class="mm-scene-thought">🐱 고양이의 생각: ${escapeHTML(ev.thought)}</div>`:'';
  const salary=ev.salary;
  const salaryReward=scene.stage==='outcome'&&salary?`<div class="mm-salary-reward"><strong>🚩 출발지 보너스 +${formatM(salary.gross)}</strong><span>${salary.repayment?`대출 상환 ${formatM(salary.repayment)} · 실제 지급 +${formatM(salary.received)}`:`현금 +${formatM(salary.received)} 지급`}</span></div>`:'';
  const card=ev.type==='pickCard'?ev.card:null;
@@ -155,7 +177,7 @@ function sceneMarkup(s){
   card?.effect==='start'?'출발지 이동 및 보너스 지급':
   card?.effect==='freeBuild'?'보유 도시 무료 건설 또는 현금 보상':'';
  const fortuneReveal=card?`<div class="mm-fortune-detail"><span>💌 행운 편지 결과</span><b>${escapeHTML(card.title)}</b><p>${escapeHTML(cardMeaning)}</p><small>${!onlineRoom&&!ev.ai?'읽은 뒤 아래 버튼을 눌러 계속하세요.':onlineRoom?'시간이 지나면 자동으로 이어지지만 바로 계속할 수도 있어요.':'잠시 후 계속 진행됩니다.'}</small></div>`:'';
- return `<div class="mm-scene-card ${ev.type==='pickCard'?'mm-fortune-reveal':''} ${ev.type==='takeLoan'?'mm-loan-reveal':''} ${ev.ai?'mm-scene-cat':''} ${scene.stage==='outcome'?'is-outcome':''}" role="status" aria-live="polite"><span class="mm-scene-label">${ev.ai?'🐱 고양이의 행동':'✨ '+escapeHTML(ev.actorName)+'님의 행동'}</span><div class="mm-scene-icon">${emoji}</div><strong>${escapeHTML(stageTitle)}</strong><small>${escapeHTML(ev.message)}</small>${fortuneReveal}${salaryReward}${scene.stage==='outcome'&&ev.moneyChanges.length?`<div class="mm-scene-deltas">${ev.moneyChanges.map(m=>`<span class="${m.delta>0?'plus':'minus'}">${escapeHTML(m.name)} ${fmtDelta(m.delta)}</span>`).join('')}</div>`:''}<button class="mm-scene-skip" type="button" data-action="skipScene">${card?'확인하고 계속 →':'연출 넘기기 »'}</button></div>`;
+ return `<div class="mm-scene-card ${ev.type==='pickCard'?'mm-fortune-reveal':''} ${ev.type==='takeLoan'?'mm-loan-reveal':''} ${ev.ai?'mm-scene-cat':''} ${rolling?'mm-scene-dice':''} ${moving?'mm-scene-moving':''} ${scene.stage==='outcome'?'is-outcome':''}" role="status" aria-live="polite"><span class="mm-scene-label">${ev.ai?'🐱 고양이의 행동':'✨ '+escapeHTML(ev.actorName)+'님의 행동'}</span><div class="mm-scene-icon">${emoji}</div><strong>${escapeHTML(stageTitle)}</strong>${progress}${arrival}${!moving&&!rolling?`<small>${escapeHTML(ev.message)}</small>`:''}${aiThought}${fortuneReveal}${salaryReward}${scene.stage==='outcome'&&ev.moneyChanges.length?`<div class="mm-scene-deltas">${ev.moneyChanges.map(m=>`<span class="${m.delta>0?'plus':'minus'}">${escapeHTML(m.name)} ${fmtDelta(m.delta)}</span>`).join('')}</div>`:''}<button class="mm-scene-skip" type="button" data-action="skipScene">${card?'확인하고 계속 →':'연출 넘기기 »'}</button></div>`;
 }
 function scenePawnMarkup(s){
  if(!scene||scene.event.travel||scene.event.from===scene.event.to||!scene.event.dice)return '';
@@ -365,7 +387,7 @@ function renderGame(s){
   actionPanel(s);
  const loan=!p.loanUsed&&s.phase!=='finished'&&s.phase!=='liquidation'&&!decision&&!p.ai&&(!onlineRoom||p.id===SID)?
   '<div class="mm-bank-loan">'+button('takeLoan','🏦 은행 대출 +'+formatM(BANK_LOAN)+' (향후 '+formatM(BANK_REPAY)+' 상환)','mm-neutral',inFlight||!!scene)+'</div>':'';
- root.innerHTML=`<div class="mm-topgame"><div><span class="mm-eyebrow">MOYEO MARBLE · ${onlineRoom?'ONLINE MATCH':mode==='ai'?'CAT CHALLENGE':'LOCAL MATCH'}</span><h1>모여마블 <span style="font-size:14px;color:#a99dab">${s.maxRounds===0?`♾️ 무한 · ${s.round}라운드`:`${s.round}/${s.maxRounds} 라운드`}</span></h1><p>${onlineRoom?`방 코드 ${onlineRoom.code} · 모든 주사위는 서버에서 판정`:mode==='ai'?'고양이 AI와 1:1 대결 중':'한 화면에서 돌아가며 플레이 중'}</p></div><div style="display:flex;gap:7px;align-items:center"><span class="mm-salary-chip" title="출발지를 한 바퀴 통과할 때마다 보너스 지급. 대출이 있으면 우선 상환합니다.">🚩 한 바퀴 <strong>+${formatM(PASS_BONUS)}</strong></span><span class="mm-indicator">● ${onlineRoom?'온라인 연결':'플레이 중'}</span>${button('toggleEffects',effectsOn?'✨ 연출 켜짐':'✨ 연출 꺼짐','mm-neutral')}${button('leave','↩ 나가기','mm-neutral')}</div></div>
+ root.innerHTML=`<div class="mm-topgame"><div><span class="mm-eyebrow">MOYEO MARBLE · ${onlineRoom?'ONLINE MATCH':mode==='ai'?'CAT CHALLENGE':'LOCAL MATCH'}</span><h1>모여마블 <span style="font-size:14px;color:#a99dab">${s.maxRounds===0?`♾️ 무한 · ${s.round}라운드`:`${s.round}/${s.maxRounds} 라운드`}</span></h1><p>${onlineRoom?`방 코드 ${onlineRoom.code} · 모든 주사위는 서버에서 판정`:mode==='ai'?'고양이 AI와 1:1 대결 중':'한 화면에서 돌아가며 플레이 중'}</p></div><div style="display:flex;gap:7px;align-items:center"><span class="mm-salary-chip" title="출발지를 한 바퀴 통과할 때마다 보너스 지급. 대출이 있으면 우선 상환합니다.">🚩 한 바퀴 <strong>+${formatM(PASS_BONUS)}</strong></span><span class="mm-indicator">● ${onlineRoom?'온라인 연결':'플레이 중'}</span>${button('cyclePace','🐢 연출 속도 · '+paceLabel[playbackPace],'mm-neutral',false,'title="주사위, 말 이동, 고양이 AI의 표시 속도 변경"')}${button('toggleEffects',effectsOn?'✨ 연출 켜짐':'✨ 연출 꺼짐','mm-neutral')}${button('leave','↩ 나가기','mm-neutral')}</div></div>
  <div class="mm-owner-legend" aria-label="플레이어별 소유 건물 색상">${s.players.map((x,i)=>`<div class="mm-owner-key" style="--key-color:${paint[i]}"><span>${characterArt(i)}</span><strong>${escapeHTML(x.name)}</strong><small>소유 도시 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개</small></div>`).join('')}</div>
  <div class="mm-gamewrap"><div class="mm-main-panel"><section class="mm-board-frame"><div class="mm-board">${TILES.map((t,i)=>renderTile(s,t,i)).join('')}${scenePawnMarkup(s)}
  <section class="mm-board-center mm-play-stage"><div class="mm-stage-skyline" aria-hidden="true"><span class="mm-sky-b mm-sky-a"></span><span class="mm-sky-b mm-sky-b2"></span><span class="mm-sky-b mm-sky-c"></span><span class="mm-sky-b mm-sky-d"></span><span class="mm-sky-b mm-sky-e"></span><span class="mm-sky-b mm-sky-f"></span></div><div class="mm-stage-heading"><span class="mm-center-kicker">✦ DREAM · OWN · WIN ✦</span><h2 class="mm-center-title">모여<span>마블</span></h2><p class="mm-center-sub">${s.phase==='roll'?'주사위를 굴려 보세요':s.phase==='finished'?'경기가 끝났어요':'다음 행동을 선택하세요'}</p><div class="mm-turn-badge" style="--turn-color:${ownerColor(s,p.id)}"><span class="mm-turn-avatar">${ownerAvatar(s,p.id)}</span><strong>${escapeHTML(p.name)}</strong><span class="mm-turn-badge-note">${s.phase==='finished'?'경기 종료':'현재 차례'}</span></div></div>
@@ -401,33 +423,35 @@ function consumeEvents(s){
 }
 function beginScene(){
  if(scene||!sceneQueue.length)return;
- const ev=sceneQueue.shift();scene={event:ev,stage:ev.dice?'dice':'outcome',position:ev.from};
+ const ev=sceneQueue.shift();scene={event:ev,stage:ev.dice?'dice':'outcome',position:ev.from,step:0};
  clearTimeout(sceneTimer);
  if(ev.dice && ev.from!==ev.to && !ev.travel && ev.to===(ev.from+ev.dice.total)%24){
-  sceneTimer=setTimeout(()=>{if(!scene||scene.event.seq!==ev.seq)return;scene.stage='move';scene.position=ev.from;paintScene();stepScene(0);},effectsOn&&!reducedMotion?380:30);
+  sceneTimer=setTimeout(()=>{if(!scene||scene.event.seq!==ev.seq)return;scene.stage='move';scene.position=ev.from;paintScene();stepScene(0);},sceneTiming().dice);
  }else if(ev.type==='pickCard'&&ev.card){
   // In local games the fortune stays until the player reads and confirms it.
   // Online games have a maximum hold so a 15-second turn cannot be blocked.
   // AI cards can be dismissed or advance after a short readable delay.
   const hold=ev.ai?3000:onlineRoom?5000:null;
   if(hold!==null)sceneTimer=setTimeout(()=>{if(scene?.event.seq===ev.seq)finishScene();},hold);
- }else sceneTimer=setTimeout(()=>{if(scene?.event.seq===ev.seq)finishScene();},effectsOn&&!reducedMotion?1100:90);
+ }else sceneTimer=setTimeout(()=>{if(scene?.event.seq===ev.seq)finishScene();},sceneTiming().other);
 }
 function stepScene(step){
  if(!scene)return;
  const ev=scene.event;
  const count=Math.min(24,ev.dice?.total||0);
- if(step>=count){scene.position=ev.to;scene.stage='outcome';render();paintScene();sceneTimer=setTimeout(finishScene,effectsOn&&!reducedMotion?1050:60);return;}
- scene.position=(ev.from+step+1)%24;paintScene();
+ if(step>=count){scene.position=ev.to;scene.step=count;scene.stage='outcome';render();paintScene();sceneTimer=setTimeout(finishScene,sceneTiming().result);return;}
+ scene.position=(ev.from+step+1)%24;scene.step=step+1;paintScene();
  sceneTimer=setTimeout(()=>stepScene(step+1),moveDelay());
 }
 function paintScene(){
  const ev=scene?.event;if(!ev)return;
  const face=document.querySelector('[data-replay-pawn]');
- if(face){const [r,c]=tilePos(scene.position);face.style.top=`${((r-.5)/7)*100}%`;face.style.left=`${((c-.5)/7)*100}%`;}
+ if(face){const [r,c]=tilePos(scene.position);face.style.transitionDuration=`${Math.max(70,Math.min(moveDelay()-50,270))}ms`;face.style.top=`${((r-.5)/7)*100}%`;face.style.left=`${((c-.5)/7)*100}%`;}
  document.querySelectorAll('.mm-tile').forEach(el=>{el.classList.toggle('mm-path-active',Number(el.dataset.tileIndex)===scene.position);});
  const card=document.querySelector('.mm-scene-card');
- if(card){card.classList.toggle('is-outcome',scene.stage==='outcome');const title=card.querySelector('strong');if(title)title.textContent=scene.stage==='dice'&&ev.dice?`주사위 ${ev.dice.a} + ${ev.dice.b} = ${ev.dice.total}`:scene.stage==='move'?`${TILES[scene.position]?.name||'도시'}로 달려가는 중!`:ev.message;}
+ if(card){card.classList.toggle('is-outcome',scene.stage==='outcome');const title=card.querySelector(':scope > strong');if(title)title.textContent=scene.stage==='dice'&&ev.dice?`🎲 ${ev.actorName} · ${ev.dice.a} + ${ev.dice.b} = ${ev.dice.total}칸`:scene.stage==='move'?`${ev.actorName} 이동 중`:ev.message;
+  const progress=card.querySelector('[data-scene-progress]');if(progress)progress.textContent=`${scene.step||0} / ${Math.min(24,ev.dice?.total||0)}칸`;
+  const where=card.querySelector('[data-scene-where]');if(where)where.textContent=`${TILES[scene.position]?.name||'출발'} ${scene.step===(ev.dice?.total||0)?'도착':'통과 중'}`;}
 }
 function finishScene(){
  if(!scene)return;
@@ -444,7 +468,7 @@ async function startLocal(){if(mode==='local'&&!(await ensureMember()))return;if
  resetScenes();inspectedCity=null;localGame=createGame({players,maxRounds:roundsForGame()});onlineRoom=null;lastDice=null;beginMarbleIntro();render();queueCat();}
 function queueCat(){clearTimeout(aiTimer);if(introActive||onlineRoom||!localGame||localGame.phase==='finished')return;
  const p=current(localGame);if(!p.ai||scene||sceneQueue.length)return;
- aiTimer=setTimeout(()=>{if(!localGame||!current(localGame).ai)return;const action=chooseCatAction(localGame,aiDifficulty);if(action)executeAction(action.type,action.payload||{},catThought(localGame,action));},effectsOn&&!reducedMotion?520:120);
+ aiTimer=setTimeout(()=>{if(!localGame||!current(localGame).ai)return;const action=chooseCatAction(localGame,aiDifficulty);if(action)executeAction(action.type,action.payload||{},catThought(localGame,action));},sceneTiming().ai);
 }
 function executeAction(type,payload={},thought=''){
  if(inFlight||scene)return;
@@ -541,6 +565,7 @@ root.addEventListener('click',async e=>{
  case 'leave':await leave();break;
  case 'rematch':startLocal();break;
  case 'skipScene':finishScene();break;
+ case 'cyclePace':playbackPace=PLAYBACK_PACES[(PLAYBACK_PACES.indexOf(playbackPace)+1)%PLAYBACK_PACES.length];localStorage.setItem('moyeo-marble-playback-pace',playbackPace);render();break;
  case 'toggleEffects':effectsOn=!effectsOn;localStorage.setItem('moyeo-marble-effects',effectsOn?'on':'off');if(scene)finishScene();else render();break;
  case 'toggleLobbyEffects':if(mode==='ai')persistNick();effectsOn=!effectsOn;localStorage.setItem('moyeo-marble-effects',effectsOn?'on':'off');render();break;
  case 'toggleTutorial':if(mode==='ai')persistNick();tutorialOn=!tutorialOn;localStorage.setItem('moyeo-marble-tutorial',tutorialOn?'on':'off');render();break;
