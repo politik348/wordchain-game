@@ -1,5 +1,5 @@
 import {renderPregame} from '../pregame-lobbies.mjs?v=20261120marbleSetup1';
-import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,upgradeCost,maxBuildLevel,propertyValue,saleValue,countMonopolies,olympicCost,LEVEL_NAMES,BAIL_COST,BANK_LOAN,BANK_REPAY,PASS_BONUS,winnerRanking} from './engine.mjs?v=20261123lapsalary1';
+import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,upgradeCost,maxBuildLevel,propertyValue,saleValue,countMonopolies,olympicCost,LEVEL_NAMES,BAIL_COST,BANK_LOAN,BANK_REPAY,PASS_BONUS,winnerRanking} from './engine.mjs?v=20261123cardchoice1';
 const root=document.querySelector('#mmApp');
 const toastZone=document.querySelector('#mmToast');
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -100,6 +100,7 @@ function renderLobby(){
         ['도시를 차지해요','주사위를 굴려 도시를 구매하고 같은 색의 도시를 모아보세요.'],
         ['첫 턴부터 건설','첫 방문부터 별장·빌딩·호텔을 지을 수 있어요. 랜드마크는 호텔 이후!'],
         ['출발지 통과 보너스',`한 바퀴를 돌면 ${PASS_BONUS}M 지급! 은행 대출이 남았다면 보너스로 먼저 상환해요.`],
+        ['행운 편지와 방어 카드','행운 편지는 읽고 직접 닫을 수 있어요. 통행료 면제·50% 할인 카드는 필요할 때 골라서 사용하세요.'],
         ['승리 조건','일반 모드는 컬러·라인 독점 또는 라운드 종료 자산으로, 무한 모드는 마지막 생존자로 승리합니다. 관광지 2곳 소유로는 즉시 승리하지 않아요.']
       ]
     },
