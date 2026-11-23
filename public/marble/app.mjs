@@ -1,5 +1,5 @@
 import {renderPregame} from '../pregame-lobbies.mjs?v=20261120marbleSetup1';
-import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,upgradeCost,maxBuildLevel,propertyValue,saleValue,countMonopolies,tourismComplete,olympicCost,LEVEL_NAMES,BAIL_COST,BANK_LOAN,BANK_REPAY,winnerRanking} from './engine.mjs?v=20261122assets1';
+import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,upgradeCost,maxBuildLevel,propertyValue,saleValue,countMonopolies,olympicCost,LEVEL_NAMES,BAIL_COST,BANK_LOAN,BANK_REPAY,winnerRanking} from './engine.mjs?v=20261123openbuild1';
 const root=document.querySelector('#mmApp');
 const toastZone=document.querySelector('#mmToast');
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -98,8 +98,8 @@ function renderLobby(){
       badge:'24칸 부동산 대전',
       rules:[
         ['도시를 차지해요','주사위를 굴려 도시를 구매하고 같은 색의 도시를 모아보세요.'],
-        ['건설과 인수','랜드마크로 발전시키거나 상대 도시를 인수해 역전하세요.'],
-        ['승리 조건','일반 모드는 독점 또는 라운드 종료 시 자산으로, 무한 모드는 마지막 생존자로 승리합니다.']
+        ['첫 턴부터 건설','첫 방문부터 별장·빌딩·호텔을 지을 수 있어요. 랜드마크는 호텔 이후!'],
+        ['승리 조건','일반 모드는 컬러·라인 독점 또는 라운드 종료 자산으로, 무한 모드는 마지막 생존자로 승리합니다. 관광지 2곳 소유로는 즉시 승리하지 않아요.']
       ]
     },
     allowedModes:catChallenge?['cat']:['online','local'],
@@ -134,7 +134,7 @@ function renderTile(s,t,i){
  const title=buyable?`${t.name} · ${held?`${owner?.name||'플레이어'} 소유 · ${LEVEL_NAMES[held.level]} · 통행료 ${formatM(fee)}`:`구매가 ${formatM(t.price)}`}`:t.name;
  const building=held&&t.kind==='city'?`<div class="mm-building-row" aria-label="${LEVEL_NAMES[held.level]}">${held.level===4?'<span class="mm-building-landmark">🏰</span>':held.level===0?'<span class="mm-empty-lot">🏳</span>':Array.from({length:held.level},(_,n)=>`<i class="mm-building-block" style="--height:${12+n*4}px"></i>`).join('')}</div>`:held&&t.kind==='tourist'?'<span class="mm-tourist-badge">🛟 관광지</span>':'';
  const ownerBadge=held?`<span class="mm-owner-badge" title="${escapeHTML(owner?.name)} 소유"><span class="mm-owner-icon">${characterArt(ownerIndex)}</span><b>${escapeHTML(owner?.name||'플레이어')}</b></span>`:'';
- const monopoly=held&&(t.kind==='city'?TILES.every((v,j)=>v.kind!=='city'||v.group!==t.group||s.properties[j]?.owner===held.owner):tourismComplete(s,held.owner));
+ const monopoly=held&&t.kind==='city'&&TILES.every((v,j)=>v.kind!=='city'||v.group!==t.group||s.properties[j]?.owner===held.owner);
  return `<div class="mm-tile ${buyable?'mm-city':'mm-special'} ${t.kind==='tourist'?'mm-tourist':''} ${held?'mm-own':''} ${canTravel?'mm-landable':''} ${pawns.some(p=>p.id===current(s).id)?'mm-highlight':''} ${scene?.event.tileIndex===i?'mm-scene-target':''} ${inspectedCity===i?'mm-inspected':''}" data-kind="${t.kind}" data-tile-index="${i}" ${canTravel?`data-land="${i}" tabindex="0" role="button" aria-label="${escapeHTML(t.name)}(으)로 여행하기"`:canInspect?`data-inspect="${i}" tabindex="0" role="button" aria-label="${escapeHTML(t.name)} 정보 보기"`:''} title="${escapeHTML(title)}" style="grid-row:${row};grid-column:${col};${buyable?`--tile-color:${t.kind==='tourist'?'#70b9df':GROUPS[t.group].color};`:''}${held?`--owner-color:${paint[ownerIndex]||'#a3a3a3'};`:''}">
  ${building}<span class="mm-tile-emoji">${t.emoji}</span><span class="mm-tile-name">${escapeHTML(t.name)}</span>${buyable?`<span class="mm-tile-price">${held?`통행 ${formatM(fee)}`:formatM(t.price)}</span>`:''}${monopoly?'<span class="mm-monopoly-flag">2× 독점</span>':''}${s.olympics?.[i]?`<span class="mm-olympic-flag">🏅 ${s.olympics[i]}×</span>`:''}${ownerBadge}${pawns.length?`<span class="mm-tile-tokens">${pawns.map(p=>token(s,p,i)).join('')}</span>`:''}</div>`;
 }
@@ -293,12 +293,17 @@ function actionPanel(s){
  if(s.phase==='travel')return `<div class="mm-status-line">✈️ 세계여행 출발!</div><p class="mm-status-sub">${escapeHTML(p.name)}님, 다음 차례가 되었어요. 원하는 지역을 선택해 바로 이동합니다.</p><div class="mm-center-actions">${button('travelBest','🎯 투자 추천 지역으로 이동','mm-primary',!yourTurn||inFlight)}</div>`;
  const {kind,index}=s.pending||{},t=TILES[index],v=s.properties[index];
  if(kind==='purchase'){
-  const villa=t.kind==='city'?buildingCost(index,0):0;
-  return `<div class="mm-status-line">${t.kind==='tourist'?'🏖️ 관광지':'🏘️ 도시'} 구매 · ${escapeHTML(t.name)}</div><p class="mm-status-sub">${t.kind==='tourist'?'관광지는 인수가 불가능하며 건설할 수 없어요.':'토지만 살 수도 있고, 별장까지 한 번에 지을 수도 있어요.'}</p><div class="mm-center-actions">${button('buy',`🏳 토지 구매 · ${formatM(t.price)}`,'mm-primary',!yourTurn||inFlight||p.cash<t.price,`data-level="0"`)}${t.kind==='city'?button('buy',`🏠 별장까지 · ${formatM(t.price+villa)}`,'mm-primary',!yourTurn||inFlight||p.cash<t.price+villa,`data-level="1"`):''}${button('pass','건너뛰기','mm-neutral',!yourTurn||inFlight)}</div>`;
+  const buildOptions=t.kind==='city'?[0,1,2,3]:[0];
+  const purchaseButtons=buildOptions.map(level=>{
+   const total=t.price+(level?upgradeCost(index,0,level):0);
+   const caption=level===0?'🏳 토지만 구매':'🏗️ '+LEVEL_NAMES[level]+'까지 건설';
+   return button('buy',caption+' · '+formatM(total),level===1?'mm-primary':'mm-neutral',!yourTurn||inFlight||p.cash<total,`data-level="${level}"`);
+  }).join('');
+  return `<div class="mm-status-line">${t.kind==='tourist'?'🏖️ 관광지':'🏘️ 도시'} 구매 · ${escapeHTML(t.name)}</div><p class="mm-status-sub">${t.kind==='tourist'?'관광지는 건설·인수가 불가능하며, 두 곳을 모두 소유해도 즉시 승리하지 않습니다.':'첫 턴부터 별장·빌딩·호텔까지 비용을 내고 건설할 수 있어요. 랜드마크는 호텔을 지은 후 가능해요.'}</p><div class="mm-center-actions">${purchaseButtons}${button('pass','건너뛰기','mm-neutral',!yourTurn||inFlight)}</div>`;
  }
  if(kind==='upgrade'){
   const max=maxBuildLevel(s,p.id,index);
-  return `<div class="mm-status-line">🏗️ ${escapeHTML(t.name)} 건설</div><p class="mm-status-sub">현재 ${LEVEL_NAMES[v.level]} · 출발지 ${p.laps}회 통과 · 건설 가능 최고 단계 ${LEVEL_NAMES[max]}. 단계별로 선택하세요.</p><div class="mm-center-actions">${buildButtons(s,index,v.level,p)}${button('pass','건설하지 않기','mm-neutral',!yourTurn||inFlight)}</div>`;
+  return `<div class="mm-status-line">🏗️ ${escapeHTML(t.name)} 건설</div><p class="mm-status-sub">현재 ${LEVEL_NAMES[v.level]} · 첫 턴부터 건설 가능 · 최고 단계 ${LEVEL_NAMES[max]}. 건설 단계를 선택하세요.</p><div class="mm-center-actions">${buildButtons(s,index,v.level,p)}${button('pass','건설하지 않기','mm-neutral',!yourTurn||inFlight)}</div>`;
  }
  if(kind==='takeover'){
   const price=propertyValue(index,v.level)*2,owner=s.players.find(x=>x.id===v.owner);
@@ -326,7 +331,7 @@ function sidePanel(s){
  const showTimers=onlineRoom && s.phase!=='finished';
  return `<aside class="mm-sidebar"><section class="mm-card"><h2 class="mm-card-title">👑 플레이어 현황 <small>${s.players.length}명</small></h2>${s.players.map((x,i)=>`<div class="mm-player ${p.id===x.id&&s.phase!=='finished'?'current':''} ${x.bankrupt?'bankrupt':''}"><span class="mm-avatar" style="--pcolor:${paint[i]}">${characterArt(i)}</span><div class="mm-player-info"><strong>${escapeHTML(x.name)}${x.ai?' · AI':''}${p.id===x.id&&s.phase!=='finished'?'<em class="mm-player-turn">현재 턴</em>':''}</strong><small>부동산 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개 · 컬러 ${countMonopolies(s,x.id)}세트 · 🪽${x.angel||0} 🎟️${x.discountCards||0}${x.bankDebt?` · 빚 ${formatM(x.bankDebt)}`:''}</small></div><span class="mm-money">${formatM(x.cash)}<small><br>자산 ${formatM(netWorth(s,x.id))}</small></span></div>`).join('')}${endless?`<div class="mm-endless-progress">♾️ 파산까지 계속 · ${s.round}라운드 진행 · 생존 ${s.players.filter(x=>!x.bankrupt).length}명</div>`:`<div class="mm-progress"><div class="mm-progress-fill" style="width:${Math.min(100,Math.round(s.turnCount/turns*100))}%"></div></div><div class="mm-progress-label"><span>${s.round} / ${s.maxRounds}라운드</span><span>${Math.min(turns,s.turnCount)}/${turns}턴</span></div>`}${showTimers?`<p style="text-align:center;margin:10px 0 0"><span class="mm-clock" data-clock>⏳ 30초</span></p>`:''}</section>
  ${salePanel}${cityInspector(s)}<section class="mm-card mm-events-card"><h2 class="mm-card-title">📣 최근 행동 <small>상세 기록 펼치기</small></h2><div class="mm-action-ribbon">${recentAction(s)}</div><div class="mm-event-list">${(s.events||[]).slice(0,4).map((ev,j)=>`<div class="mm-event ${ev.ai?'is-cat':''} ${j===0?'new':''}" style="--event-color:${ownerColor(s,ev.actor)}"><span class="mm-event-icon">${ownerAvatar(s,ev.actor)}</span><div><strong>${escapeHTML(ev.message)}</strong>${ev.moneyChanges.length?`<small>${ev.moneyChanges.map(m=>`${escapeHTML(m.name)} ${fmtDelta(m.delta)}`).join(' · ')}</small>`:''}${ev.thought?`<small class="mm-event-thought">💭 ${escapeHTML(ev.thought)}</small>`:''}</div></div>`).join('')||'<p class="mm-helper">첫 행동을 기다리고 있어요.</p>'}</div><details class="mm-raw-history"><summary>전체 세부 기록 보기</summary><div class="mm-log-list">${s.log.slice(0,24).map(e=>`<div class="mm-log">${escapeHTML(e.text)}</div>`).join('')}</div></details></section>
- ${tutorialOn?`<section class="mm-card mm-tutorial-game"><h2 class="mm-card-title">💡 초보자 도움말</h2><p>① 주사위를 굴려 도시를 찾아가요.</p><p>② 도시는 현금이 부족해지지 않게 구매·건설하세요.</p><p>③ 다른 플레이어의 도시에 도착하면 통행료를 지불해요.</p><p>④ 시작 화면에서 도움말을 끌 수 있어요.</p></section>`:''}<section class="mm-card"><h2 class="mm-card-title">✨ 승리 팁</h2><div class="mm-helper">${s.maxRounds===0?'♾️ 무한모드는 독점해도 승리하지 않아요. 마지막 한 명만 남으면 끝!':'컬러 독점 2배 · 관광지 둘 다 소유하면 즉시 승리!<br>컬러 3세트 또는 한 면의 도시를 모두 소유해도 승리합니다.'}<br>랜드마크와 관광지는 인수 불가. 무인도는 더블/보석금으로 탈출!</div>${onlineRoom?`<div style="margin-top:12px">${button('copyInvite','🔗 방 링크 복사','mm-neutral')}</div>`:''}</section></aside>`;
+ ${tutorialOn?`<section class="mm-card mm-tutorial-game"><h2 class="mm-card-title">💡 초보자 도움말</h2><p>① 주사위를 굴려 도시를 찾아가요.</p><p>② 도시는 현금이 부족해지지 않게 구매·건설하세요.</p><p>③ 다른 플레이어의 도시에 도착하면 통행료를 지불해요.</p><p>④ 시작 화면에서 도움말을 끌 수 있어요.</p></section>`:''}<section class="mm-card"><h2 class="mm-card-title">✨ 승리 팁</h2><div class="mm-helper">${s.maxRounds===0?'♾️ 무한모드는 독점해도 승리하지 않아요. 마지막 한 명만 남으면 끝!':'컬러 독점은 통행료 2배! 관광지 2곳 소유는 즉시 승리하지 않습니다.<br>컬러 3세트 또는 한 면의 도시를 모두 소유하면 승리합니다.'}<br>랜드마크와 관광지는 인수 불가. 무인도는 더블/보석금으로 탈출!</div>${onlineRoom?`<div style="margin-top:12px">${button('copyInvite','🔗 방 링크 복사','mm-neutral')}</div>`:''}</section></aside>`;
 }
 function renderGame(s){
  const p=current(s);
