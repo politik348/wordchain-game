@@ -38,6 +38,7 @@ function autoAdvance(r){
  if(state.phase==='roll')type='roll';
  else if(state.phase==='travel'){type='travel';payload={index:0};}
  else if(state.phase==='chance'){type='pickCard';payload={index:randomInt(0,3)};}
+ else if(state.phase==='tollDefense')type='payToll'; // timed-out players conserve their defensive cards
  else if(state.phase==='island')type='islandRoll';
  else if(state.phase==='choice')type='pass';
  else if(state.phase==='liquidation'){
@@ -103,7 +104,7 @@ export async function handleMarbleRequest(req,res,pathname){
   if(op==='action'){
    if(!r.state)throw fail(400,'게임을 시작해주세요.');
    const type=String(data.type||'');
-   if(!['roll','pass','buy','upgrade','takeover','travel','islandRoll','payBail','startBuild','olympic','pickCard','takeLoan','sellProperty'].includes(type))throw fail(400,'허용되지 않는 행동입니다.');
+   if(!['roll','pass','buy','upgrade','takeover','travel','islandRoll','payBail','startBuild','olympic','pickCard','payToll','useAngel','useDiscount','takeLoan','sellProperty'].includes(type))throw fail(400,'허용되지 않는 행동입니다.');
    finishTurnAction(r,sid,type,data.payload||{});reply(res,200,visible(r));return true;
   }
   if(op==='leave'){
