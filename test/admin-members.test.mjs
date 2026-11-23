@@ -40,7 +40,8 @@ test('member directory is admin-only, lists invites, and never returns secrets',
  assert.equal(invitedMember.gameAccess.escape,false);
  assert.equal(invitedMember.gameAccess.tetris,false);
  assert.ok(invitedMember.invitedAt>0);
- assert.ok(!JSON.stringify(invited.data).includes('7129'));
+ assert.equal(Object.hasOwn(invitedMember,'code'),false);
+ assert.equal(Object.hasOwn(invitedMember,'codeHash'),false);
  assert.ok(!JSON.stringify(invited.data).includes('codeHash'));
  const verify=await request('/api/auth/verify',{method:'POST',body:{dripNickname:'회원관리테스터',code:'7129'}});
  assert.equal(verify.status,200);
@@ -63,7 +64,7 @@ test('member directory is admin-only, lists invites, and never returns secrets',
  assert.ok(!JSON.stringify(list.data).includes('salt'));
  assert.ok(!JSON.stringify(list.data).includes('tokenHash'));
  assert.ok(!JSON.stringify(list.data).includes('registrationToken'));
- assert.ok(!JSON.stringify(list.data).includes('7129'));
+ assert.equal(Object.hasOwn(member,'code'),false);
  const approved=await request('/api/admin/escape-access',{method:'POST',admin:true,body:{username:'members123',approve:true}});
  assert.equal(approved.status,200);
  assert.equal(approved.data.approved,true);
