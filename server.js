@@ -573,26 +573,28 @@ const handler=async(req,res)=>{
       const tasteFile=ESCAPE_TASTE_ASSETS.get(pathname);
       if(isEscapeTaste&&!tasteFile)throw err(404,'맛보기 파일을 찾을 수 없습니다.');
       const protectedEscape=pathname==='/escape'||pathname.startsWith('/escape/');
-      const protectedGamehell=pathname==='/gamehell'||pathname.startsWith('/gamehell/');
+      const memberRoots=['/gamehell','/tetris','/logic'];
+      const memberRoot=memberRoots.find(root=>pathname===root||pathname.startsWith(root+'/'));
+      const protectedMember=Boolean(memberRoot);
       if(protectedEscape)await requireEscapeAccess(req);
-      if(protectedGamehell&&!await getAuthenticatedAccount(req)){
-        // A direct visit to the arcade must use the same membership system as the main site.
-        // Preserve the trial query string so the player returns to the intended mode.
-        if(pathname==='/gamehell'||pathname==='/gamehell/'||pathname==='/gamehell/index.html'){
-          const next='/gamehell/index.html'+u.search;
+      if(protectedMember&&!await getAuthenticatedAccount(req)){
+        // Standalone games require a valid signed-in session, including direct assets.
+        // Preserve mode and query parameters such as ?cat=1 and ?trial=1.
+        if(pathname===memberRoot||pathname===memberRoot+'/'||pathname===memberRoot+'/index.html'){
+          const next=memberRoot+'/index.html'+u.search;
           res.writeHead(302,{'Location':'/?auth=login&next='+encodeURIComponent(next),'Cache-Control':'private, no-store'});
           res.end();return;
         }
-        throw err(401,'모여게임지옥을 이용하려면 회원가입·로그인이 필요합니다.');
+        throw err(401,'이 게임을 이용하려면 회원가입·로그인이 필요합니다.');
       }
-      let file=tasteFile||(pathname==='/'?'index.html':pathname==='/gamehell'||pathname==='/gamehell/'?'gamehell/index.html':pathname.replace(/^\//,''));
+      let file=tasteFile||(pathname==='/'?'index.html':memberRoot&&(pathname===memberRoot||pathname===memberRoot+'/')?memberRoot.slice(1)+'/index.html':pathname.replace(/^\//,''));
       const absolute=path.resolve(PUBLIC,file);
       if(!absolute.startsWith(PUBLIC+path.sep)&&absolute!==path.join(PUBLIC,'index.html'))throw err(403,'허용되지 않은 경로입니다.');
       let s;try{s=await stat(absolute);}catch{throw err(404,'파일이 없습니다.');}
       if(!s.isFile())throw err(404,'파일이 없습니다.');
       let data=await readFile(absolute);
       if(file==='index.html') data=injectSocialTags(data);
-      res.writeHead(200,{'Content-Type':MIME[path.extname(file)]||'application/octet-stream','Cache-Control':(protectedEscape||protectedGamehell)?'private, no-store':isEscapeTaste?'public, no-cache':path.extname(file)==='.html'?'no-cache':'public, max-age=300'});
+      res.writeHead(200,{'Content-Type':MIME[path.extname(file)]||'application/octet-stream','Cache-Control':(protectedEscape||protectedMember)?'private, no-store':isEscapeTaste?'public, no-cache':path.extname(file)==='.html'?'no-cache':'public, max-age=300'});
       return res.end(data);
     }
     throw err(404,'요청을 찾지 못했습니다.');
