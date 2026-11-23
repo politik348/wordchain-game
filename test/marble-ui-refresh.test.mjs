@@ -35,7 +35,7 @@ function state(phase,kind,opts={}){
 }
 test('new stylesheet is actually loaded AFTER existing marble CSS, with cache-busted UI code',()=>{
  assert.match(page,/ui-refresh\.css\?v=20261123marble5/);
- assert.match(page,/app\.mjs\?v=20261123cardchoice1/);
+ assert.match(page,/app\.mjs\?v=20261123cardchoice2/);
  assert.ok(page.indexOf('ui-refresh.css')>page.indexOf('gameplay-upgrades.css'));
  assert.match(css,/\.mm-gamewrap \.mm-sidebar\{grid-column:1;grid-row:1/);
  assert.match(css,/@media\(max-width:940px\)/);
@@ -133,4 +133,8 @@ test('fortune cards reveal their full effect and await explicit confirmation in 
  assert.match(app,/if\(hold!==null\)sceneTimer=setTimeout/);
  assert.match(theme,/\.mm-fortune-detail/);
  assert.match(theme,/\.mm-toll-defense-actions/);
+});
+
+test('fortune card reveal has precedence over the emergency liquidation screen',()=>{
+ assert.match(app,/s\?\.phase==='liquidation'&&\(!onlineRoom\|\|current\(s\)\.id===SID\)&&!introActive&&!scene/);
 });
