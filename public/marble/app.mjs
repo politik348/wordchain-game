@@ -146,7 +146,15 @@ function sceneMarkup(s){
  const stageTitle=scene.stage==='dice'&&ev.dice?`주사위 ${ev.dice.a} + ${ev.dice.b} = ${ev.dice.total}`:scene.stage==='move'?'캐릭터 이동 중!':ev.message;
  const salary=ev.salary;
  const salaryReward=scene.stage==='outcome'&&salary?`<div class="mm-salary-reward"><strong>🚩 출발지 보너스 +${formatM(salary.gross)}</strong><span>${salary.repayment?`대출 상환 ${formatM(salary.repayment)} · 실제 지급 +${formatM(salary.received)}`:`현금 +${formatM(salary.received)} 지급`}</span></div>`:'';
- return `<div class="mm-scene-card ${ev.type==='pickCard'?'mm-fortune-reveal':''} ${ev.type==='takeLoan'?'mm-loan-reveal':''} ${ev.ai?'mm-scene-cat':''} ${scene.stage==='outcome'?'is-outcome':''}" role="status" aria-live="polite"><span class="mm-scene-label">${ev.ai?'🐱 고양이의 행동':'✨ '+escapeHTML(ev.actorName)+'님의 행동'}</span><div class="mm-scene-icon">${emoji}</div><strong>${escapeHTML(stageTitle)}</strong><small>${escapeHTML(ev.message)}</small>${salaryReward}${scene.stage==='outcome'&&ev.moneyChanges.length?`<div class="mm-scene-deltas">${ev.moneyChanges.map(m=>`<span class="${m.delta>0?'plus':'minus'}">${escapeHTML(m.name)} ${fmtDelta(m.delta)}</span>`).join('')}</div>`:''}<button class="mm-scene-skip" type="button" data-action="skipScene">연출 넘기기 »</button></div>`;
+ const card=ev.type==='pickCard'?ev.card:null;
+ const cardMeaning=card?.effect==='cash'?(card.amount>=0?`현금 +${formatM(card.amount)} 획득`:`현금 ${formatM(-card.amount)} 지출`):
+  card?.effect==='angel'?'통행료 면제 카드 1장 획득 · 원하는 때 사용 가능':
+  card?.effect==='discount'?'통행료 50% 할인권 1장 획득 · 원하는 때 사용 가능':
+  card?.effect==='travel'?'다음 차례에 원하는 도시로 이동':
+  card?.effect==='start'?'출발지 이동 및 보너스 지급':
+  card?.effect==='freeBuild'?'보유 도시 무료 건설 또는 현금 보상':'';
+ const fortuneReveal=card?`<div class="mm-fortune-detail"><span>💌 행운 편지 결과</span><b>${escapeHTML(card.title)}</b><p>${escapeHTML(cardMeaning)}</p><small>${!onlineRoom&&!ev.ai?'읽은 뒤 아래 버튼을 눌러 계속하세요.':onlineRoom?'시간이 지나면 자동으로 이어지지만 바로 계속할 수도 있어요.':'잠시 후 계속 진행됩니다.'}</small></div>`:'';
+ return `<div class="mm-scene-card ${ev.type==='pickCard'?'mm-fortune-reveal':''} ${ev.type==='takeLoan'?'mm-loan-reveal':''} ${ev.ai?'mm-scene-cat':''} ${scene.stage==='outcome'?'is-outcome':''}" role="status" aria-live="polite"><span class="mm-scene-label">${ev.ai?'🐱 고양이의 행동':'✨ '+escapeHTML(ev.actorName)+'님의 행동'}</span><div class="mm-scene-icon">${emoji}</div><strong>${escapeHTML(stageTitle)}</strong><small>${escapeHTML(ev.message)}</small>${fortuneReveal}${salaryReward}${scene.stage==='outcome'&&ev.moneyChanges.length?`<div class="mm-scene-deltas">${ev.moneyChanges.map(m=>`<span class="${m.delta>0?'plus':'minus'}">${escapeHTML(m.name)} ${fmtDelta(m.delta)}</span>`).join('')}</div>`:''}<button class="mm-scene-skip" type="button" data-action="skipScene">${card?'확인하고 계속 →':'연출 넘기기 »'}</button></div>`;
 }
 function scenePawnMarkup(s){
  if(!scene||scene.event.travel||scene.event.from===scene.event.to||!scene.event.dice)return '';
@@ -396,6 +404,12 @@ function beginScene(){
  clearTimeout(sceneTimer);
  if(ev.dice && ev.from!==ev.to && !ev.travel && ev.to===(ev.from+ev.dice.total)%24){
   sceneTimer=setTimeout(()=>{if(!scene||scene.event.seq!==ev.seq)return;scene.stage='move';scene.position=ev.from;paintScene();stepScene(0);},effectsOn&&!reducedMotion?380:30);
+ }else if(ev.type==='pickCard'&&ev.card){
+  // In local games the fortune stays until the player reads and confirms it.
+  // Online games have a maximum hold so a 15-second turn cannot be blocked.
+  // AI cards can be dismissed or advance after a short readable delay.
+  const hold=ev.ai?3000:onlineRoom?5000:null;
+  if(hold!==null)sceneTimer=setTimeout(()=>{if(scene?.event.seq===ev.seq)finishScene();},hold);
  }else sceneTimer=setTimeout(()=>{if(scene?.event.seq===ev.seq)finishScene();},effectsOn&&!reducedMotion?1100:90);
 }
 function stepScene(step){
