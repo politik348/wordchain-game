@@ -1,5 +1,5 @@
 import {renderPregame} from '../pregame-lobbies.mjs?v=20261120marbleSetup1';
-import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,upgradeCost,maxBuildLevel,propertyValue,saleValue,countMonopolies,olympicCost,LEVEL_NAMES,BAIL_COST,BANK_LOAN,BANK_REPAY,winnerRanking} from './engine.mjs?v=20261123openbuild1';
+import {TILES,GROUPS,createGame,applyAction,chooseCatAction,netWorth,toll,buildingCost,upgradeCost,maxBuildLevel,propertyValue,saleValue,countMonopolies,olympicCost,LEVEL_NAMES,BAIL_COST,BANK_LOAN,BANK_REPAY,PASS_BONUS,winnerRanking} from './engine.mjs?v=20261123lapsalary1';
 const root=document.querySelector('#mmApp');
 const toastZone=document.querySelector('#mmToast');
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -99,6 +99,7 @@ function renderLobby(){
       rules:[
         ['도시를 차지해요','주사위를 굴려 도시를 구매하고 같은 색의 도시를 모아보세요.'],
         ['첫 턴부터 건설','첫 방문부터 별장·빌딩·호텔을 지을 수 있어요. 랜드마크는 호텔 이후!'],
+        ['출발지 통과 보너스',`한 바퀴를 돌면 ${PASS_BONUS}M 지급! 은행 대출이 남았다면 보너스로 먼저 상환해요.`],
         ['승리 조건','일반 모드는 컬러·라인 독점 또는 라운드 종료 자산으로, 무한 모드는 마지막 생존자로 승리합니다. 관광지 2곳 소유로는 즉시 승리하지 않아요.']
       ]
     },
@@ -136,14 +137,16 @@ function renderTile(s,t,i){
  const ownerBadge=held?`<span class="mm-owner-badge" title="${escapeHTML(owner?.name)} 소유"><span class="mm-owner-icon">${characterArt(ownerIndex)}</span><b>${escapeHTML(owner?.name||'플레이어')}</b></span>`:'';
  const monopoly=held&&t.kind==='city'&&TILES.every((v,j)=>v.kind!=='city'||v.group!==t.group||s.properties[j]?.owner===held.owner);
  return `<div class="mm-tile ${buyable?'mm-city':'mm-special'} ${t.kind==='tourist'?'mm-tourist':''} ${held?'mm-own':''} ${canTravel?'mm-landable':''} ${pawns.some(p=>p.id===current(s).id)?'mm-highlight':''} ${scene?.event.tileIndex===i?'mm-scene-target':''} ${inspectedCity===i?'mm-inspected':''}" data-kind="${t.kind}" data-tile-index="${i}" ${canTravel?`data-land="${i}" tabindex="0" role="button" aria-label="${escapeHTML(t.name)}(으)로 여행하기"`:canInspect?`data-inspect="${i}" tabindex="0" role="button" aria-label="${escapeHTML(t.name)} 정보 보기"`:''} title="${escapeHTML(title)}" style="grid-row:${row};grid-column:${col};${buyable?`--tile-color:${t.kind==='tourist'?'#70b9df':GROUPS[t.group].color};`:''}${held?`--owner-color:${paint[ownerIndex]||'#a3a3a3'};`:''}">
- ${building}<span class="mm-tile-emoji">${t.emoji}</span><span class="mm-tile-name">${escapeHTML(t.name)}</span>${buyable?`<span class="mm-tile-price">${held?`통행 ${formatM(fee)}`:formatM(t.price)}</span>`:''}${monopoly?'<span class="mm-monopoly-flag">2× 독점</span>':''}${s.olympics?.[i]?`<span class="mm-olympic-flag">🏅 ${s.olympics[i]}×</span>`:''}${ownerBadge}${pawns.length?`<span class="mm-tile-tokens">${pawns.map(p=>token(s,p,i)).join('')}</span>`:''}</div>`;
+ ${building}<span class="mm-tile-emoji">${t.emoji}</span><span class="mm-tile-name">${escapeHTML(t.name)}</span>${i===0?`<span class="mm-start-salary">+${formatM(PASS_BONUS)}</span>`:''}${buyable?`<span class="mm-tile-price">${held?`통행 ${formatM(fee)}`:formatM(t.price)}</span>`:''}${monopoly?'<span class="mm-monopoly-flag">2× 독점</span>':''}${s.olympics?.[i]?`<span class="mm-olympic-flag">🏅 ${s.olympics[i]}×</span>`:''}${ownerBadge}${pawns.length?`<span class="mm-tile-tokens">${pawns.map(p=>token(s,p,i)).join('')}</span>`:''}</div>`;
 }
 function sceneMarkup(s){
  if(!scene)return '';
  const ev=scene.event;
  const emoji=['roll','islandRoll'].includes(ev.type)?'🎲':ev.type==='buy'?'🏙️':['upgrade','startBuild'].includes(ev.type)?'🏗️':ev.type==='takeover'?'⚔️':ev.type==='travel'?'✈️':ev.type==='olympic'?'🏅':ev.type==='payBail'?'🏝️':ev.type==='pickCard'?(ev.card?.emoji||'💌'):ev.type==='takeLoan'?'🏦':'💬';
  const stageTitle=scene.stage==='dice'&&ev.dice?`주사위 ${ev.dice.a} + ${ev.dice.b} = ${ev.dice.total}`:scene.stage==='move'?'캐릭터 이동 중!':ev.message;
- return `<div class="mm-scene-card ${ev.type==='pickCard'?'mm-fortune-reveal':''} ${ev.type==='takeLoan'?'mm-loan-reveal':''} ${ev.ai?'mm-scene-cat':''} ${scene.stage==='outcome'?'is-outcome':''}" role="status" aria-live="polite"><span class="mm-scene-label">${ev.ai?'🐱 고양이의 행동':'✨ '+escapeHTML(ev.actorName)+'님의 행동'}</span><div class="mm-scene-icon">${emoji}</div><strong>${escapeHTML(stageTitle)}</strong><small>${escapeHTML(ev.message)}</small>${scene.stage==='outcome'&&ev.moneyChanges.length?`<div class="mm-scene-deltas">${ev.moneyChanges.map(m=>`<span class="${m.delta>0?'plus':'minus'}">${escapeHTML(m.name)} ${fmtDelta(m.delta)}</span>`).join('')}</div>`:''}<button class="mm-scene-skip" type="button" data-action="skipScene">연출 넘기기 »</button></div>`;
+ const salary=ev.salary;
+ const salaryReward=scene.stage==='outcome'&&salary?`<div class="mm-salary-reward"><strong>🚩 출발지 보너스 +${formatM(salary.gross)}</strong><span>${salary.repayment?`대출 상환 ${formatM(salary.repayment)} · 실제 지급 +${formatM(salary.received)}`:`현금 +${formatM(salary.received)} 지급`}</span></div>`:'';
+ return `<div class="mm-scene-card ${ev.type==='pickCard'?'mm-fortune-reveal':''} ${ev.type==='takeLoan'?'mm-loan-reveal':''} ${ev.ai?'mm-scene-cat':''} ${scene.stage==='outcome'?'is-outcome':''}" role="status" aria-live="polite"><span class="mm-scene-label">${ev.ai?'🐱 고양이의 행동':'✨ '+escapeHTML(ev.actorName)+'님의 행동'}</span><div class="mm-scene-icon">${emoji}</div><strong>${escapeHTML(stageTitle)}</strong><small>${escapeHTML(ev.message)}</small>${salaryReward}${scene.stage==='outcome'&&ev.moneyChanges.length?`<div class="mm-scene-deltas">${ev.moneyChanges.map(m=>`<span class="${m.delta>0?'plus':'minus'}">${escapeHTML(m.name)} ${fmtDelta(m.delta)}</span>`).join('')}</div>`:''}<button class="mm-scene-skip" type="button" data-action="skipScene">연출 넘기기 »</button></div>`;
 }
 function scenePawnMarkup(s){
  if(!scene||scene.event.travel||scene.event.from===scene.event.to||!scene.event.dice)return '';
@@ -174,7 +177,8 @@ function recentAction(s){
  const ev=s.lastEvent;
  if(!ev)return '<span class="mm-action-empty">🎲 아직 첫 주사위를 기다리고 있어요.</span>';
  const changes=ev.moneyChanges.map(m=>`<span class="mm-action-delta ${m.delta>0?'positive':'negative'}">${escapeHTML(m.name)} ${fmtDelta(m.delta)}</span>`).join('');
- return `<div class="mm-action-who" style="--action-color:${ownerColor(s,ev.actor)}"><span class="mm-action-face">${ownerAvatar(s,ev.actor)}</span><div><small>${ev.ai?'고양이 AI의 최근 행동':'방금 일어난 행동'}</small><strong>${escapeHTML(ev.message)}</strong>${ev.thought?`<span class="mm-action-thought">💭 ${escapeHTML(ev.thought)}</span>`:''}</div></div><div class="mm-action-foot">${changes||'<span>자산 변동 없음</span>'}</div>`;
+ const salarySummary=ev.salary?`<span class="mm-action-salary">🚩 통과 보너스 +${formatM(ev.salary.gross)}${ev.salary.repayment?` · 대출 상환 ${formatM(ev.salary.repayment)}`:''}</span>`:'';
+ return `<div class="mm-action-who" style="--action-color:${ownerColor(s,ev.actor)}"><span class="mm-action-face">${ownerAvatar(s,ev.actor)}</span><div><small>${ev.ai?'고양이 AI의 최근 행동':'방금 일어난 행동'}</small><strong>${escapeHTML(ev.message)}</strong>${ev.thought?`<span class="mm-action-thought">💭 ${escapeHTML(ev.thought)}</span>`:''}</div></div><div class="mm-action-foot">${salarySummary}${changes||'<span>자산 변동 없음</span>'}</div>`;
 }
 function cityInspector(s){
  const i=inspectedCity;
@@ -344,7 +348,7 @@ function renderGame(s){
   actionPanel(s);
  const loan=!p.loanUsed&&s.phase!=='finished'&&s.phase!=='liquidation'&&!decision&&!p.ai&&(!onlineRoom||p.id===SID)?
   '<div class="mm-bank-loan">'+button('takeLoan','🏦 은행 대출 +'+formatM(BANK_LOAN)+' (향후 '+formatM(BANK_REPAY)+' 상환)','mm-neutral',inFlight||!!scene)+'</div>':'';
- root.innerHTML=`<div class="mm-topgame"><div><span class="mm-eyebrow">MOYEO MARBLE · ${onlineRoom?'ONLINE MATCH':mode==='ai'?'CAT CHALLENGE':'LOCAL MATCH'}</span><h1>모여마블 <span style="font-size:14px;color:#a99dab">${s.maxRounds===0?`♾️ 무한 · ${s.round}라운드`:`${s.round}/${s.maxRounds} 라운드`}</span></h1><p>${onlineRoom?`방 코드 ${onlineRoom.code} · 모든 주사위는 서버에서 판정`:mode==='ai'?'고양이 AI와 1:1 대결 중':'한 화면에서 돌아가며 플레이 중'}</p></div><div style="display:flex;gap:7px;align-items:center"><span class="mm-indicator">● ${onlineRoom?'온라인 연결':'플레이 중'}</span>${button('toggleEffects',effectsOn?'✨ 연출 켜짐':'✨ 연출 꺼짐','mm-neutral')}${button('leave','↩ 나가기','mm-neutral')}</div></div>
+ root.innerHTML=`<div class="mm-topgame"><div><span class="mm-eyebrow">MOYEO MARBLE · ${onlineRoom?'ONLINE MATCH':mode==='ai'?'CAT CHALLENGE':'LOCAL MATCH'}</span><h1>모여마블 <span style="font-size:14px;color:#a99dab">${s.maxRounds===0?`♾️ 무한 · ${s.round}라운드`:`${s.round}/${s.maxRounds} 라운드`}</span></h1><p>${onlineRoom?`방 코드 ${onlineRoom.code} · 모든 주사위는 서버에서 판정`:mode==='ai'?'고양이 AI와 1:1 대결 중':'한 화면에서 돌아가며 플레이 중'}</p></div><div style="display:flex;gap:7px;align-items:center"><span class="mm-salary-chip" title="출발지를 한 바퀴 통과할 때마다 보너스 지급. 대출이 있으면 우선 상환합니다.">🚩 한 바퀴 <strong>+${formatM(PASS_BONUS)}</strong></span><span class="mm-indicator">● ${onlineRoom?'온라인 연결':'플레이 중'}</span>${button('toggleEffects',effectsOn?'✨ 연출 켜짐':'✨ 연출 꺼짐','mm-neutral')}${button('leave','↩ 나가기','mm-neutral')}</div></div>
  <div class="mm-owner-legend" aria-label="플레이어별 소유 건물 색상">${s.players.map((x,i)=>`<div class="mm-owner-key" style="--key-color:${paint[i]}"><span>${characterArt(i)}</span><strong>${escapeHTML(x.name)}</strong><small>소유 도시 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개</small></div>`).join('')}</div>
  <div class="mm-gamewrap"><div class="mm-main-panel"><section class="mm-board-frame"><div class="mm-board">${TILES.map((t,i)=>renderTile(s,t,i)).join('')}${scenePawnMarkup(s)}
  <section class="mm-board-center mm-play-stage"><div class="mm-stage-skyline" aria-hidden="true"><span class="mm-sky-b mm-sky-a"></span><span class="mm-sky-b mm-sky-b2"></span><span class="mm-sky-b mm-sky-c"></span><span class="mm-sky-b mm-sky-d"></span><span class="mm-sky-b mm-sky-e"></span><span class="mm-sky-b mm-sky-f"></span></div><div class="mm-stage-heading"><span class="mm-center-kicker">✦ DREAM · OWN · WIN ✦</span><h2 class="mm-center-title">모여<span>마블</span></h2><p class="mm-center-sub">${s.phase==='roll'?'주사위를 굴려 보세요':s.phase==='finished'?'경기가 끝났어요':'다음 행동을 선택하세요'}</p><div class="mm-turn-badge" style="--turn-color:${ownerColor(s,p.id)}"><span class="mm-turn-avatar">${ownerAvatar(s,p.id)}</span><strong>${escapeHTML(p.name)}</strong><span class="mm-turn-badge-note">${s.phase==='finished'?'경기 종료':'현재 차례'}</span></div></div>
