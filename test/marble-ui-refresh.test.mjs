@@ -35,7 +35,7 @@ function state(phase,kind,opts={}){
 }
 test('new stylesheet is actually loaded AFTER existing marble CSS, with cache-busted UI code',()=>{
  assert.match(page,/ui-refresh\.css\?v=20261123marble5/);
- assert.match(page,/app\.mjs\?v=20261123marble5/);
+ assert.match(page,/app\.mjs\?v=20261123polish1/);
  assert.ok(page.indexOf('ui-refresh.css')>page.indexOf('gameplay-upgrades.css'));
  assert.match(css,/\.mm-gamewrap \.mm-sidebar\{grid-column:1;grid-row:1/);
  assert.match(css,/@media\(max-width:940px\)/);
