@@ -54,3 +54,13 @@ test('Marble v5 uses four original mascot SVGs consistently',()=>{
  assert.ok(css.includes('@media'));
  new Script(app.replace(/^import .*?;\s*$/gm,''));
 });
+
+test('Timed online toll decisions remain fair: allowed choices and no automatic forfeiture',()=>{
+ assert.ok(api.includes("state.phase==='tollDefense'"));
+ assert.match(api,/type='payToll'/);
+ for(const action of ['payToll','useAngel','useDiscount'])
+  assert.ok(api.includes("'"+action+"'"),action+' must be allowed by the server');
+ assert.match(api,/r\.state=surrender\(r\.state,sid\)/);
+ assert.match(app,/mm-toll-defense-actions/);
+ assert.match(app,/case 'payToll':case 'useAngel':case 'useDiscount'/);
+});
