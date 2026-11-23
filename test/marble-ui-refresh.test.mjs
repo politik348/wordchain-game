@@ -35,7 +35,7 @@ function state(phase,kind,opts={}){
 }
 test('new stylesheet is actually loaded AFTER existing marble CSS, with cache-busted UI code',()=>{
  assert.match(page,/ui-refresh\.css\?v=20261123marble5/);
- assert.match(page,/app\.mjs\?v=20261123polish1/);
+ assert.match(page,/app\.mjs\?v=20261123salary1/);
  assert.ok(page.indexOf('ui-refresh.css')>page.indexOf('gameplay-upgrades.css'));
  assert.match(css,/\.mm-gamewrap \.mm-sidebar\{grid-column:1;grid-row:1/);
  assert.match(css,/@media\(max-width:940px\)/);
@@ -79,7 +79,7 @@ test('dice actions, travel actions, loans, and liquidation remain connected',()=
 
 test('premium cityscape, dice art and purchase cards load in visual polish layer',()=>{
  const theme=read('public/marble/visual-polish.css');
- assert.match(page,/visual-polish\.css\?v=20261123polish1/);
+ assert.match(page,/visual-polish\.css\?v=20261123salary1/);
  assert.ok(page.indexOf('visual-polish.css')>page.indexOf('ui-refresh.css'));
  assert.match(app,/mm-stage-skyline/);
  assert.match(app,/mm-turn-badge/);
@@ -89,4 +89,20 @@ test('premium cityscape, dice art and purchase cards load in visual polish layer
  assert.match(theme,/\.mm-gamewrap \.mm-board-frame\{/);
  assert.match(theme,/\.mm-decision-actions \.mm-center-actions:has\(\[data-action="buy"\]\)/);
  assert.match(theme,/prefers-reduced-motion:reduce/);
+});
+
+test('salary amount and net payout are visible on start tile, top bar and action result',()=>{
+ const theme=read('public/marble/visual-polish.css');
+ const engine=read('public/marble/engine.mjs');
+ assert.match(engine,/PASS_BONUS=220/);
+ assert.match(engine,/salaryLaps=Math\.max/);
+ assert.match(engine,/salaryRepayment=/);
+ assert.match(engine,/moneyChanges,salary,message/);
+ assert.match(app,/mm-salary-chip/);
+ assert.match(app,/mm-start-salary/);
+ assert.match(app,/mm-salary-reward/);
+ assert.match(app,/mm-action-salary/);
+ assert.match(app,/PASS_BONUS/);
+ assert.match(theme,/\.mm-start-salary/);
+ assert.match(theme,/\.mm-salary-reward/);
 });
