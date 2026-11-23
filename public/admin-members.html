@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#fff8ef">
+<title>모여게임즈 · 통합 회원 관리</title>
+<style>
+:root{font-family:system-ui,'Malgun Gothic',sans-serif;color:#413647;background:#fff7ef;font-synthesis:none}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;padding:28px 18px 60px;background:radial-gradient(circle at 90% 4%,#ffe7de,transparent 28%),radial-gradient(circle at 0% 35%,#eaf1fc,transparent 36%),#fff9f3}
+main{max-width:1200px;margin:0 auto}a{color:#ad5967;text-decoration:none;font-weight:700}a:hover{text-decoration:underline}
+.breadcrumb{display:flex;flex-wrap:wrap;align-items:center;gap:13px;font-size:13px;margin-bottom:16px}
+.hero{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:23px}.eyebrow{font-size:12px;letter-spacing:.14em;font-weight:900;color:#cd7385}
+h1{margin:5px 0 8px;font-size:clamp(26px,4vw,36px);letter-spacing:-1.6px}h2{font-size:17px;margin:0 0 14px}
+p{color:#807782;font-size:13px;line-height:1.8;margin:5px 0}small{font-size:12px;color:#928792}
+.panel{background:#fff;border:1px solid #f0e5e0;border-radius:23px;padding:22px;box-shadow:0 14px 42px #5a3d5620;margin-bottom:18px}
+.key-row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.key-row label{flex:1;min-width:230px}
+label{display:grid;gap:7px;font-size:12px;font-weight:850}input,select{height:43px;border:1px solid #e4d7df;border-radius:12px;padding:9px 12px;background:white;color:#463c49;font-size:14px;width:100%;outline:none}
+input:focus,select:focus{border-color:#d57f9b;box-shadow:0 0 0 3px #fbe9f0}
+button{font:inherit;font-size:13px;font-weight:850;cursor:pointer;padding:12px 16px;border-radius:11px;border:1px solid transparent;background:#d66c83;color:white}
+button:hover{filter:brightness(.97)}button:disabled{opacity:.55;cursor:progress}
+button.subtle{background:#fff1f0;color:#ae536d;border-color:#f1dce1}button.small{padding:7px 10px;font-size:12px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-top:19px}.controls label{flex:1;min-width:190px}.controls .status-select{flex:0 1 195px}
+.message{margin:14px 0 0;padding:12px 14px;border-radius:12px;background:#f0f5ff;color:#4b5b8f;font-size:13px}.message.error{background:#fff0ef;color:#ad4b50}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:17px}
+.metric{background:white;border-radius:16px;padding:16px 19px;border:1px solid #f0e5e0}.metric strong{display:block;font-size:27px;font-weight:900}.metric span{font-size:12px;color:#837b85}
+.directory-title{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.table-scroll{overflow:auto;border:1px solid #eee2e7;border-radius:14px;margin-top:13px}
+table{width:100%;min-width:1070px;border-collapse:collapse;font-size:12px;text-align:left}thead{background:#faf1f3}th{padding:14px 11px;color:#776b77;font-size:11px;white-space:nowrap}td{padding:13px 11px;border-top:1px solid #f2edf0;vertical-align:middle}tbody tr:hover{background:#fffaf9}
+.name{font-weight:850;color:#463649;font-size:13px}.user-id{margin-top:3px;color:#928592;font-size:11px}.muted{color:#a59aa2}.pill{display:inline-flex;align-items:center;border-radius:100px;padding:5px 9px;background:#eaf7ef;color:#367d5b;font-weight:850;font-size:11px;white-space:nowrap}
+.pill.wait{background:#fff3df;color:#9a702e}.pill.off{background:#f3eef2;color:#857480}.pill.danger{background:#fff0ef;color:#bd5763}
+.escape-cell{display:flex;flex-direction:column;align-items:start;gap:6px}.empty{text-align:center;color:#928792;padding:30px 12px}
+.footnote{margin-top:14px;font-size:12px;color:#847c83}.footnote strong{color:#594657}
+@media(max-width:640px){.hero{display:block}.panel{padding:17px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.key-row button{width:100%}.metric strong{font-size:22px}}
+</style>
+</head>
+<body>
+<main>
+<nav class="breadcrumb" aria-label="관리자 탐색"><a href="/">← 모여게임즈</a><a href="/admin.html">가입번호 발급</a><a href="/admin-escape.html">방탈출 승인 관리</a></nav>
+<section class="hero"><div><div class="eyebrow">MOYEO GAMES · ADMIN</div><h1>회원 관리</h1><p>가입 현황과 마지막 로그인, 게임별 이용 권한을 한눈에 확인하세요.</p></div></section>
+<section class="panel" aria-label="관리자 인증 및 검색">
+ <div class="key-row">
+  <label for="adminKey">운영자 인증키<input id="adminKey" type="password" minlength="24" autocomplete="off" placeholder="Render 환경변수 MOYEO_ADMIN_KEY"></label>
+  <button id="load" type="button">회원 목록 조회</button>
+ </div>
+ <div class="controls">
+  <label for="search">회원 검색<input id="search" type="search" placeholder="닉네임 또는 아이디" autocomplete="off"></label>
+  <label for="filter" class="status-select">가입 상태<select id="filter"><option value="all">전체 회원 및 초대</option><option value="registered">가입 완료</option><option value="invited">초대 대기</option><option value="expired">초대 만료</option></select></label>
+  <button id="refresh" type="button" class="subtle">새로고침</button>
+ </div>
+ <div id="message" class="message" role="status" aria-live="polite">운영자 인증키를 입력한 뒤 회원 목록 조회를 누르세요.</div>
+</section>
+<section class="metrics" aria-label="회원 통계">
+ <div class="metric"><strong id="total">—</strong><span>가입 완료</span></div>
+ <div class="metric"><strong id="invited">—</strong><span>초대 대기</span></div>
+ <div class="metric"><strong id="expired">—</strong><span>초대 만료</span></div>
+ <div class="metric"><strong id="escape">—</strong><span>방탈출 승인 회원</span></div>
+</section>
+<section class="panel" aria-label="회원 목록">
+ <div class="directory-title"><div><h2>회원 목록</h2><p>회원과 미사용 초대번호의 발급 대상이 함께 표시됩니다. 초대번호 원문은 노출하지 않습니다.</p></div><small id="visibleCount" aria-live="polite">조회 전</small></div>
+ <div class="table-scroll" role="region" aria-label="회원 권한 표" tabindex="0"><table><thead><tr><th scope="col">드립대학 닉네임 / 아이디</th><th scope="col">가입일 / 초대일</th><th scope="col">마지막 로그인</th><th scope="col">가입 상태</th><th scope="col">방탈출 승인</th><th scope="col">모여게임지옥</th><th scope="col">테트리스</th><th scope="col">모여로직</th><th scope="col">온라인 대전</th></tr></thead><tbody id="members"><tr><td colspan="9" class="empty">관리자 인증 후 목록이 표시됩니다.</td></tr></tbody></table></div>
+ <p class="footnote"><strong>권한 안내:</strong> 방탈출은 운영자의 별도 승인이 필요합니다. 나머지 게임은 가입·로그인만 하면 이용할 수 있으며, 개별 승인 기능은 없습니다. 모여게임지옥 맛보기는 비회원도 이용할 수 있습니다. 이전 가입자의 마지막 로그인 기록은 기능 도입 전 데이터가 없어 표시되지 않을 수 있습니다.</p>
+</section>
+</main>
+<script>
+const el=id=>document.getElementById(id);
+let allMembers=[],loaded=false;
+const safeDate=value=>{if(!value)return '기록 없음';const date=new Date(Number(value));return Number.isNaN(date.getTime())?'기록 없음':new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(date);};
+function pill(text,kind=''){const node=document.createElement('span');node.className='pill '+kind;node.textContent=text;return node;}
+function statusPill(row){return row.registrationStatus==='registered'?pill('가입 완료'):row.registrationStatus==='invited'?pill('초대 대기','wait'):pill('초대 만료','danger');}
+function accessPill(row,key){return row.gameAccess&&row.gameAccess[key]?pill('이용 가능'):pill('가입 후 이용','off');}
+function cell(parent,content,cls=''){const td=document.createElement('td');if(cls)td.className=cls;if(typeof content==='string')td.textContent=content;else td.append(content);parent.append(td);return td;}
+function setMessage(message,isError=false){el('message').textContent=message;el('message').classList.toggle('error',isError);}
+function render(){
+ const query=el('search').value.trim().toLocaleLowerCase('ko'),filter=el('filter').value;
+ const list=allMembers.filter(row=>(filter==='all'||row.registrationStatus===filter)&&(!query||[row.dripNickname,row.username].some(v=>String(v||'').toLocaleLowerCase('ko').includes(query))));
+ const body=el('members');body.replaceChildren();
+ if(!list.length){const tr=document.createElement('tr');cell(tr,loaded?'검색 조건에 맞는 회원이 없습니다.':'관리자 인증 후 목록이 표시됩니다.','empty').colSpan=9;body.append(tr);}
+ for(const row of list){
+  const tr=document.createElement('tr');
+  const name=document.createElement('div');name.className='name';name.textContent=row.dripNickname;
+  const username=document.createElement('div');username.className='user-id';username.textContent=row.username?'아이디: '+row.username:'아이디: 미등록';
+  const identity=document.createElement('div');identity.append(name,username);cell(tr,identity);
+  const dated=document.createElement('div');dated.textContent=safeDate(row.registeredAt||row.invitedAt);
+  if(row.registrationStatus!=='registered'){const expiry=document.createElement('div');expiry.className='user-id';expiry.textContent='만료: '+safeDate(row.inviteExpiresAt);dated.append(expiry);}
+  cell(tr,dated);cell(tr,row.lastLoginAt?safeDate(row.lastLoginAt):'기록 없음','muted');
+  cell(tr,statusPill(row));
+  const escape=document.createElement('div');escape.className='escape-cell';
+  escape.append(row.registrationStatus==='registered'?(row.escapeApproved?pill('승인됨'):pill('미승인','wait')):pill('가입 후 승인','off'));
+  if(row.registrationStatus==='registered'){
+   const toggle=document.createElement('button');toggle.type='button';toggle.className='small subtle';
+   toggle.textContent=row.escapeApproved?'승인 철회':'이용 승인';
+   toggle.addEventListener('click',()=>updateEscape(row,toggle));escape.append(toggle);
+  }
+  cell(tr,escape);
+  for(const game of ['gamehell','tetris','logic','multiplayer'])cell(tr,accessPill(row,game));
+  body.append(tr);
+ }
+ el('visibleCount').textContent=loaded?'표시 '+list.length+'명 / 전체 '+allMembers.length+'건':'조회 전';
+}
+function updateCounts(){
+ const count=status=>allMembers.filter(x=>x.registrationStatus===status).length;
+ el('total').textContent=count('registered');el('invited').textContent=count('invited');el('expired').textContent=count('expired');
+ el('escape').textContent=allMembers.filter(x=>x.escapeApproved).length;
+}
+async function adminRequest(url,options={}){
+ const key=el('adminKey').value;
+ if(!key)throw Error('운영자 인증키를 입력하세요.');
+ const response=await fetch(url,{...options,headers:{Authorization:'Bearer '+key,...(options.headers||{})},cache:'no-store'});
+ const json=await response.json();
+ if(!response.ok)throw Error(json.error||'관리자 요청에 실패했습니다.');
+ return json;
+}
+async function load(){
+ const button=el('load');button.disabled=true;el('refresh').disabled=true;
+ try{const data=await adminRequest('/api/admin/members');allMembers=Array.isArray(data.members)?data.members:[];loaded=true;updateCounts();render();setMessage('회원 기록을 조회했습니다. 최신 정보가 필요하면 새로고침하세요.');}
+ catch(err){setMessage(err.message,true);}
+ finally{button.disabled=false;el('refresh').disabled=false;}
+}
+async function updateEscape(row,button){
+ const approve=!row.escapeApproved;
+ if(!approve&&!confirm(row.dripNickname+'님의 방탈출 승인을 철회하시겠습니까?'))return;
+ button.disabled=true;
+ try{
+  await adminRequest('/api/admin/escape-access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:row.username,approve})});
+  await load();setMessage(row.dripNickname+'님의 방탈출 '+(approve?'승인을 완료했습니다.':'승인을 철회했습니다.'));
+ }catch(err){setMessage(err.message,true);button.disabled=false;}
+}
+el('load').addEventListener('click',load);el('refresh').addEventListener('click',load);
+el('search').addEventListener('input',render);el('filter').addEventListener('change',render);
+el('adminKey').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();load();}});
+</script>
+</body>
+</html>
