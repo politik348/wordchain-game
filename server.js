@@ -576,10 +576,18 @@ const handler=async(req,res)=>{
       const memberRoots=['/gamehell','/tetris','/logic'];
       const memberRoot=memberRoots.find(root=>pathname===root||pathname.startsWith(root+'/'));
       const protectedMember=Boolean(memberRoot);
+      const gamehellEntrypoint=pathname==='/gamehell'||pathname==='/gamehell/'||pathname==='/gamehell/index.html';
+      // The three-mode Game Hell taste page is explicitly public. Its own client
+      // logic only exposes drill, hurdle, and chain and keeps trial saves separate.
+      const publicGamehellTrial=gamehellEntrypoint&&u.searchParams.get('trial')==='1';
+      // These exact assets are also used by the public taste page: HTML for the
+      // full 13-game version is still protected unless the account is signed in.
+      const publicGamehellAsset=memberRoot==='/gamehell'&&(
+        new Set(['/gamehell/gamehell.css','/gamehell/gamehell.js','/gamehell/characters.js']).has(pathname)
+        || /^\/gamehell\/assets\/characters\/(?:cheese|peach|mint|space|night|sunny|cloudy|royal)\.svg$/.test(pathname)
+      );
       if(protectedEscape)await requireEscapeAccess(req);
-      if(protectedMember&&!await getAuthenticatedAccount(req)){
-        // Standalone games require a valid signed-in session, including direct assets.
-        // Preserve mode and query parameters such as ?cat=1 and ?trial=1.
+      if(protectedMember&&!publicGamehellTrial&&!publicGamehellAsset&&!await getAuthenticatedAccount(req)){
         if(pathname===memberRoot||pathname===memberRoot+'/'||pathname===memberRoot+'/index.html'){
           const next=memberRoot+'/index.html'+u.search;
           res.writeHead(302,{'Location':'/?auth=login&next='+encodeURIComponent(next),'Cache-Control':'private, no-store'});
