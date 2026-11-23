@@ -147,6 +147,7 @@ test('movement defaults to readable timing and offers persistent pace selection'
  assert.match(app,/:'relaxed';/);
  assert.match(app,/relaxed:\{dice:1050,step:360,result:2600,other:2050,ai:1650\}/);
  assert.match(app,/const moveDelay=\(\)=>sceneTiming\(\)\.step/);
+ assert.match(app,/if\(reducedMotion\|\|!effectsOn\)return \{dice:220,step:35,result:1950,other:1650,ai:1250\}/);
  assert.match(app,/sceneTimer=setTimeout\(finishScene,sceneTiming\(\)\.result\)/);
  assert.match(app,/sceneTiming\(\)\.ai/);
  assert.match(app,/case 'cyclePace':playbackPace=/);
