@@ -69,7 +69,7 @@ test('never show interactive decision dialog to AI or online spectators or durin
 });
 test('dice actions, travel actions, loans, and liquidation remain connected',()=>{
  assert.match(app,/mm-dice-console/);
- assert.match(app,/data-action="roll"/);
+ assert.match(app,/button\('roll','🎲 주사위 굴리기'/);
  assert.match(app,/decisionModal\(s\)/);
  assert.match(app,/liquidationPopup\(s\)/);
  assert.match(app,/mm-action-ribbon/);
