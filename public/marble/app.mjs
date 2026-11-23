@@ -354,10 +354,12 @@ function render(){
  if(introActive&&s&&s.phase!=='finished')root.insertAdjacentHTML('beforeend',marbleIntroMarkup());
  if(s?.phase==='liquidation'&&(!onlineRoom||current(s).id===SID)&&!introActive)
   root.insertAdjacentHTML('beforeend',liquidationPopup(s));
- if(s&&hasHumanDecision(s)){
+ const showDecision=Boolean(s&&hasHumanDecision(s));
+ if(showDecision){
   root.insertAdjacentHTML('beforeend',decisionModal(s));
   root.querySelector('.mm-decision-actions .mm-btn:not(:disabled),.mm-decision-actions .mm-fortune-card:not(:disabled)')?.focus({preventScroll:true});
  }
+ document.body.classList.toggle('mm-decision-open',showDecision);
  updateClock();
  const showCatResult=catChallenge&&mode==='ai'&&s?.phase==='finished'&&!s.catResultDismissed&&window.MoyeoCatResult?.overlay;
  if(showCatResult){
