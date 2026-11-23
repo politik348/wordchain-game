@@ -1108,7 +1108,7 @@ membership=createMembershipUI({
  },
  afterLogin(){
   const params=new URLSearchParams(location.search),next=params.get('next');
-  if(next&&/^\/(?:marble\/index\.html|escape-access\/index\.html)(?:\?[^#]*)?(?:#.*)?$/.test(next)){location.href=next;return;}
+  if(next&&/^\/(?:marble\/index\.html|gamehell\/index\.html|escape-access\/index\.html)(?:\?[^#]*)?(?:#.*)?$/.test(next)){location.href=next;return;}
   refreshRooms(view==='detail'?selection:'').then(()=>render());
  }
 });
