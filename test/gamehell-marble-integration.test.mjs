@@ -24,7 +24,7 @@ test('Marble v3 preserves isolated Cat Challenge entrypoint and multiplayer mode
  assert.match(marble,/mmReturnLink/);
  assert.match(readFileSync(new URL('../public/marble/index.html',import.meta.url),'utf8'),/id="mmReturnLink"/);
 });
-test('Game Hell, Tetris and Logic require membership on all direct entrypoints',async()=>{
+test('Game Hell full version, Tetris and Logic require membership while the 3-game arcade trial stays public',async()=>{
  if(server.listening)return;
  server.listen(0,'127.0.0.1');
  await once(server,'listening');
@@ -34,7 +34,6 @@ test('Game Hell, Tetris and Logic require membership on all direct entrypoints',
    ['/gamehell','/gamehell/index.html'],
    ['/gamehell/','/gamehell/index.html'],
    ['/gamehell/index.html','/gamehell/index.html'],
-   ['/gamehell/index.html?trial=1','/gamehell/index.html?trial=1'],
    ['/tetris','/tetris/index.html'],
    ['/tetris/','/tetris/index.html'],
    ['/tetris/index.html','/tetris/index.html'],
@@ -50,7 +49,25 @@ test('Game Hell, Tetris and Logic require membership on all direct entrypoints',
    assert.equal(redirect.searchParams.get('next'),next);
    assert.match(response.headers.get('cache-control')||'',/no-store/);
   }
-  for(const path of ['/gamehell/gamehell.css','/gamehell/gamehell.js','/gamehell/characters.js','/gamehell/assets/characters/cheese.svg','/tetris/missing.js','/logic/missing.js']){
+  // Anonymous visitors are allowed to play only the 3-game arcade taste mode.
+  for(const path of ['/gamehell/index.html?trial=1','/gamehell/?trial=1','/gamehell?trial=1']){
+   const response=await fetch(base+path,{redirect:'manual'});
+   assert.equal(response.status,200,path);
+   assert.match(await response.text(),/모여게임지옥/);
+   assert.match(response.headers.get('cache-control')||'',/no-store/);
+  }
+  // These resources must be public or the anonymous trial page cannot render.
+  for(const path of ['/gamehell/gamehell.css','/gamehell/gamehell.js','/gamehell/characters.js','/gamehell/assets/characters/cheese.svg']){
+   const response=await fetch(base+path);
+   assert.equal(response.status,200,path);
+   assert.ok((await response.text()).length>300,path);
+  }
+  for(const path of ['/gamehell/index.html?trial=0','/gamehell/index.html?trial=true']){
+   const response=await fetch(base+path,{redirect:'manual'});
+   assert.equal(response.status,302,path);
+   assert.equal(new URL(response.headers.get('location'),base).searchParams.get('auth'),'login');
+  }
+  for(const path of ['/gamehell/not-a-trial-file.js','/tetris/missing.js','/logic/missing.js']){
    const response=await fetch(base+path);
    assert.equal(response.status,401,path);
    assert.match((await response.json()).error,/회원가입·로그인/);
