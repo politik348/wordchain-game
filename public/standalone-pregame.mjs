@@ -39,9 +39,9 @@ function main(){
  const defaults=game==='tetris'?{difficulty:'normal',aiDifficulty:'beginner'}:game==='logic'?{size:'5'}:{minigame:'drill',duration:'45'};
  const valid=game==='tetris'?{difficulty:['easy','normal','hard'],aiDifficulty:['beginner','intermediate','advanced']}:game==='logic'?{size:['5','10','15']}:{minigame:arcadeModes.map(x=>x[0]),duration:['45','90','0']};
  const values=restore(game,defaults,valid);
- const allowedModes=game==='tetris'?[cat?'cat':'solo']:['solo'];
+ const allowedModes=game==='tetris'?['solo','cat']:['solo'];
  const config=defs[game];
- const mode=allowedModes[0];
+ let mode=cat?'cat':'solo';
  const shell=document.createElement('div');
  shell.className='pg-standalone-shell';shell.id='pgStandaloneShell';
  document.body.append(shell);
@@ -73,7 +73,7 @@ function main(){
   if(started)return;
   if(game==='tetris'){
    if(typeof window.MOYEO_TETRIS_START!=='function')return;
-   window.MOYEO_TETRIS_START({mode:cat?'versus':'solo',difficulty:values.difficulty,aiDifficulty:values.aiDifficulty||'beginner'});
+   window.MOYEO_TETRIS_START({mode:mode==='cat'?'versus':'solo',difficulty:values.difficulty,aiDifficulty:values.aiDifficulty||'beginner'});
   }else if(game==='logic'){
    const size=document.getElementById('size');
    if(!size)return;
@@ -95,7 +95,9 @@ function main(){
  }
  shell.addEventListener('click',event=>{
   const b=event.target.closest('button');if(!b)return;
-  if(b.dataset.pgDifficulty&&cat&&valid.aiDifficulty?.includes(b.dataset.pgDifficulty)){
+  if(b.dataset.pgMode&&allowedModes.includes(b.dataset.pgMode)){
+   mode=b.dataset.pgMode;render();
+  }else if(b.dataset.pgDifficulty&&mode==='cat'&&valid.aiDifficulty?.includes(b.dataset.pgDifficulty)){
    values.aiDifficulty=b.dataset.pgDifficulty;
    try{localStorage.setItem('moyeo-pregame-'+game,JSON.stringify(values));}catch{}
    render();
