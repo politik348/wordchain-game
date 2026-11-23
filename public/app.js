@@ -222,7 +222,7 @@ function updateRoom(next) {
  deferredRoomRender=false;
  render();
 }
-const GENERAL_GAME_ILLUSTRATIONS=new Set(['gamehell','tetris','logic','rummikub','marble','mafia']);
+const GENERAL_GAME_ILLUSTRATIONS=new Set(['gamehell','tetris','logic','rummikub','marble','mafia','omok','yut','doodle','bell','liar','wordchain']);
 function card(g){
  const hasAnimalArt=GENERAL_GAME_ILLUSTRATIONS.has(g.id);
  const imageClass=hasAnimalArt?' game-illust-animal game-animal-'+g.id:'';
