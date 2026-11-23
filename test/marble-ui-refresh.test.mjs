@@ -106,3 +106,31 @@ test('salary amount and net payout are visible on start tile, top bar and action
  assert.match(theme,/\.mm-start-salary/);
  assert.match(theme,/\.mm-salary-reward/);
 });
+
+test('human can pick which protective toll card to spend at the decision dialog',()=>{
+ const stateWithCards=state('tollDefense','tollDefense');
+ stateWithCards.pending.charge=550;
+ stateWithCards.players[0].angel=1;
+ stateWithCards.players[0].discountCards=2;
+ const out=createHarness(stateWithCards,{});
+ assert.equal(out.visible,true);
+ assert.match(out.html,/DEFENSE CHOICE/);
+ assert.match(out.html,/mm-toll-defense-actions/);
+ assert.match(out.html,/data-action="payToll"/);
+ assert.match(out.html,/data-action="useAngel"/);
+ assert.match(out.html,/data-action="useDiscount"/);
+ assert.match(out.html,/550M/);
+ assert.equal(createHarness(stateWithCards,{scene:{event:{}}}).visible,false);
+ assert.equal(createHarness(stateWithCards,{onlineRoom:{}}).visible,true);
+});
+test('fortune cards reveal their full effect and await explicit confirmation in local matches',()=>{
+ const theme=read('public/marble/visual-polish.css');
+ assert.match(app,/const fortuneReveal=card/);
+ assert.match(app,/card\.title/);
+ assert.match(app,/card\.amount/);
+ assert.match(app,/card\?'확인하고 계속/);
+ assert.match(app,/const hold=ev\.ai\?3000:onlineRoom\?5000:null/);
+ assert.match(app,/if\(hold!==null\)sceneTimer=setTimeout/);
+ assert.match(theme,/\.mm-fortune-detail/);
+ assert.match(theme,/\.mm-toll-defense-actions/);
+});
