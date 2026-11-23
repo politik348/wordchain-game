@@ -50,6 +50,8 @@ test('Logic preserves puzzle controls, stages and local progress',()=>{
  assert.match(logic,/15×15 도전/);
  assert.match(logic,/모여로직/);
  assert.match(logic,/logic-home-link/);
+ assert.doesNotMatch(logic,/\.cell:nth-child\(5n\)/,'Clue elements must not create random dark vertical cell borders');
+ assert.match(logic,/\.cell\{width:var\(--cell\);height:var\(--cell\);background:#fff;border:1px solid #e2e8f0/);
  new Script(inline(logic));
 });
 
