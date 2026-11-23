@@ -76,3 +76,17 @@ test('dice actions, travel actions, loans, and liquidation remain connected',()=
  assert.match(app,/data-land=/);
  assert.match(app,/marbleCatResult\(s\)/);
 });
+
+test('premium cityscape, dice art and purchase cards load in visual polish layer',()=>{
+ const theme=read('public/marble/visual-polish.css');
+ assert.match(page,/visual-polish\\.css\\?v=20261123polish1/);
+ assert.ok(page.indexOf('visual-polish.css')>page.indexOf('ui-refresh.css'));
+ assert.match(app,/mm-stage-skyline/);
+ assert.match(app,/mm-turn-badge/);
+ assert.match(app,/mm-decision-art-inner/);
+ assert.match(app,/mm-dice-flourish/);
+ assert.match(theme,/\\.mm-stage-skyline\\{/);
+ assert.match(theme,/\\.mm-gamewrap \\.mm-board-frame\\{/);
+ assert.match(theme,/\\.mm-decision-actions \\.mm-center-actions:has\\(\\[data-action="buy"\\]\\)/);
+ assert.match(theme,/prefers-reduced-motion:reduce/);
+});
