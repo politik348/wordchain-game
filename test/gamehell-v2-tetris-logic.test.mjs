@@ -5,7 +5,7 @@ import {runInNewContext, Script} from 'node:vm';
 
 const read=path=>readFileSync(new URL('../public/'+path,import.meta.url),'utf8');
 const app=read('app.js'),hub=read('cat-hub.mjs');
-const tetris=read('tetris/index.html'),logic=read('logic/index.html');
+const tetris=read('tetris/index.html'),logic=read('logic/index.html'),pregame=read('standalone-pregame.mjs');
 const hell=read('gamehell/index.html'),hellJs=read('gamehell/gamehell.js');
 const chars=read('gamehell/characters.js');
 const inline=html=>{
@@ -26,7 +26,7 @@ test('Tetris and Logic are separate standalone games and home shows twelve',()=>
  assert.ok(app.includes('${renderCatFeatured()}${GAMES.map(card)'));
 });
 
-test('Cat hub contains Tetris AI entry and regular Tetris stays solo',()=>{
+test('Tetris supports Cat Challenge and solo from either the home page or Cat hub',()=>{
  assert.match(hub,/tetris/);
  assert.match(hub,/6 GAMES/);
  assert.match(hub,/6가지 고양이 대전/);
@@ -34,8 +34,12 @@ test('Cat hub contains Tetris AI entry and regular Tetris stays solo',()=>{
  assert.match(tetris,/id="solo"/);
  assert.match(tetris,/id="versus"/);
  assert.match(tetris,/const catChallenge=new URLSearchParams\(location\.search\)\.get\('cat'\)==='1'/);
- assert.match(tetris,/\$\('versus'\)\.hidden=!catChallenge/);
- assert.match(tetris,/\$\('solo'\)\.hidden=catChallenge/);
+ assert.doesNotMatch(tetris,/\$\('versus'\)\.hidden=!catChallenge/);
+ assert.doesNotMatch(tetris,/\$\('solo'\)\.hidden=catChallenge/);
+ assert.match(tetris,/<button id="versus" class="btn">/);
+ assert.match(pregame,/allowedModes=game==='tetris'\?\['solo','cat'\]/);
+ assert.match(pregame,/mode=mode==='cat'\?'versus':'solo'/);
+ assert.match(pregame,/b\.dataset\.pgMode&&allowedModes\.includes/);
  assert.match(tetris,/window\.MOYEO_TETRIS_START=options=>/);
  assert.match(tetris,/standalone-pregame\.mjs/);
  assert.match(tetris,/tetrisBackLink/);
