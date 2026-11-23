@@ -114,7 +114,7 @@ async function adminRequest(url,options={}){
 async function load(){
  const button=el('load');button.disabled=true;el('refresh').disabled=true;
  try{const data=await adminRequest('/api/admin/members');allMembers=Array.isArray(data.members)?data.members:[];loaded=true;updateCounts();render();setMessage('회원 기록을 조회했습니다. 최신 정보가 필요하면 새로고침하세요.');}
- catch(err){setMessage(err.message,true);}
+ catch(err){allMembers=[];loaded=false;render();for(const id of ['total','invited','expired','escape'])el(id).textContent='—';setMessage(err.message,true);}
  finally{button.disabled=false;el('refresh').disabled=false;}
 }
 async function updateEscape(row,button){
