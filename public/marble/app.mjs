@@ -378,7 +378,7 @@ function render(){
  const s=getState();if(s)consumeEvents(s);
  if(onlineRoom){if(!onlineRoom.state)renderWaiting();else renderGame(onlineRoom.state);}else if(localGame)renderGame(localGame);else renderLobby();
  if(introActive&&s&&s.phase!=='finished')root.insertAdjacentHTML('beforeend',marbleIntroMarkup());
- if(s?.phase==='liquidation'&&(!onlineRoom||current(s).id===SID)&&!introActive)
+ if(s?.phase==='liquidation'&&(!onlineRoom||current(s).id===SID)&&!introActive&&!scene)
   root.insertAdjacentHTML('beforeend',liquidationPopup(s));
  const showDecision=Boolean(s&&hasHumanDecision(s));
  if(showDecision){
