@@ -413,3 +413,79 @@ body:has(.mm-gamewrap) .mm-bg-decoration{opacity:.3;filter:blur(17px)}
  .mm-topgame .mm-salary-chip{font-size:9px;white-space:normal}
  .mm-start-salary{font-size:7px}
 }
+
+/* Readable fortune reveal and player-controlled toll-defense cards. */
+.mm-scene-card.mm-fortune-reveal{
+ pointer-events:auto;
+ width:min(92%,420px);max-height:min(94%,490px);
+ overflow-y:auto;overscroll-behavior:contain;
+ background:linear-gradient(155deg,#fffaf0,#fbe9fc);
+ border:3px solid #dab6ee;
+ box-shadow:0 14px 38px #442b6070,0 4px 0 #cda6e2;
+ padding:13px 13px 12px;
+}
+.mm-scene-card.mm-fortune-reveal .mm-scene-icon{font-size:30px;animation:none}
+.mm-scene-card.mm-fortune-reveal>strong{font-size:clamp(13px,1.8vw,17px)}
+.mm-scene-card.mm-fortune-reveal .mm-fortune-detail{
+ margin:10px auto 9px;padding:13px 15px;
+ display:grid;gap:7px;justify-items:center;
+ border:2px solid #f4d5ea;border-radius:16px;
+ background:linear-gradient(135deg,#fff9ec,#fffdfd 45%,#f3eaff);
+ box-shadow:0 4px 0 #ead6e4;
+ line-height:1.55;
+}
+.mm-fortune-detail>span{
+ display:block;letter-spacing:1.5px;
+ color:#ad78aa;background:#fff2fc;border-radius:20px;
+ padding:3px 10px;font-size:10px;font-weight:950;
+}
+.mm-fortune-detail>b{color:#613b6e;font-size:clamp(16px,2.25vw,21px);line-height:1.4}
+.mm-fortune-detail>p{margin:0;font-size:clamp(11px,1.35vw,14px);color:#8b608b;font-weight:900}
+.mm-scene-card.mm-fortune-reveal .mm-fortune-detail>small{
+ display:block!important;margin:0!important;font-size:10px!important;
+ color:#917e99;line-height:1.45;font-weight:750;
+}
+.mm-scene-card.mm-fortune-reveal .mm-scene-skip{
+ background:linear-gradient(120deg,#ad72d4,#db83b7);
+ color:#fff;border:2px solid #fff;border-radius:12px;
+ box-shadow:0 4px 0 #9b63be;
+ padding:11px 20px;min-width:170px;min-height:42px;
+ margin:5px auto 2px;font-size:13px;font-weight:1000;
+}
+.mm-scene-card.mm-fortune-reveal .mm-scene-skip:hover{transform:translateY(-2px)}
+.mm-scene-card.mm-fortune-reveal .mm-scene-skip:focus-visible{
+ outline:3px solid #fff;outline-offset:3px
+}
+.mm-decision-actions .mm-toll-defense-actions{
+ display:grid;grid-template-columns:1fr;
+ width:100%;max-width:440px;margin-inline:auto;gap:9px;
+}
+.mm-decision-actions .mm-toll-defense-actions .mm-btn{
+ min-height:53px;min-width:0;width:100%;font-weight:1000;
+ border:2px solid #e5d7e7;border-radius:15px;font-size:clamp(11px,1.3vw,14px);
+ box-shadow:0 3px 0 #e9dbe4;text-align:center;white-space:normal;
+}
+.mm-decision-actions .mm-toll-defense-actions [data-action="useAngel"]{
+ background:linear-gradient(115deg,#f9ca7b,#f1a967)!important;
+ color:#583a2b!important;border-color:#f8e5b5!important;
+}
+.mm-decision-actions .mm-toll-defense-actions [data-action="useDiscount"]{
+ background:linear-gradient(115deg,#c6e9ff,#d2ddff)!important;color:#435977!important;border-color:#bbd6ef!important;
+}
+.mm-decision-actions .mm-toll-defense-actions [data-action="payToll"]{
+ background:#f9f5f9!important;color:#6c5b76!important;
+}
+@media(max-width:650px){
+ .mm-scene-card.mm-fortune-reveal{width:95%;max-height:93%;padding:8px 9px 10px;overflow-y:auto}
+ .mm-scene-card.mm-fortune-reveal .mm-scene-icon{font-size:23px}
+ .mm-scene-card.mm-fortune-reveal>strong{font-size:12px}
+ .mm-scene-card.mm-fortune-reveal .mm-fortune-detail{padding:8px;gap:4px;margin:5px auto 7px}
+ .mm-fortune-detail>b{font-size:15px}
+ .mm-fortune-detail>p{font-size:11px}
+ .mm-scene-card.mm-fortune-reveal .mm-scene-skip{min-height:39px;padding:8px 12px;font-size:12px}
+ .mm-decision-actions .mm-toll-defense-actions{gap:6px}
+ .mm-decision-actions .mm-toll-defense-actions .mm-btn{min-height:43px;font-size:11px}
+}
+@media(prefers-reduced-motion:reduce){
+ .mm-scene-card.mm-fortune-reveal .mm-scene-skip{transition:none!important}
+}
