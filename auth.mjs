@@ -23,6 +23,11 @@ export const accountStorageReady=()=>readyStore() && adminKey().length>=24;
 const nickKey=x=>String(x||'').normalize('NFC').trim().toLocaleLowerCase('ko');
 const nickname=x=>String(x||'').normalize('NFC').trim();
 const publicAccount=x=>x?{id:x.id,username:x.username,dripNickname:x.dripNickname}:null;
+// Escape is the only game with an additional approval gate; others require membership.
+const gameAccess=(member,escapeApproved=false)=>({
+ multiplayer:member,gamehell:member,tetris:member,logic:member,
+ escape:member&&escapeApproved
+});
 function validNick(n){if(n.length<2||n.length>24||/[<>\u0000-\u001f]/.test(n))throw error(400,'드립대학 닉네임은 2~24자로 입력하세요.');}
 function validUser(s){if(!/^[a-z][a-z0-9_-]{3,19}$/.test(s))throw error(400,'아이디는 영문 소문자로 시작하는 4~20자(숫자, _ 및 - 허용)여야 합니다.');}
 function validPassword(s){if(typeof s!=='string'||s.length<10||s.length>128)throw error(400,'비밀번호는 10~128자로 입력하세요.');}
@@ -139,7 +144,7 @@ function adminCheck(req){
  if(!given||!hexEqual(hash(given),hash(wanted)))throw error(403,'관리자 인증이 필요합니다.');
 }
 export async function handleAccountRequest(req,res,pathname){
- if(!pathname.startsWith('/api/auth/')&&!pathname.startsWith('/api/admin/invites')&&pathname!=='/api/escape/access'&&pathname!=='/api/admin/escape-access')return false;
+ if(!pathname.startsWith('/api/auth/')&&!pathname.startsWith('/api/admin/invites')&&pathname!=='/api/admin/members'&&pathname!=='/api/escape/access'&&pathname!=='/api/admin/escape-access')return false;
  try{
   if(pathname==='/api/auth/me'&&req.method==='GET'){
    const account=await getAuthenticatedAccount(req);
@@ -149,6 +154,32 @@ export async function handleAccountRequest(req,res,pathname){
    respond(res,200,await escapeAccessStatus(req));return true;
   }
   if(!accountStorageReady())throw error(503,'회원가입을 위해 영구 저장소와 관리자 인증키 설정이 필요합니다.');
+  if(pathname==='/api/admin/members'&&req.method==='GET'){
+   adminCheck(req);throttle(req,'adminMemberList',100);
+   const members=await readOrWrite(data=>{
+    const registered=data.accounts.map(account=>{
+     const grant=(data.escapeGrants||[]).find(g=>g.accountId===account.id);
+     const approved=Boolean(grant?.approved);
+     return {
+      username:account.username,dripNickname:account.dripNickname,
+      registrationStatus:'registered',registeredAt:account.createdAt||null,
+      lastLoginAt:account.lastLoginAt||null,invitedAt:null,inviteExpiresAt:null,
+      escapeApproved:approved,escapeUpdatedAt:grant?.updatedAt||null,
+      gameAccess:gameAccess(true,approved)
+     };
+    });
+    const nicks=new Set(data.accounts.map(account=>account.nickKey));
+    const invites=(data.invites||[]).filter(x=>!x.usedAt&&!nicks.has(x.nickKey)).map(invite=>({
+     username:null,dripNickname:invite.dripNickname,
+     registrationStatus:invite.expiresAt>Date.now()?'invited':'expired',
+     registeredAt:null,lastLoginAt:null,invitedAt:invite.createdAt||null,
+     inviteExpiresAt:invite.expiresAt||null,escapeApproved:false,
+     escapeUpdatedAt:null,gameAccess:gameAccess(false)
+    }));
+    return [...registered,...invites].sort((a,b)=>(b.registeredAt||b.invitedAt||0)-(a.registeredAt||a.invitedAt||0));
+   });
+   respond(res,200,{members});return true;
+  }
   if(pathname==='/api/admin/escape-access'&&req.method==='GET'){
    adminCheck(req);throttle(req,'adminEscapeList',100);
    const entries=await readOrWrite(data=>data.accounts.map(account=>{
@@ -218,7 +249,8 @@ export async function handleAccountRequest(req,res,pathname){
     if(state.accounts.some(x=>x.username===username))throw error(409,'이미 사용 중인 아이디입니다.');
     if(state.accounts.some(x=>x.nickKey===verified.nickKey))throw error(409,'이미 등록한 드립대학 닉네임입니다.');
     invitation.usedAt=Date.now();
-    const value={id:randomBytes(16).toString('hex'),username,dripNickname:invitation.dripNickname,nickKey:verified.nickKey,salt,passwordHash,createdAt:Date.now()};
+    const now=Date.now();
+    const value={id:randomBytes(16).toString('hex'),username,dripNickname:invitation.dripNickname,nickKey:verified.nickKey,salt,passwordHash,createdAt:now,lastLoginAt:now};
     state.accounts.push(value);return publicAccount(value);
    },true);
    pending.delete(key);
@@ -234,6 +266,7 @@ export async function handleAccountRequest(req,res,pathname){
    const salt=person?.salt||'00000000000000000000000000000000';
    const hashed=await encryptPassword(password.slice(0,129),salt);
    if(!person||!hexEqual(hashed,person.passwordHash))throw error(401,'아이디 또는 비밀번호가 올바르지 않습니다.');
+   await readOrWrite(state=>{const account=state.accounts.find(x=>x.id===person.id);if(account)account.lastLoginAt=Date.now();},true);
    const token=await createSession(person.id);issueCookie(res,token,req);
    respond(res,200,{authenticated:true,account:publicAccount(person)});return true;
   }
