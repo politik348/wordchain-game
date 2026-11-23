@@ -379,3 +379,27 @@ test('v5 online room preserves the selected 20-round length',async()=>{
  const result=await request(`/api/marble/rooms/${room.code}/start`,{sid:host});
  assert.equal(result.state.maxRounds,20);
 });
+test('lap bonus event reports gross amount, automatic loan deduction, and actual received cash',()=>{
+ let s=newGame();s.players[0].position=22;
+ s=applyAction(s,'alice','roll',{},low);
+ assert.equal(s.players[0].cash,START_CASH+PASS_BONUS);
+ assert.deepEqual(s.lastEvent.salary,{laps:1,gross:PASS_BONUS,repayment:0,received:PASS_BONUS});
+ s=newGame();
+ s=applyAction(s,'alice','takeLoan',{},low);
+ s.players[0].position=22;
+ s=applyAction(s,'alice','roll',{},low);
+ assert.deepEqual(s.lastEvent.salary,{laps:1,gross:PASS_BONUS,repayment:PASS_BONUS,received:0});
+ assert.equal(s.players[0].bankDebt,540-PASS_BONUS);
+ s=newGame();
+ s=applyAction(s,'alice','takeLoan',{},low);
+ s.players[0].bankDebt=80;
+ s.players[0].position=22;
+ s=applyAction(s,'alice','roll',{},low);
+ assert.deepEqual(s.lastEvent.salary,{laps:1,gross:PASS_BONUS,repayment:80,received:PASS_BONUS-80});
+ assert.equal(s.players[0].bankDebt,0);
+});
+test('ordinary dice rolls without crossing start do not show a salary reward',()=>{
+ const s=landOn(newGame(),'alice',2);
+ assert.equal(s.lastEvent.salary,null);
+ assert.equal(s.players[0].laps,0);
+});
