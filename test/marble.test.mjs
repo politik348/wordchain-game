@@ -5,7 +5,7 @@ import http from 'node:http';
 import {
  createGame,applyAction,chooseCatAction,surrender,TILES,START_CASH,PASS_BONUS,ISLAND_TURNS,
  BAIL_COST,LEVEL_NAMES,buildingCost,upgradeCost,maxBuildLevel,toll,propertyValue,
- countMonopolies,tourismComplete,olympicCost,netWorth
+ countMonopolies,olympicCost,netWorth
 } from '../public/marble/engine.mjs';
 import {handleMarbleRequest} from '../marble-server.mjs';
 const players=[{id:'alice',name:'앨리스'},{id:'bob',name:'밥'}];
@@ -28,31 +28,33 @@ test('24-slot map, city pairs, scenic tourism and corner spaces',()=>{
  assert.throws(()=>createGame({players:[players[0]]}),/2~4/);
  assert.throws(()=>createGame({players:[players[0],players[0]]}),/중복/);
 });
-test('buy bare land or buy city together with first villa',()=>{
+test('city purchase offers land, villa, building and hotel from the very first turn',()=>{
  let a=newGame();a=landOn(a,'alice',2);
  assert.deepEqual(a.pending,{kind:'purchase',index:2});
  const land=applyAction(a,'alice','buy',{targetLevel:0},low);
  assert.equal(land.properties[2].level,0);assert.equal(land.players[0].cash,START_CASH-125);
- assert.ok(toll(land,2)>0,'bare land must still charge a toll');
- const villa=applyAction(a,'alice','buy',{targetLevel:1},low);
- assert.equal(villa.properties[2].level,1);assert.equal(villa.players[0].cash,START_CASH-125-buildingCost(2,0));
- assert.ok(toll(villa,2)>toll(land,2));
- assert.throws(()=>applyAction(a,'alice','buy',{targetLevel:2},low),/건물/);
- assert.throws(()=>applyAction(villa,'bob','roll',{},low),/다른 플레이어/);
+ assert.ok(toll(land,2)>0,'bare land still charges a toll');
+ for(const level of [1,2,3]){
+  const built=applyAction(a,'alice','buy',{targetLevel:level},low);
+  assert.equal(built.properties[2].level,level);
+  assert.equal(built.players[0].cash,START_CASH-125-upgradeCost(2,0,level));
+  assert.ok(toll(built,2)>toll(land,2));
+ }
+ assert.throws(()=>applyAction(a,'alice','buy',{targetLevel:4},low),/건설 단계/);
+ assert.throws(()=>applyAction(land,'bob','roll',{},low),/다른 플레이어/);
 });
-test('building stages unlock after passing start; landmark after hotel',()=>{
+test('building can reach a hotel without passing start, while a landmark follows the hotel',()=>{
  let s=newGame();s.properties[2]={owner:'alice',level:1};
- assert.equal(maxBuildLevel(s,'alice',2),1);
- s=landOn(s,'alice',2);assert.notEqual(s.phase,'choice','cannot make building 2 before first lap');
- s=newGame();s.properties[2]={owner:'alice',level:1};s.players[0].laps=1;
- s=landOn(s,'alice',2);assert.equal(s.pending?.kind,'upgrade');
- assert.throws(()=>applyAction(s,'alice','upgrade',{targetLevel:3},low),/단계/);
- s=applyAction(s,'alice','upgrade',{targetLevel:2},low);
- assert.equal(s.properties[2].level,2);
- s=newGame();s.properties[2]={owner:'alice',level:2};s.players[0].laps=2;
- s=landOn(s,'alice',2);s=applyAction(s,'alice','upgrade',{targetLevel:3},low);
+ assert.equal(s.players[0].laps,0);
+ assert.equal(maxBuildLevel(s,'alice',2),3);
+ s=landOn(s,'alice',2);
+ assert.equal(s.pending?.kind,'upgrade');
+ s=applyAction(s,'alice','upgrade',{targetLevel:3},low);
  assert.equal(s.properties[2].level,3);
- s=setTurn(s,'alice');s=landOn(s,'alice',2);
+ assert.equal(s.players[0].laps,0,'building no longer requires a completed lap');
+ assert.equal(maxBuildLevel(s,'alice',2),4);
+ s=landOn(s,'alice',2);
+ assert.equal(s.pending?.kind,'upgrade');
  s=applyAction(s,'alice','upgrade',{targetLevel:4},low);
  assert.equal(s.properties[2].level,4);
  assert.equal(maxBuildLevel(s,'alice',2),4);
@@ -82,14 +84,18 @@ test('color monopoly multiplies toll; losing one city removes it',()=>{
  assert.equal(countMonopolies(s,'alice'),1);assert.equal(toll(s,1),t*2);
  s.properties[2].owner='bob';assert.equal(countMonopolies(s,'alice'),0);assert.equal(toll(s,1),t);
 });
-test('tourist attractions are unbuildable; owning both immediately wins',()=>{
+test('tourist attractions stay non-buildable but owning both no longer wins or multiplies toll',()=>{
  let s=newGame();s.properties[15]={owner:'alice',level:0};
+ const initialToll=toll(s,15);
  s=landOn(s,'alice',21);
  assert.equal(s.pending.kind,'purchase');
- assert.throws(()=>applyAction(s,'alice','buy',{targetLevel:1},low),/건물/);
+ assert.throws(()=>applyAction(s,'alice','buy',{targetLevel:1},low),/건설 단계/);
  s=applyAction(s,'alice','buy',{targetLevel:0},low);
- assert.equal(tourismComplete(s,'alice'),true);
- assert.equal(s.winner,'alice');assert.equal(s.reason,'관광지 독점');
+ assert.equal(s.properties[15].owner,'alice');
+ assert.equal(s.properties[21].owner,'alice');
+ assert.equal(s.winner,null,'tourist pair must never immediately win');
+ assert.notEqual(s.phase,'finished');
+ assert.equal(toll(s,15),initialToll,'tourist pair no longer doubles toll');
 });
 test('triple color and line monopoly trigger strategic wins',()=>{
  let s=newGame();
@@ -179,7 +185,7 @@ test('AI always chooses legal moves and games terminate for multiple seeded simu
    assert.ok(s.players.every(p=>p.cash>=0));
   }
   assert.equal(s.phase,'finished',`seed ${seed}`);assert.ok(s.winner);
-  assert.ok(['파산 승리','라인 독점','트리플 컬러 독점','관광지 독점','라운드 종료 · 총자산 승리'].includes(s.reason));
+  assert.ok(['파산 승리','라인 독점','트리플 컬러 독점','라운드 종료 · 총자산 승리'].includes(s.reason));
   assert.ok(netWorth(s,s.winner)>=0);
  }
 });
