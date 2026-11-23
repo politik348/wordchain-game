@@ -246,6 +246,32 @@ function beginMarbleIntro(){
  clearTimeout(introTimer);introActive=true;sellPanelOpen=false;
  introTimer=setTimeout(finishMarbleIntro,reducedMotion||!effectsOn?700:2700);
 }
+// Shared choice actions are presented in a viewport dialog; gameplay remains owned by the engine.
+function hasHumanDecision(s){
+ const p=current(s),kind=s.pending?.kind;
+ return !introActive&&!scene&&s.phase!=='finished'&&!p.ai&&(!onlineRoom||p.id===SID)&&
+   (s.phase==='chance'||(s.phase==='choice'&&['purchase','upgrade','takeover','olympic','startBuild'].includes(kind)));
+}
+function decisionModal(s){
+ if(!hasHumanDecision(s))return '';
+ const p=current(s),kind=s.pending?.kind||'chance',index=s.pending?.index,t=TILES[index],held=s.properties[index];
+ const isCity=Boolean(t&&['city','tourist'].includes(t.kind));
+ const emoji=kind==='purchase'?t?.emoji:kind==='upgrade'?'🏗️':kind==='takeover'?'⚔️':kind==='olympic'?'🏅':kind==='startBuild'?'🏠':'💌';
+ const title=isCity?escapeHTML(t.name):kind==='olympic'?'올림픽 개최':kind==='startBuild'?'출발지 특별 건설':'행운 편지';
+ const category=kind==='purchase'?'NEW PROPERTY':kind==='upgrade'?'BUILD YOUR CITY':kind==='takeover'?'TAKEOVER':kind==='olympic'?'CITY BONUS':kind==='startBuild'?'FREE BUILD CHANCE':'LUCKY CARD';
+ const stats=isCity?'<div class="mm-decision-details">'+
+  '<span>토지 가격<strong>'+formatM(t.price)+'</strong></span>'+
+  '<span>현재 통행료<strong>'+(held?formatM(toll(s,index)):'미소유')+'</strong></span>'+
+  '<span>내 현금<strong>'+formatM(p.cash)+'</strong></span></div>':
+  '<div class="mm-decision-details"><span>현재 플레이어<strong>'+escapeHTML(p.name)+'</strong></span><span>보유 현금<strong>'+formatM(p.cash)+'</strong></span></div>';
+ return '<div class="mm-decision-overlay" role="dialog" aria-modal="true" aria-label="게임 행동 선택">'+
+  '<section class="mm-decision-dialog" aria-labelledby="mmDecisionTitle"><div class="mm-decision-hero">'+
+  '<span class="mm-decision-kicker">'+category+' · 선택할 차례</span><div class="mm-decision-art" aria-hidden="true">'+(emoji||'🏡')+'</div>'+
+  '<h2 id="mmDecisionTitle">'+title+'</h2><span class="mm-decision-subtitle">'+(kind==='purchase'?'이 지역을 소유할까요?':kind==='chance'?'카드 한 장을 선택하세요.':'다음 행동을 결정하세요.')+'</span></div>'+
+  stats+'<div class="mm-decision-actions">'+actionPanel(s)+'</div>'+
+  (!p.loanUsed?'<div class="mm-decision-loan">'+button('takeLoan','🏦 은행 대출 '+formatM(BANK_LOAN)+' (상환 '+formatM(BANK_REPAY)+')','mm-neutral',inFlight||!!scene)+'</div>':'')+
+  '</section></div>';
+}
 function actionPanel(s){
  const p=current(s),yourTurn=(onlineRoom?p.id===SID:!p.ai)&&!scene;
  if(s.phase==='liquidation')return '<div class="mm-status-line">💵 결제 자금 부족</div><p class="mm-status-sub">화면 중앙에서 매각할 부동산을 선택하세요.</p>';
@@ -298,17 +324,27 @@ function sidePanel(s){
   (sellPanelOpen?saleChoices(s,p):'')+'</section>':'';
 
  const showTimers=onlineRoom && s.phase!=='finished';
- return `<aside class="mm-sidebar"><section class="mm-card"><h2 class="mm-card-title">참가자 <small>${s.players.length}명</small></h2>${s.players.map((x,i)=>`<div class="mm-player ${p.id===x.id&&s.phase!=='finished'?'current':''} ${x.bankrupt?'bankrupt':''}"><span class="mm-avatar" style="--pcolor:${paint[i]}">${characterArt(i)}</span><div class="mm-player-info"><strong>${escapeHTML(x.name)}${x.ai?' · AI':''}</strong><small>부동산 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개 · 컬러 ${countMonopolies(s,x.id)}세트 · 🪽${x.angel||0} 🎟️${x.discountCards||0}${x.bankDebt?` · 빚 ${formatM(x.bankDebt)}`:''}</small></div><span class="mm-money">${formatM(x.cash)}<small><br>자산 ${formatM(netWorth(s,x.id))}</small></span></div>`).join('')}${endless?`<div class="mm-endless-progress">♾️ 파산까지 계속 · ${s.round}라운드 진행 · 생존 ${s.players.filter(x=>!x.bankrupt).length}명</div>`:`<div class="mm-progress"><div class="mm-progress-fill" style="width:${Math.min(100,Math.round(s.turnCount/turns*100))}%"></div></div><div class="mm-progress-label"><span>${s.round} / ${s.maxRounds}라운드</span><span>${Math.min(turns,s.turnCount)}/${turns}턴</span></div>`}${showTimers?`<p style="text-align:center;margin:10px 0 0"><span class="mm-clock" data-clock>⏳ 30초</span></p>`:''}</section>
- ${salePanel}${cityInspector(s)}<section class="mm-card mm-events-card"><h2 class="mm-card-title">📣 행동 기록 <small>고양이가 뭘 했는지 확인!</small></h2><div class="mm-event-list">${(s.events||[]).slice(0,7).map((ev,j)=>`<div class="mm-event ${ev.ai?'is-cat':''} ${j===0?'new':''}" style="--event-color:${ownerColor(s,ev.actor)}"><span class="mm-event-icon">${ownerAvatar(s,ev.actor)}</span><div><strong>${escapeHTML(ev.message)}</strong>${ev.moneyChanges.length?`<small>${ev.moneyChanges.map(m=>`${escapeHTML(m.name)} ${fmtDelta(m.delta)}`).join(' · ')}</small>`:''}${ev.thought?`<small class="mm-event-thought">💭 ${escapeHTML(ev.thought)}</small>`:''}</div></div>`).join('')||'<p class="mm-helper">첫 행동을 기다리고 있어요.</p>'}</div><details class="mm-raw-history"><summary>전체 세부 기록 보기</summary><div class="mm-log-list">${s.log.slice(0,24).map(e=>`<div class="mm-log">${escapeHTML(e.text)}</div>`).join('')}</div></details></section>
+ return `<aside class="mm-sidebar"><section class="mm-card"><h2 class="mm-card-title">👑 플레이어 현황 <small>${s.players.length}명</small></h2>${s.players.map((x,i)=>`<div class="mm-player ${p.id===x.id&&s.phase!=='finished'?'current':''} ${x.bankrupt?'bankrupt':''}"><span class="mm-avatar" style="--pcolor:${paint[i]}">${characterArt(i)}</span><div class="mm-player-info"><strong>${escapeHTML(x.name)}${x.ai?' · AI':''}${p.id===x.id&&s.phase!=='finished'?'<em class="mm-player-turn">현재 턴</em>':''}</strong><small>부동산 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개 · 컬러 ${countMonopolies(s,x.id)}세트 · 🪽${x.angel||0} 🎟️${x.discountCards||0}${x.bankDebt?` · 빚 ${formatM(x.bankDebt)}`:''}</small></div><span class="mm-money">${formatM(x.cash)}<small><br>자산 ${formatM(netWorth(s,x.id))}</small></span></div>`).join('')}${endless?`<div class="mm-endless-progress">♾️ 파산까지 계속 · ${s.round}라운드 진행 · 생존 ${s.players.filter(x=>!x.bankrupt).length}명</div>`:`<div class="mm-progress"><div class="mm-progress-fill" style="width:${Math.min(100,Math.round(s.turnCount/turns*100))}%"></div></div><div class="mm-progress-label"><span>${s.round} / ${s.maxRounds}라운드</span><span>${Math.min(turns,s.turnCount)}/${turns}턴</span></div>`}${showTimers?`<p style="text-align:center;margin:10px 0 0"><span class="mm-clock" data-clock>⏳ 30초</span></p>`:''}</section>
+ ${salePanel}${cityInspector(s)}<section class="mm-card mm-events-card"><h2 class="mm-card-title">📣 최근 행동 <small>상세 기록 펼치기</small></h2><div class="mm-action-ribbon">${recentAction(s)}</div><div class="mm-event-list">${(s.events||[]).slice(0,4).map((ev,j)=>`<div class="mm-event ${ev.ai?'is-cat':''} ${j===0?'new':''}" style="--event-color:${ownerColor(s,ev.actor)}"><span class="mm-event-icon">${ownerAvatar(s,ev.actor)}</span><div><strong>${escapeHTML(ev.message)}</strong>${ev.moneyChanges.length?`<small>${ev.moneyChanges.map(m=>`${escapeHTML(m.name)} ${fmtDelta(m.delta)}`).join(' · ')}</small>`:''}${ev.thought?`<small class="mm-event-thought">💭 ${escapeHTML(ev.thought)}</small>`:''}</div></div>`).join('')||'<p class="mm-helper">첫 행동을 기다리고 있어요.</p>'}</div><details class="mm-raw-history"><summary>전체 세부 기록 보기</summary><div class="mm-log-list">${s.log.slice(0,24).map(e=>`<div class="mm-log">${escapeHTML(e.text)}</div>`).join('')}</div></details></section>
  ${tutorialOn?`<section class="mm-card mm-tutorial-game"><h2 class="mm-card-title">💡 초보자 도움말</h2><p>① 주사위를 굴려 도시를 찾아가요.</p><p>② 도시는 현금이 부족해지지 않게 구매·건설하세요.</p><p>③ 다른 플레이어의 도시에 도착하면 통행료를 지불해요.</p><p>④ 시작 화면에서 도움말을 끌 수 있어요.</p></section>`:''}<section class="mm-card"><h2 class="mm-card-title">✨ 승리 팁</h2><div class="mm-helper">${s.maxRounds===0?'♾️ 무한모드는 독점해도 승리하지 않아요. 마지막 한 명만 남으면 끝!':'컬러 독점 2배 · 관광지 둘 다 소유하면 즉시 승리!<br>컬러 3세트 또는 한 면의 도시를 모두 소유해도 승리합니다.'}<br>랜드마크와 관광지는 인수 불가. 무인도는 더블/보석금으로 탈출!</div>${onlineRoom?`<div style="margin-top:12px">${button('copyInvite','🔗 방 링크 복사','mm-neutral')}</div>`:''}</section></aside>`;
 }
 function renderGame(s){
  const p=current(s);
  const rolls=s.lastRoll||lastDice;
  const [a,b]=rolls?[rolls.a,rolls.b]:[1,6];
+ const decision=hasHumanDecision(s);
+ const waiting=(!onlineRoom&&p.ai)||(onlineRoom&&p.id!==SID);
+ const actionContent=decision?'<div class="mm-stage-waiting"><strong>✨ 선택할 시간이야!</strong><small>화면에 뜬 행동 카드에서 매입·건설 여부를 골라 주세요.</small></div>':
+  waiting&&['choice','chance'].includes(s.phase)?'<div class="mm-stage-waiting"><strong>⏳ '+escapeHTML(p.name)+'님의 선택을 기다리는 중</strong><small>다음 행동이 정해지면 게임이 계속됩니다.</small></div>':
+  actionPanel(s);
+ const loan=!p.loanUsed&&s.phase!=='finished'&&s.phase!=='liquidation'&&!decision&&!p.ai&&(!onlineRoom||p.id===SID)?
+  '<div class="mm-bank-loan">'+button('takeLoan','🏦 은행 대출 +'+formatM(BANK_LOAN)+' (향후 '+formatM(BANK_REPAY)+' 상환)','mm-neutral',inFlight||!!scene)+'</div>':'';
  root.innerHTML=`<div class="mm-topgame"><div><span class="mm-eyebrow">MOYEO MARBLE · ${onlineRoom?'ONLINE MATCH':mode==='ai'?'CAT CHALLENGE':'LOCAL MATCH'}</span><h1>모여마블 <span style="font-size:14px;color:#a99dab">${s.maxRounds===0?`♾️ 무한 · ${s.round}라운드`:`${s.round}/${s.maxRounds} 라운드`}</span></h1><p>${onlineRoom?`방 코드 ${onlineRoom.code} · 모든 주사위는 서버에서 판정`:mode==='ai'?'고양이 AI와 1:1 대결 중':'한 화면에서 돌아가며 플레이 중'}</p></div><div style="display:flex;gap:7px;align-items:center"><span class="mm-indicator">● ${onlineRoom?'온라인 연결':'플레이 중'}</span>${button('toggleEffects',effectsOn?'✨ 연출 켜짐':'✨ 연출 꺼짐','mm-neutral')}${button('leave','↩ 나가기','mm-neutral')}</div></div>
  <div class="mm-owner-legend" aria-label="플레이어별 소유 건물 색상">${s.players.map((x,i)=>`<div class="mm-owner-key" style="--key-color:${paint[i]}"><span>${characterArt(i)}</span><strong>${escapeHTML(x.name)}</strong><small>소유 도시 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개</small></div>`).join('')}</div>
- <section class="mm-action-ribbon" aria-label="최근 행동 현황">${recentAction(s)}</section><div class="mm-gamewrap"><div class="mm-main-panel"><section class="mm-board-frame"><div class="mm-board">${TILES.map((t,i)=>renderTile(s,t,i)).join('')}${scenePawnMarkup(s)}<section class="mm-board-center"><span class="mm-center-kicker">🎲 DREAM · OWN · WIN</span><h2 class="mm-center-title">모여<span>마블</span></h2><p class="mm-center-sub">도시를 모아 세상을 정복해봐!</p>${s.phase==='finished'?'':`<div class="mm-dice-row"><span class="mm-die ${scene?.stage==='dice'?'mm-die-rolling':''}">${dice[scene?.event.dice?.a||a]}</span><span class="mm-die ${scene?.stage==='dice'?'mm-die-rolling':''}">${dice[scene?.event.dice?.b||b]}</span></div>`}${sceneMarkup(s)}${actionPanel(s)}${!p.loanUsed&&s.phase!=='finished'&&!p.ai&&(!onlineRoom||p.id===SID)?`<div class="mm-bank-loan">${button('takeLoan',`🏦 은행 대출 +${formatM(BANK_LOAN)} (향후 ${formatM(BANK_REPAY)} 상환)`,'mm-neutral',inFlight||!!scene)}</div>`:''}<span class="mm-center-tip">🌷 행운은 짧게, 전략은 길게!</span></section></div></section>
+ <div class="mm-gamewrap"><div class="mm-main-panel"><section class="mm-board-frame"><div class="mm-board">${TILES.map((t,i)=>renderTile(s,t,i)).join('')}${scenePawnMarkup(s)}
+ <section class="mm-board-center mm-play-stage"><div class="mm-stage-heading"><span class="mm-center-kicker">DREAM · OWN · WIN</span><h2 class="mm-center-title">모여<span>마블</span></h2><p class="mm-center-sub">${escapeHTML(p.name)}님의 차례 · ${s.phase==='roll'?'주사위를 굴려 보세요':s.phase==='finished'?'경기가 끝났어요':'다음 행동을 선택하세요'}</p></div>
+ ${s.phase==='finished'?'<div class="mm-stage-finished">'+actionContent+'</div>':`<div class="mm-dice-console"><div class="mm-dice-tower"><small>${rolls?'최근 주사위':'주사위 준비'}</small><div class="mm-dice-row"><span class="mm-die ${scene?.stage==='dice'?'mm-die-rolling':''}">${dice[scene?.event.dice?.a||a]}</span><span class="mm-die ${scene?.stage==='dice'?'mm-die-rolling':''}">${dice[scene?.event.dice?.b||b]}</span></div>${rolls?'<strong>합계 '+rolls.total+'</strong>':'<strong>행운을 빌어요!</strong>'}</div><div class="mm-stage-actions">${actionContent}</div></div>`}
+ ${sceneMarkup(s)}${loan}<span class="mm-center-tip">🌷 행운은 짧게, 전략은 길게!</span></section></div></section>
  ${s.phase==='travel'&&!p.ai&&(!onlineRoom||p.id===SID)?`<section class="mm-option-panel"><h3 class="mm-option-title">✈️ 여행할 도시를 선택해주세요</h3><div class="mm-travel-grid">${TILES.map((t,i)=>({t,i})).filter(z=>['city','tourist','start','olympic'].includes(z.t.kind)).map(({t,i})=>`<button data-land="${i}">${t.emoji} ${escapeHTML(t.name)}</button>`).join('')}</div></section>`:''}</div>${sidePanel(s)}</div>`;
 }
 function render(){
@@ -318,6 +354,10 @@ function render(){
  if(introActive&&s&&s.phase!=='finished')root.insertAdjacentHTML('beforeend',marbleIntroMarkup());
  if(s?.phase==='liquidation'&&(!onlineRoom||current(s).id===SID)&&!introActive)
   root.insertAdjacentHTML('beforeend',liquidationPopup(s));
+ if(s&&hasHumanDecision(s)){
+  root.insertAdjacentHTML('beforeend',decisionModal(s));
+  root.querySelector('.mm-decision-actions .mm-btn:not(:disabled),.mm-decision-actions .mm-fortune-card:not(:disabled)')?.focus({preventScroll:true});
+ }
  updateClock();
  const showCatResult=catChallenge&&mode==='ai'&&s?.phase==='finished'&&!s.catResultDismissed&&window.MoyeoCatResult?.overlay;
  if(showCatResult){
