@@ -45,7 +45,7 @@ let playbackPace=PLAYBACK_PACES.includes(localStorage.getItem('moyeo-marble-play
  localStorage.getItem('moyeo-marble-playback-pace'):'relaxed';
 const paceLabel={relaxed:'천천히',normal:'보통',fast:'빠르게'};
 const sceneTiming=()=>{
- if(reducedMotion||!effectsOn)return {dice:100,step:35,result:350,other:400,ai:300};
+ if(reducedMotion||!effectsOn)return {dice:220,step:35,result:1950,other:1650,ai:1250};
  const t={
   relaxed:{dice:1050,step:360,result:2600,other:2050,ai:1650},
   normal:{dice:750,step:235,result:1850,other:1450,ai:1100},
