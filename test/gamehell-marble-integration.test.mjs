@@ -24,7 +24,7 @@ test('Marble v3 preserves isolated Cat Challenge entrypoint and multiplayer mode
  assert.match(marble,/mmReturnLink/);
  assert.match(readFileSync(new URL('../public/marble/index.html',import.meta.url),'utf8'),/id="mmReturnLink"/);
 });
-test('Game Hell requires membership even for direct URL and taste mode, while public games remain accessible',async()=>{
+test('Game Hell, Tetris and Logic require membership on all direct entrypoints',async()=>{
  if(server.listening)return;
  server.listen(0,'127.0.0.1');
  await once(server,'listening');
@@ -34,7 +34,14 @@ test('Game Hell requires membership even for direct URL and taste mode, while pu
    ['/gamehell','/gamehell/index.html'],
    ['/gamehell/','/gamehell/index.html'],
    ['/gamehell/index.html','/gamehell/index.html'],
-   ['/gamehell/index.html?trial=1','/gamehell/index.html?trial=1']]){
+   ['/gamehell/index.html?trial=1','/gamehell/index.html?trial=1'],
+   ['/tetris','/tetris/index.html'],
+   ['/tetris/','/tetris/index.html'],
+   ['/tetris/index.html','/tetris/index.html'],
+   ['/tetris/index.html?cat=1','/tetris/index.html?cat=1'],
+   ['/logic','/logic/index.html'],
+   ['/logic/','/logic/index.html'],
+   ['/logic/index.html','/logic/index.html']]){
    const response=await fetch(base+path,{redirect:'manual'});
    assert.equal(response.status,302,path);
    const redirect=new URL(response.headers.get('location'),base);
@@ -43,19 +50,21 @@ test('Game Hell requires membership even for direct URL and taste mode, while pu
    assert.equal(redirect.searchParams.get('next'),next);
    assert.match(response.headers.get('cache-control')||'',/no-store/);
   }
-  for(const path of ['/gamehell/gamehell.css','/gamehell/gamehell.js','/gamehell/characters.js','/gamehell/assets/characters/cheese.svg']){
+  for(const path of ['/gamehell/gamehell.css','/gamehell/gamehell.js','/gamehell/characters.js','/gamehell/assets/characters/cheese.svg','/tetris/missing.js','/logic/missing.js']){
    const response=await fetch(base+path);
    assert.equal(response.status,401,path);
    assert.match((await response.json()).error,/회원가입·로그인/);
   }
-  for(const path of ['/marble/index.html','/tetris/index.html','/logic/index.html']){
+  for(const path of ['/marble/index.html']){
    const response=await fetch(base+path);
    assert.equal(response.status,200,path);
    assert.ok((await response.text()).length>300,path);
   }
  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 });
-test('Main site returns registered players to Game Hell after login',()=>{
- assert.ok(app.includes(String.raw`gamehell\/index\.html`));
+test('Main site returns newly logged-in users to Game Hell, Tetris or Logic',()=>{
+ for(const segment of ['gamehell','tetris','logic']){
+  assert.ok(app.includes(segment+'\\/index\\.html'),segment+' login redirect must be allowlisted');
+ }
  assert.match(app,/if\(next&&/);
 });
