@@ -265,6 +265,12 @@ function summarizeAction(before,after,id,type,pending,origin,diceResult){
   if(old?.owner!==now?.owner||old?.level!==now?.level)propertyChanges.push({index:+key,previous:old,now,kind:!old&&now?'purchase':old&&now&&old.owner!==now.owner?'takeover':old&&now?'build':'sale'});
  }
  const moneyChanges=after.players.map(p=>({id:p.id,name:p.name,delta:p.cash-(before.players.find(x=>x.id===p.id)?.cash||0)})).filter(x=>x.delta!==0);
+ // Report the salary separately from the net action delta: tax, loans and rent
+ // can occur in the same move. This is gross income, repayment and actual cash.
+ const salaryLaps=Math.max(0,(actor.laps||0)-(previous?.laps||0));
+ const salaryGross=salaryLaps*PASS_BONUS;
+ const salaryRepayment=salaryLaps?Math.min(salaryGross,Math.max(0,(previous?.bankDebt||0)-(actor.bankDebt||0))):0;
+ const salary=salaryLaps?{laps:salaryLaps,gross:salaryGross,repayment:salaryRepayment,received:salaryGross-salaryRepayment}:null;
  const to=actor.position;
  let message='';
  if(type==='pickCard')message=`${actor.name} · 행운 편지 ${after.cardReveal?.emoji||'💌'} ${after.lastCard||'공개'}!`;
@@ -280,7 +286,7 @@ function summarizeAction(before,after,id,type,pending,origin,diceResult){
  else message=`${actor.name} · 이번 행동을 넘겼어요`;
  const special=messages.find(x=>x.includes('통행료')||x.includes('무인도')||x.includes('행운 편지')||x.includes('세금')||x.includes('세계여행'));
  if(special&&(type==='roll'||type==='islandRoll'))message+=` · ${special.replace(/^.*?님 /,'').slice(0,45)}`;
- return {seq:(before.actionSeq||0)+1,type,actor:id,actorName:actor.name,ai:!!previous?.ai,card:type==='pickCard'?after.cardReveal:null,from:origin,to,travel:type==='travel'||messages.some(x=>x.includes('3연속 더블')),dice:diceResult||null,tileIndex:['roll','islandRoll','travel'].includes(type)?to:pending?.index??to,propertyChanges,moneyChanges,message:message.trim(),messages,phase:after.phase,turnIndexBefore:before.turnIndex,turnIndexAfter:after.turnIndex,winner:after.winner||null};
+ return {seq:(before.actionSeq||0)+1,type,actor:id,actorName:actor.name,ai:!!previous?.ai,card:type==='pickCard'?after.cardReveal:null,from:origin,to,travel:type==='travel'||messages.some(x=>x.includes('3연속 더블')),dice:diceResult||null,tileIndex:['roll','islandRoll','travel'].includes(type)?to:pending?.index??to,propertyChanges,moneyChanges,salary,message:message.trim(),messages,phase:after.phase,turnIndexBefore:before.turnIndex,turnIndexAfter:after.turnIndex,winner:after.winner||null};
 }
 function rollDice(rng,parity){
  const a=randomIndex(rng,6)+1;
