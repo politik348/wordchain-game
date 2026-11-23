@@ -35,7 +35,7 @@ function state(phase,kind,opts={}){
 }
 test('new stylesheet is actually loaded AFTER existing marble CSS, with cache-busted UI code',()=>{
  assert.match(page,/ui-refresh\.css\?v=20261123marble5/);
- assert.match(page,/app\.mjs\?v=20261123cardchoice2/);
+ assert.match(page,/app\.mjs\?v=20261123slowmotion1/);
  assert.ok(page.indexOf('ui-refresh.css')>page.indexOf('gameplay-upgrades.css'));
  assert.match(css,/\.mm-gamewrap \.mm-sidebar\{grid-column:1;grid-row:1/);
  assert.match(css,/@media\(max-width:940px\)/);
@@ -137,4 +137,32 @@ test('fortune cards reveal their full effect and await explicit confirmation in 
 
 test('fortune card reveal has precedence over the emergency liquidation screen',()=>{
  assert.match(app,/s\?\.phase==='liquidation'&&\(!onlineRoom\|\|current\(s\)\.id===SID\)&&!introActive&&!scene/);
+});
+
+test('movement defaults to readable timing and offers persistent pace selection',()=>{
+ const motion=read('public/marble/motion-pacing.css');
+ assert.match(page,/motion-pacing\.css\?v=20261123slowmotion1/);
+ assert.ok(page.indexOf('motion-pacing.css')>page.indexOf('visual-polish.css'));
+ assert.match(app,/const PLAYBACK_PACES=\['relaxed','normal','fast'\]/);
+ assert.match(app,/:'relaxed';/);
+ assert.match(app,/relaxed:\{dice:1050,step:360,result:2600,other:2050,ai:1650\}/);
+ assert.match(app,/const moveDelay=\(\)=>sceneTiming\(\)\.step/);
+ assert.match(app,/sceneTimer=setTimeout\(finishScene,sceneTiming\(\)\.result\)/);
+ assert.match(app,/sceneTiming\(\)\.ai/);
+ assert.match(app,/case 'cyclePace':playbackPace=/);
+ assert.match(app,/localStorage\.setItem\('moyeo-marble-playback-pace'/);
+ assert.match(motion,/\.mm-scene-card\.mm-scene-moving/);
+});
+test('dice roll, tile-by-tile path and cat AI actions each have legible narration',()=>{
+ const motion=read('public/marble/motion-pacing.css');
+ assert.match(app,/scene\.stage='move';scene\.position=ev\.from;scene\.step=0;render\(\);paintScene\(\);stepScene\(0\)/);
+ assert.match(app,/data-scene-progress/);
+ assert.match(app,/data-scene-where/);
+ assert.match(app,/mm-arrival-highlight/);
+ assert.match(app,/mm-scene-thought/);
+ assert.match(app,/face\.style\.transitionDuration/);
+ assert.match(app,/mm-scene-dice/);
+ assert.match(motion,/\.mm-move-progress/);
+ assert.match(motion,/\.mm-replay-pawn/);
+ assert.match(motion,/prefers-reduced-motion:reduce/);
 });
