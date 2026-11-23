@@ -254,16 +254,16 @@ function beginMarbleIntro(){
 function hasHumanDecision(s){
  const p=current(s),kind=s.pending?.kind;
  return !introActive&&!scene&&s.phase!=='finished'&&!p.ai&&(!onlineRoom||p.id===SID)&&
-   (s.phase==='chance'||(s.phase==='choice'&&['purchase','upgrade','takeover','olympic','startBuild'].includes(kind)));
+   (s.phase==='chance'||(s.phase==='choice'&&['purchase','upgrade','takeover','olympic','startBuild','tollDefense'].includes(kind)));
 }
 function decisionModal(s){
  if(!hasHumanDecision(s))return '';
  const p=current(s),kind=s.pending?.kind||'chance',index=s.pending?.index,t=TILES[index],held=s.properties[index];
  const isCity=Boolean(t&&['city','tourist'].includes(t.kind));
- const emoji=kind==='purchase'?t?.emoji:kind==='upgrade'?'🏗️':kind==='takeover'?'⚔️':kind==='olympic'?'🏅':kind==='startBuild'?'🏠':'💌';
+ const emoji=kind==='purchase'?t?.emoji:kind==='upgrade'?'🏗️':kind==='takeover'?'⚔️':kind==='tollDefense'?'🛡️':kind==='olympic'?'🏅':kind==='startBuild'?'🏠':'💌';
  const title=isCity?escapeHTML(t.name):kind==='olympic'?'올림픽 개최':kind==='startBuild'?'출발지 특별 건설':'행운 편지';
- const category=kind==='purchase'?'NEW PROPERTY':kind==='upgrade'?'BUILD YOUR CITY':kind==='takeover'?'TAKEOVER':kind==='olympic'?'CITY BONUS':kind==='startBuild'?'FREE BUILD CHANCE':'LUCKY CARD';
- const stats=isCity?'<div class="mm-decision-details">'+
+ const category=kind==='purchase'?'NEW PROPERTY':kind==='upgrade'?'BUILD YOUR CITY':kind==='takeover'?'TAKEOVER':kind==='tollDefense'?'DEFENSE CHOICE':kind==='olympic'?'CITY BONUS':kind==='startBuild'?'FREE BUILD CHANCE':'LUCKY CARD';
+ const stats=kind==='tollDefense'?'<div class="mm-decision-details"><span>통행료<strong>'+formatM(s.pending.charge)+'</strong></span><span>보유 면제권<strong>'+p.angel+'장</strong></span><span>50% 할인권<strong>'+p.discountCards+'장</strong></span></div>':isCity?'<div class="mm-decision-details">'+
   '<span>토지 가격<strong>'+formatM(t.price)+'</strong></span>'+
   '<span>현재 통행료<strong>'+(held?formatM(toll(s,index)):'미소유')+'</strong></span>'+
   '<span>내 현금<strong>'+formatM(p.cash)+'</strong></span></div>':
@@ -271,7 +271,7 @@ function decisionModal(s){
  return '<div class="mm-decision-overlay" role="dialog" aria-modal="true" aria-label="게임 행동 선택">'+
   '<section class="mm-decision-dialog" aria-labelledby="mmDecisionTitle"><div class="mm-decision-hero">'+
   '<span class="mm-decision-kicker">'+category+' · 선택할 차례</span><div class="mm-decision-art" aria-hidden="true"><span class="mm-decision-spark mm-spark-a">✦</span><span class="mm-decision-art-inner">'+(emoji||'🏡')+'</span><span class="mm-decision-spark mm-spark-b">✧</span></div>'+
-  '<h2 id="mmDecisionTitle">'+title+'</h2><span class="mm-decision-subtitle">'+(kind==='purchase'?'이 지역을 소유할까요?':kind==='chance'?'카드 한 장을 선택하세요.':'다음 행동을 결정하세요.')+'</span></div>'+
+  '<h2 id="mmDecisionTitle">'+title+'</h2><span class="mm-decision-subtitle">'+(kind==='purchase'?'이 지역을 소유할까요?':kind==='chance'?'카드 한 장을 선택하세요.':kind==='tollDefense'?'카드를 아껴 두거나 지금 사용할 수 있어요.':'다음 행동을 결정하세요.')+'</span></div>'+
   stats+'<div class="mm-decision-actions">'+actionPanel(s)+'</div>'+
   (!p.loanUsed?'<div class="mm-decision-loan">'+button('takeLoan','🏦 은행 대출 '+formatM(BANK_LOAN)+' (상환 '+formatM(BANK_REPAY)+')','mm-neutral',inFlight||!!scene)+'</div>':'')+
   '</section></div>';
@@ -285,6 +285,14 @@ function actionPanel(s){
    return '<div class="mm-result"><h2>경기 종료</h2><p>경기 결과를 확인하거나 결과창을 닫고 게임판을 살펴보세요.</p></div>';
   }
   return `<div class="mm-result"><span class="mm-result-emoji">🏆</span><h2>${escapeHTML(winner?.name||'승자')} 승리!</h2><p>${escapeHTML(s.reason||'게임 종료')}</p><div class="mm-result-rank">${ranking.map((x,i)=>`<div><span>${i+1}위 ${escapeHTML(x.name)}</span><span>${formatM(netWorth(s,x.id))}</span></div>`).join('')}</div><div class="mm-center-actions">${onlineRoom?onlineRoom.host===SID?button('startOnline','다시 대결하기','mm-primary'):button('leave','메인으로','mm-secondary'):button('rematch','다시 대결하기','mm-primary')}${button('leave','종료','mm-secondary')}</div></div>`;
+ }
+ if(s.phase==='tollDefense'){
+  const {index,charge}=s.pending||{},tile=TILES[index];
+  return `<div class="mm-status-line">🛡️ ${escapeHTML(tile?.name||'상대 도시')} 통행료 선택</div><p class="mm-status-sub">통행료 ${formatM(charge)}. 카드는 자동으로 사용되지 않아요. 지금 사용하거나 다음 기회까지 아껴 두세요.</p><div class="mm-center-actions mm-toll-defense-actions">
+   ${button('payToll',`💵 전액 지불 · ${formatM(charge)} (카드 보관)`,'mm-neutral',!yourTurn||inFlight)}
+   ${p.angel?button('useAngel',`🪽 면제권 사용 · 무료 (${p.angel}장 보유)`,'mm-primary',!yourTurn||inFlight):''}
+   ${p.discountCards?button('useDiscount',`🎟️ 50% 할인권 · ${formatM(Math.round(charge*.5/5)*5)} (${p.discountCards}장 보유)`,'mm-neutral',!yourTurn||inFlight):''}
+  </div>`;
  }
  if(s.phase==='chance')return `<div class="mm-status-line">💌 행운 편지 도착!</div><p class="mm-status-sub">카드 뒷면 3장 중 하나를 선택하세요. 이득일 수도, 손해일 수도 있어요!</p><div class="mm-fortune-picks">${[0,1,2].map(i=>`<button class="mm-fortune-card" type="button" data-action="pickCard" data-index="${i}" ${!yourTurn||inFlight?'disabled':''}><span>✦</span><strong>행운 ${i+1}</strong><small>뒤집기</small></button>`).join('')}</div>`;
  if(s.phase==='roll'){
@@ -335,7 +343,7 @@ function sidePanel(s){
  const showTimers=onlineRoom && s.phase!=='finished';
  return `<aside class="mm-sidebar"><section class="mm-card"><h2 class="mm-card-title">👑 플레이어 현황 <small>${s.players.length}명</small></h2>${s.players.map((x,i)=>`<div class="mm-player ${p.id===x.id&&s.phase!=='finished'?'current':''} ${x.bankrupt?'bankrupt':''}"><span class="mm-avatar" style="--pcolor:${paint[i]}">${characterArt(i)}</span><div class="mm-player-info"><strong>${escapeHTML(x.name)}${x.ai?' · AI':''}${p.id===x.id&&s.phase!=='finished'?'<em class="mm-player-turn">현재 턴</em>':''}</strong><small>부동산 ${Object.values(s.properties).filter(z=>z.owner===x.id).length}개 · 컬러 ${countMonopolies(s,x.id)}세트 · 🪽${x.angel||0} 🎟️${x.discountCards||0}${x.bankDebt?` · 빚 ${formatM(x.bankDebt)}`:''}</small></div><span class="mm-money">${formatM(x.cash)}<small><br>자산 ${formatM(netWorth(s,x.id))}</small></span></div>`).join('')}${endless?`<div class="mm-endless-progress">♾️ 파산까지 계속 · ${s.round}라운드 진행 · 생존 ${s.players.filter(x=>!x.bankrupt).length}명</div>`:`<div class="mm-progress"><div class="mm-progress-fill" style="width:${Math.min(100,Math.round(s.turnCount/turns*100))}%"></div></div><div class="mm-progress-label"><span>${s.round} / ${s.maxRounds}라운드</span><span>${Math.min(turns,s.turnCount)}/${turns}턴</span></div>`}${showTimers?`<p style="text-align:center;margin:10px 0 0"><span class="mm-clock" data-clock>⏳ 30초</span></p>`:''}</section>
  ${salePanel}${cityInspector(s)}<section class="mm-card mm-events-card"><h2 class="mm-card-title">📣 최근 행동 <small>상세 기록 펼치기</small></h2><div class="mm-action-ribbon">${recentAction(s)}</div><div class="mm-event-list">${(s.events||[]).slice(0,4).map((ev,j)=>`<div class="mm-event ${ev.ai?'is-cat':''} ${j===0?'new':''}" style="--event-color:${ownerColor(s,ev.actor)}"><span class="mm-event-icon">${ownerAvatar(s,ev.actor)}</span><div><strong>${escapeHTML(ev.message)}</strong>${ev.moneyChanges.length?`<small>${ev.moneyChanges.map(m=>`${escapeHTML(m.name)} ${fmtDelta(m.delta)}`).join(' · ')}</small>`:''}${ev.thought?`<small class="mm-event-thought">💭 ${escapeHTML(ev.thought)}</small>`:''}</div></div>`).join('')||'<p class="mm-helper">첫 행동을 기다리고 있어요.</p>'}</div><details class="mm-raw-history"><summary>전체 세부 기록 보기</summary><div class="mm-log-list">${s.log.slice(0,24).map(e=>`<div class="mm-log">${escapeHTML(e.text)}</div>`).join('')}</div></details></section>
- ${tutorialOn?`<section class="mm-card mm-tutorial-game"><h2 class="mm-card-title">💡 초보자 도움말</h2><p>① 주사위를 굴려 도시를 찾아가요.</p><p>② 도시는 현금이 부족해지지 않게 구매·건설하세요.</p><p>③ 다른 플레이어의 도시에 도착하면 통행료를 지불해요.</p><p>④ 시작 화면에서 도움말을 끌 수 있어요.</p></section>`:''}<section class="mm-card"><h2 class="mm-card-title">✨ 승리 팁</h2><div class="mm-helper">${s.maxRounds===0?'♾️ 무한모드는 독점해도 승리하지 않아요. 마지막 한 명만 남으면 끝!':'컬러 독점은 통행료 2배! 관광지 2곳 소유는 즉시 승리하지 않습니다.<br>컬러 3세트 또는 한 면의 도시를 모두 소유하면 승리합니다.'}<br>랜드마크와 관광지는 인수 불가. 무인도는 더블/보석금으로 탈출!</div>${onlineRoom?`<div style="margin-top:12px">${button('copyInvite','🔗 방 링크 복사','mm-neutral')}</div>`:''}</section></aside>`;
+ ${tutorialOn?`<section class="mm-card mm-tutorial-game"><h2 class="mm-card-title">💡 초보자 도움말</h2><p>① 주사위를 굴려 도시를 찾아가요.</p><p>② 도시는 현금이 부족해지지 않게 구매·건설하세요.</p><p>③ 다른 플레이어의 도시에 도착하면 통행료를 지불해요.</p><p>④ 통행료 면제·할인권은 원할 때 사용할 수 있어요.</p></section>`:''}<section class="mm-card"><h2 class="mm-card-title">✨ 승리 팁</h2><div class="mm-helper">${s.maxRounds===0?'♾️ 무한모드는 독점해도 승리하지 않아요. 마지막 한 명만 남으면 끝!':'컬러 독점은 통행료 2배! 관광지 2곳 소유는 즉시 승리하지 않습니다.<br>컬러 3세트 또는 한 면의 도시를 모두 소유하면 승리합니다.'}<br>랜드마크와 관광지는 인수 불가. 무인도는 더블/보석금으로 탈출!</div>${onlineRoom?`<div style="margin-top:12px">${button('copyInvite','🔗 방 링크 복사','mm-neutral')}</div>`:''}</section></aside>`;
 }
 function renderGame(s){
  const p=current(s);
@@ -506,7 +514,7 @@ root.addEventListener('click',async e=>{
  case 'createOnline':await createOnline();break;
  case 'joinOnline':await joinOnline(document.querySelector('#mmJoinCode')?.value);break;
  case 'startOnline':await startOnline();break;
- case 'roll':case 'pass':case 'islandRoll':case 'payBail':case 'takeLoan':executeAction(action);break;
+ case 'roll':case 'pass':case 'islandRoll':case 'payBail':case 'takeLoan':case 'payToll':case 'useAngel':case 'useDiscount':executeAction(action);break;
  case 'pickCard':executeAction('pickCard',{index:Number(e.target.closest('[data-action]').dataset.index)});break;
  case 'rollOdd':executeAction('roll',{parity:'odd'});break;
  case 'rollEven':executeAction('roll',{parity:'even'});break;
