@@ -262,7 +262,7 @@ function beginMarbleIntro(){
 function hasHumanDecision(s){
  const p=current(s),kind=s.pending?.kind;
  return !introActive&&!scene&&s.phase!=='finished'&&!p.ai&&(!onlineRoom||p.id===SID)&&
-   (s.phase==='chance'||(s.phase==='choice'&&['purchase','upgrade','takeover','olympic','startBuild','tollDefense'].includes(kind)));
+   (s.phase==='chance'||(s.phase==='tollDefense'&&kind==='tollDefense')||(s.phase==='choice'&&['purchase','upgrade','takeover','olympic','startBuild'].includes(kind)));
 }
 function decisionModal(s){
  if(!hasHumanDecision(s))return '';
