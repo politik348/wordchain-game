@@ -7,7 +7,7 @@ import {YUT_NAMES, freshYutPieces, rollYut, legalYutMoves, applyYutMove, chooseC
 import {renderSoloYut} from './yut-solo-ui.mjs?v=20261122backdo1';
 import {renderYutBoard,renderYutThrow,renderYutRouteChooser,renderYutRollTray,renderYutPieceStats} from './yut-board.mjs?v=20261122backdo1';
 import {installYutPowerControl} from './yut-power.mjs?v=20261120yut5';
-import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261123fortress1';
+import {CAT_CHALLENGE_GAMES, renderCatFeatured, renderCatHub, renderCatSetup} from './cat-hub.mjs?v=20261124fightercat4';
 import {createMembershipUI} from './auth-ui.mjs?v=20261120statusrefresh1';
 import {renderPregame} from './pregame-lobbies.mjs?v=20261120catIcon2';
 import {renderOnlineWaiting} from './waiting-room.mjs?v=20261120catlevels1';
@@ -982,7 +982,7 @@ document.addEventListener('click',async e=>{
  if(action==='catChoose'){
   const target=b.dataset.catGame;
   if(!CAT_CHALLENGE_GAMES.includes(target))return;
-  if(target==='fortress'){location.href='/fortress/index.html?cat=1';return;}if(target==='marble'){location.href='/marble/index.html?cat=1';return;}if(target==='tetris'){location.href='/tetris/index.html?cat=1';return;}
+  if(target==='fighter'){location.href='/fighter/index.html?cat=1';return;}if(target==='fortress'){location.href='/fortress/index.html?cat=1';return;}if(target==='marble'){location.href='/marble/index.html?cat=1';return;}if(target==='tetris'){location.href='/tetris/index.html?cat=1';return;}
   selection=target;view='catSetup';render();window.scrollTo(0,0);return;
  }
  if(action==='scrollGames'){scrollGames();return;}if(action==='createRoom'){await createRoom(selection);return;}
