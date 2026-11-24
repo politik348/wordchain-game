@@ -15,6 +15,9 @@
 <script src="./art-stage-alley-v5.js"></script>
 <script src="./art-stage-roof-v5.js"></script>
 <script src="./art-stage-throne-v5.js"></script>
+<script src="./art-frames-octopus-v5.js"></script>
+<script src="./art-frames-eel-v5.js"></script>
+<script src="./art-frames-hippo-v5.js"></script>
 <script src="./cat-assets-v4.js?v=5"></script>
 <script>window.MOYEO_FIGHTERS=[
 {id:'tiger',name:'류',en:'RYU',species:'호랑이',role:'균형형',color:'#e78a39',light:'#ffe1ae',dark:'#5b342c',gi:'#f1ece0',belt:'#22232a',speed:4.1,hp:1000,power:1,reach:1,special:'파동권',kind:'shot',alt:'승룡권',super:'진공파동권'},
@@ -74,7 +77,27 @@ function drawTechnical(c,d,x,y,face,f,scale){
  const draw=()=>c.drawImage(im,pose%4*384,Math.floor(pose/4)*384,384,384,-size/2,-size*380/384,size,size);
  if(trail){c.save();c.globalAlpha=.20;c.translate(-22,0);draw();c.translate(-18,0);c.globalAlpha=.10;draw();c.restore()}draw();c.restore();return true;
 }
+
+function drawMultiFrame(c,d,x,y,face,f,scale){
+ const img=artImages[d.id+'-frames-v5'],seq=window.FIGHTER_FRAMES_V5?.[d.id];if(!isArtReady(img)||!seq)return false;
+ const a=f?.attack,k=a?.key;let group='idle',progress=(frame%54)/54,tilt=0,dx=0,sy=1;
+ if(f?.hp<=0){group=seq.ko?'ko':'hit';progress=1;if(!seq.ko)tilt=-1.25;}
+ else if(f?.stun>0){group='hit';progress=1-Math.min(1,f.stun/14);dx=-6*(1-progress)}
+ else if(f&&state==='done'&&wins[f.i]>=2){group='idle';progress=(frame%54)/54}
+ else if(a){group=k==='dash'?'alt':k==='electric'||k==='flurry'||k==='spin'||k==='shot'||k==='charge'?'special':k==='long'||k==='super'?'alt':['heavy','hk','mk','upper','grab'].includes(k)?'heavy':'punch';progress=Math.min(.999,a.t/Math.max(1,a.total));if(['electric','flurry'].includes(k)&&a.t>=a.start&&a.t<=a.end)progress=((a.t-a.start)%18)/18; if(k==='long'&&a.t>=a.start&&a.t<=a.end)dx=10;}
+ else if(f?.y<FLOOR-2){group='jump';progress=f.vy<-5?.25:f.vy<1?.48:f.vy<6?.65:.87;}
+ else if(f?.crouch){group='jump';progress=.999;sy=.87}
+ else if(f?.guard){group='heavy';progress=0}
+ else if(f?.moving){group='walk';progress=(frame%35)/35}
+ const frames=seq[group]||seq.idle,index=frames[Math.max(0,Math.min(frames.length-1,Math.floor(progress*frames.length)))];
+ const size=(d.id==='hippo'?270:d.id==='octopus'?262:264)*scale/1.12;
+ c.save();c.translate(x+face*dx,y);c.scale(face,sy);if(tilt){c.translate(-25,-9);c.rotate(tilt)}
+ c.imageSmoothingEnabled=false;c.drawImage(img,(index%8)*192,Math.floor(index/8)*192,192,192,-size/2,-size*182/192,size,size);
+ c.restore();return true;
+}
+
 function drawSprite(c,d,x,y,face,f,scale){
+ if(drawMultiFrame(c,d,x,y,face,f,scale))return true;
  if(drawTechnical(c,d,x,y,face,f,scale))return true;
  if(drawGuile(c,d,x,y,face,f,scale))return true;
  const img=artImages[d.id+'-poses'];if(!isArtReady(img))return false;
