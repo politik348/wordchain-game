@@ -41,7 +41,9 @@
         const response=await fetch(new URL('motions.json',dir));
         if(!response.ok)return false;
         const m=await response.json();
-        if(m.key!==d.key||m.status!=='ready'||m.species!==p.species)return false;
+        if(m.key!==d.key||m.species!==p.species)return false;
+        const preview=new URLSearchParams(location.search).get('raster1723')==='1';
+        if(m.status!=='ready'&&!(m.status==='preview'&&preview))return false;
         const [atlas,portrait]=await Promise.all([image(new URL('sprites.png',dir)),image(new URL('portrait.png',dir))]);
         if(!valid(m,atlas))return false;
         Object.assign(entry,{ready:true,m,atlas,portrait});

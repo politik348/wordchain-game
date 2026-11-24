@@ -1,6 +1,6 @@
 # KOF97 — character raster pipeline, keys 17–23
 
-**Status: integration scaffold only; no final raster assets in this commit.**
+**Status: procedural raster preview available for all seven; final hand-painted art not complete.**
 
 The loader is deliberately opt-in and preserves existing rendering until a valid set of three files is available for a fighter. Do not mark a character ready without checking transparency, consistent animal species, separate frames, weapon continuity, feet anchors and playtesting.
 
@@ -19,3 +19,7 @@ Each folder requires portrait.png (full body, transparent, no official logo or t
 ## Input routing and tests
 
 The engine records artIntent only for these seven fighters, without changing damage, timing, movement, meter or collision behavior. Normal kick and normal grab remain separate from Kim's and Mary's same-key special actions. Alternate inputs (including cancel chains) select `alt` even if the existing engine uses a different underlying attack key. Species must match the roster exactly, and each action requires at least two distinct frame indices. Run `node --test tests/kof97-group-17-23.test.cjs` from the repository root for the adapter regression test.
+
+## Raster preview
+
+All seven assigned folders now contain real transparent indexed PNGs and 65-frame, 15-action manifests (455 total frame slots). These are newly painted procedural pixel prototypes, not final high-resolution illustrations. Preview mode is opt-in via `?raster1723=1` on the game URL. Existing default art is unchanged until each manifest is reviewed and changed from `preview` to `ready`. Review weapon/limb clipping, species and pose fidelity before promotion. Do not treat enlarged pixel portraits as final high-resolution paintings. No other fighter IDs are changed.
