@@ -1,5 +1,5 @@
 /* Animal Edition: scoped visual and move layer for roster keys 30–35.
- * Scoped SVG atlases are bundled; final illustrated raster assets remain replaceable.
+ * Generated WebP portraits and draft raster atlases are registered with SVG fallbacks.
  */
 (function(root){
 'use strict';
@@ -27,7 +27,7 @@ function drawFrame(c,d,group,index,dx,dy,dw,dh){const a=assetInfo(d),seq=a?.fram
 async function loadAssets(){
  if(!base||typeof fetch!=='function')return [];
  try{
-   const res=await fetch(new URL('manifest.json?v=3',base));if(!res.ok)return [];
+   const res=await fetch(new URL('manifest.json?v=4',base));if(!res.ok)return [];
    const manifest=await res.json(),entries=manifest.characters||{};
    const tasks=Object.keys(profiles).map(async id=>{
      const data=entries[id];if(!validated(data))return null;

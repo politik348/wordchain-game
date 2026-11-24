@@ -1,0 +1,3 @@
+# Orochi group — generated artwork import
+
+Only roster keys 30–35. Six full-resolution 1086×1448 WebP portraits; three 1280×1280 (8×8, 160 px cells) draft combat atlases; one rejected Chris sheet archived for review. Original animal roster metadata unchanged; generated portrait design species differ for some characters. No claims of final arcade-quality motion. Approximate frame mappings reuse poses for upper/grab/evade where dedicated sprites are absent. IDs 32–34 retain their existing vector combat atlases until matching sheets exist. Orochi matte alpha was reduced. Existing SVG files retained. Verify on deployed browser: selection portraits, each action, left/right facing, KO, super, alpha fringes, foot anchoring, hitbox alignment and performance.

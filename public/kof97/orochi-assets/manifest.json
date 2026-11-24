@@ -1,13 +1,13 @@
 {
-  "version": 2,
+  "version": 3,
   "characters": {
     "30": {
-      "portrait": "wild-iori-portrait.svg",
-      "src": "wild-iori-atlas.svg",
-      "width": 360,
-      "height": 270,
-      "columns": 10,
-      "anchorY": 0.9333333333333333,
+      "portrait": "wild-iori-portrait-hd.webp",
+      "src": "wild-iori-atlas-hd.webp",
+      "width": 160,
+      "height": 160,
+      "columns": 8,
+      "anchorY": 0.96,
       "frames": {
         "idle": [
           0,
@@ -15,129 +15,114 @@
           2,
           3,
           4,
-          5
+          5,
+          6,
+          7
         ],
         "walk": [
-          6,
-          7,
           8,
           9,
           10,
           11,
           12,
-          13
+          13,
+          14,
+          15
         ],
         "crouch": [
-          14,
-          15,
           16,
           17
         ],
         "guard": [
           18,
-          19,
-          20,
-          21
+          19
         ],
         "jump": [
+          20,
+          21,
           22,
-          23,
-          24,
-          25,
-          26
+          23
         ],
         "punch": [
-          27,
-          28,
-          29,
-          30,
-          31,
-          32
+          24,
+          25,
+          26,
+          27
         ],
         "kick": [
+          32,
           33,
           34,
           35,
           36,
           37,
-          38
+          38,
+          39
         ],
         "special": [
-          39,
           40,
           41,
           42,
           43,
           44,
           45,
-          46
+          46,
+          47
         ],
         "upper": [
-          47,
+          24,
+          25,
+          29,
+          30,
+          31
+        ],
+        "grab": [
+          24,
+          25,
+          28,
+          27
+        ],
+        "hit": [
+          56,
+          57
+        ],
+        "ko": [
+          58,
+          59,
+          60,
+          61
+        ],
+        "win": [
+          62,
+          63
+        ],
+        "evade": [
+          16,
+          20,
+          23
+        ],
+        "super": [
           48,
           49,
           50,
           51,
-          52
-        ],
-        "grab": [
+          52,
           53,
           54,
-          55,
-          56,
-          57,
-          58
-        ],
-        "hit": [
-          59,
-          60,
-          61,
-          62,
-          63
-        ],
-        "ko": [
-          64,
-          65,
-          66,
-          67,
-          68,
-          69
-        ],
-        "win": [
-          70,
-          71,
-          72,
-          73,
-          74,
-          75
-        ],
-        "evade": [
-          76,
-          77,
-          78,
-          79,
-          80,
-          81
-        ],
-        "super": [
-          82,
-          83,
-          84,
-          85,
-          86,
-          87,
-          88,
-          89
+          55
         ]
-      }
+      },
+      "artSpecies": "백색 늑대",
+      "portraitStatus": "generated full-body artwork",
+      "atlasStatus": "generated 64-cell draft raster; approximate action mapping, reused poses in groups without dedicated frames"
     },
     "31": {
-      "portrait": "wild-leona-portrait.svg",
-      "src": "wild-leona-atlas.svg",
-      "width": 360,
-      "height": 270,
-      "columns": 10,
-      "anchorY": 0.9333333333333333,
+      "portrait": "wild-leona-portrait-hd.webp",
+      "src": "wild-leona-atlas-hd.webp",
+      "width": 160,
+      "height": 160,
+      "columns": 8,
+      "anchorY": 0.96,
       "frames": {
         "idle": [
           0,
@@ -145,124 +130,109 @@
           2,
           3,
           4,
-          5
+          5,
+          6,
+          7
         ],
         "walk": [
-          6,
-          7,
           8,
           9,
           10,
           11,
           12,
-          13
+          13,
+          14,
+          15
         ],
         "crouch": [
-          14,
-          15,
           16,
           17
         ],
         "guard": [
           18,
-          19,
-          20,
-          21
+          19
         ],
         "jump": [
+          20,
+          21,
           22,
-          23,
-          24,
-          25,
-          26
+          23
         ],
         "punch": [
-          27,
-          28,
-          29,
-          30,
-          31,
-          32
+          24,
+          25,
+          26,
+          27
         ],
         "kick": [
+          32,
           33,
           34,
           35,
           36,
           37,
-          38
+          38,
+          39
         ],
         "special": [
-          39,
           40,
           41,
           42,
           43,
           44,
           45,
-          46
+          46,
+          47
         ],
         "upper": [
-          47,
+          24,
+          25,
+          29,
+          30,
+          31
+        ],
+        "grab": [
+          24,
+          25,
+          28,
+          27
+        ],
+        "hit": [
+          56,
+          57
+        ],
+        "ko": [
+          58,
+          59,
+          60,
+          61
+        ],
+        "win": [
+          62,
+          63
+        ],
+        "evade": [
+          16,
+          20,
+          23
+        ],
+        "super": [
           48,
           49,
           50,
           51,
-          52
-        ],
-        "grab": [
+          52,
           53,
           54,
-          55,
-          56,
-          57,
-          58
-        ],
-        "hit": [
-          59,
-          60,
-          61,
-          62,
-          63
-        ],
-        "ko": [
-          64,
-          65,
-          66,
-          67,
-          68,
-          69
-        ],
-        "win": [
-          70,
-          71,
-          72,
-          73,
-          74,
-          75
-        ],
-        "evade": [
-          76,
-          77,
-          78,
-          79,
-          80,
-          81
-        ],
-        "super": [
-          82,
-          83,
-          84,
-          85,
-          86,
-          87,
-          88,
-          89
+          55
         ]
-      }
+      },
+      "artSpecies": "설표",
+      "portraitStatus": "generated full-body artwork",
+      "atlasStatus": "generated 64-cell draft raster; approximate action mapping, reused poses in groups without dedicated frames"
     },
     "32": {
-      "portrait": "orochi-yashiro-portrait.svg",
+      "portrait": "orochi-yashiro-portrait-hd.webp",
       "src": "orochi-yashiro-atlas.svg",
       "width": 360,
       "height": 270,
@@ -389,10 +359,13 @@
           88,
           89
         ]
-      }
+      },
+      "artSpecies": "백색 코뿔소",
+      "portraitStatus": "generated full-body artwork",
+      "atlasStatus": "existing 90-cell SVG fallback; new matching raster not available"
     },
     "33": {
-      "portrait": "orochi-shermie-portrait.svg",
+      "portrait": "orochi-shermie-portrait-hd.webp",
       "src": "orochi-shermie-atlas.svg",
       "width": 360,
       "height": 270,
@@ -519,10 +492,13 @@
           88,
           89
         ]
-      }
+      },
+      "artSpecies": "전기뱀장어",
+      "portraitStatus": "generated full-body artwork",
+      "atlasStatus": "existing 90-cell SVG fallback; new matching raster not available"
     },
     "34": {
-      "portrait": "orochi-chris-portrait.svg",
+      "portrait": "orochi-chris-portrait-hd.webp",
       "src": "orochi-chris-atlas.svg",
       "width": 360,
       "height": 270,
@@ -649,15 +625,18 @@
           88,
           89
         ]
-      }
+      },
+      "artSpecies": "흑표범",
+      "portraitStatus": "generated full-body artwork",
+      "atlasStatus": "existing 90-cell SVG fallback; new matching raster not available"
     },
     "35": {
-      "portrait": "orochi-portrait.svg",
-      "src": "orochi-atlas.svg",
-      "width": 360,
-      "height": 270,
-      "columns": 10,
-      "anchorY": 0.9333333333333333,
+      "portrait": "orochi-portrait-hd.webp",
+      "src": "orochi-atlas-hd.webp",
+      "width": 160,
+      "height": 160,
+      "columns": 8,
+      "anchorY": 0.96,
       "frames": {
         "idle": [
           0,
@@ -665,122 +644,113 @@
           2,
           3,
           4,
-          5
+          5,
+          6,
+          7
         ],
         "walk": [
-          6,
-          7,
           8,
           9,
           10,
           11,
           12,
-          13
+          13,
+          14,
+          15
         ],
         "crouch": [
-          14,
-          15,
           16,
           17
         ],
         "guard": [
           18,
-          19,
-          20,
-          21
+          19
         ],
         "jump": [
+          20,
+          21,
           22,
-          23,
-          24,
-          25,
-          26
+          23
         ],
         "punch": [
+          24,
+          25,
+          26,
           27,
           28,
           29,
           30,
-          31,
-          32
+          31
         ],
         "kick": [
+          32,
           33,
           34,
-          35,
-          36,
-          37,
-          38
+          35
         ],
         "special": [
-          39,
           40,
           41,
           42,
           43,
           44,
           45,
-          46
+          46,
+          47
         ],
         "upper": [
-          47,
+          28,
+          29,
+          30,
+          31
+        ],
+        "grab": [
+          24,
+          25,
+          26,
+          27
+        ],
+        "hit": [
+          56,
+          57
+        ],
+        "ko": [
+          58,
+          59,
+          60,
+          61
+        ],
+        "win": [
+          62,
+          63
+        ],
+        "evade": [
+          18,
+          19,
+          22
+        ],
+        "super": [
           48,
           49,
           50,
           51,
-          52
-        ],
-        "grab": [
+          52,
           53,
           54,
-          55,
-          56,
-          57,
-          58
-        ],
-        "hit": [
-          59,
-          60,
-          61,
-          62,
-          63
-        ],
-        "ko": [
-          64,
-          65,
-          66,
-          67,
-          68,
-          69
-        ],
-        "win": [
-          70,
-          71,
-          72,
-          73,
-          74,
-          75
-        ],
-        "evade": [
-          76,
-          77,
-          78,
-          79,
-          80,
-          81
-        ],
-        "super": [
-          82,
-          83,
-          84,
-          85,
-          86,
-          87,
-          88,
-          89
+          55
         ]
-      }
+      },
+      "artSpecies": "백사",
+      "portraitStatus": "generated full-body artwork",
+      "atlasStatus": "generated 64-cell draft raster; approximate action mapping, reused poses in groups without dedicated frames"
     }
   },
-  "notes": "Keys 30–35 only. Transparent SVG interim art, 90 frame cells each, raster PNG export in art studio. Final hand-illustrated raster artwork not bundled."
+  "notes": "Keys 30–35 only. Six generated portraits, three draft raster atlases, and three SVG fallback atlases. Chris rejected atlas contains Iori-like art and is archived, never registered. New portrait species reflect supplied artwork, not necessarily existing roster metadata. Approximate 8x8 raster cell mapping; not hand-verified frame-by-frame combat animation.",
+  "rejectedAssets": [
+    {
+      "key": 34,
+      "src": "orochi-chris-atlas-rejected.webp",
+      "reason": "Incorrect Iori-like character; not used in combat"
+    }
+  ]
 }
