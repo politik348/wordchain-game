@@ -18,7 +18,7 @@ function select(d,f,frame,state,win){
  if(win)return ['win',(frame%60)/60];
  if(f.evade)return ['evade',clamp(1-f.evade/18)];
  if(f.stun)return ['hit',clamp(1-f.stun/20)];
- if(f.attack){const a=f.attack,k=a.key;let group=k==='super'?'super':k===d.kind?'special':['kick','mk','hk'].includes(k)?'kick':['punch','medium','heavy'].includes(k)?'punch':'alt';
+ if(f.attack){const a=f.attack,k=a.key;let group=k==='super'?'super':a.artIntent==='alt'?'alt':a.artIntent==='special'?'special':k===d.kind?'special':['kick','mk','hk'].includes(k)?'kick':['punch','medium','heavy'].includes(k)?'punch':'alt';
  const t=a.t<a.start?.5*a.t/Math.max(1,a.start):a.t<=a.end?.5+.15*(a.t-a.start)/Math.max(1,a.end-a.start):.65+.35*(a.t-a.end)/Math.max(1,a.total-a.end);
  return [group,clamp(t)];}
  if(f.y<449)return ['jump',clamp((f.vy+13)/26)];
