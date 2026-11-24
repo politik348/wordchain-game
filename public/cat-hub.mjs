@@ -8,7 +8,7 @@ const catDetails = {
   tetris: '강한 고양이와 블록 퍼즐 대결',
   wordchain: '끝말잇기와 쿵쿵따 한 판',
   fortress: '바람과 탄도를 읽는 고양이 탱크 대전',
-  fighter: '여섯 고양이 격투 보스를 쓰러뜨리는 아케이드 도전'
+  fighter: '고양이 AI도 기존 격투가를 선택! 3판 2선승 1:1 대전'
 };
 const escapeHtml = text => String(text ?? '').replace(/[&<>"']/g, char => ({
   '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
