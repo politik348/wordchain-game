@@ -1,0 +1,11 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import E from '../fortress-engine.mjs';
+const page=readFileSync(new URL('../public/fortress/index.html',import.meta.url),'utf8');
+test('expanded world and team spawn separation',()=>{assert.equal(E.W,2400);assert.equal(E.VIEW_W,960);for(const map of Object.keys(E.MAPS))for(const size of [1,2,3,4]){const s=E.create({map,size,seed:44});assert.equal(s.ground.length,E.W);assert.ok(Math.min(...s.tanks.filter(t=>t.team===1).map(t=>t.x))-Math.max(...s.tanks.filter(t=>t.team===0).map(t=>t.x))>E.VIEW_W);assert.ok(s.tanks.every(t=>t.y<E.H));}});
+test('charge timing and frozen cap',()=>{assert.deepEqual([0,350,700,1050,1400,2500].map(n=>E.chargePower(n)),[12,34,56,78,100,100]);assert.equal(E.chargePower(2000,65),65);});
+test('terrain slope affects world firing angle, facing direction and trajectory',()=>{let s=E.create({seed:12,tank:'cannon'}),t=s.tanks[0];s.ground.fill(300);assert.equal(E.actualAngle(s,t,45,1),45);for(let x=t.x-20;x<=t.x+20;x++)s.ground[x]=300+(x-t.x)*.5;assert.ok(E.actualAngle(s,t,45,1)<45);assert.ok(E.actualAngle(s,t,45,-1)>45);let p=E.trace(s,t,45,80,1,0).points;assert.ok(p[0][1]>t.y-18-Math.sin(Math.PI/4)*22);});
+test('AI can aim across separated teams on all maps',()=>{for(const map of Object.keys(E.MAPS)){let s=E.create({map,seed:44,tank:'cannon',enemy:'cannon',collapse:false});let a=E.chooseAI(s,'hard');let shots=E.plan(s,a.angle,a.power,a.dir,a.weapon);assert.ok(shots.some(p=>p.hit&&Math.abs(p.hit.x-s.tanks[1].x)<45),map);}});
+test('browser and online engine match exactly; input and camera scripts parse',()=>{const scripts=[...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]);scripts.forEach(s=>new vm.Script(s));const server=readFileSync(new URL('../fortress-engine.mjs',import.meta.url),'utf8').replace(/export default globalThis\.FortressEngine;\s*$/,'').trim();assert.equal(scripts[0].trim(),server);assert.ok(page.includes("releaseCharge('keyboard')"));assert.ok(page.includes('updateCamera(now)'));});
