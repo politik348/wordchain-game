@@ -1,0 +1,12 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+const html=readFileSync(new URL('../public/fortress/index.html',import.meta.url),'utf8');
+const scripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+const world=vm.createContext({});
+vm.runInContext(scripts[0],world);
+const E=world.FortressEngine;
+test('13 tanks and both script syntax checks',()=>{assert.equal(Object.keys(E.TANKS).length,13);scripts.forEach(s=>new vm.Script(s));});
+for(const size of [1,2,3,4])test('AI battle terminates: '+size+'v'+size,()=>{for(const map of ['valley','islands']){let s=E.create({size,map,seed:13+size,tank:'venom',enemy:'frost'});assert.equal(s.tanks.length,size*2);for(let i=0;i<180&&s.phase!=='over';i++){const a=E.chooseAI(s,'easy');E.aim(s,a.angle,a.power,a.dir,a.weapon);E.fire(s);E.finish(s);if(s.phase!=='over')assert.ok(s.tanks[s.turn].hp>0);}assert.equal(s.phase,'over');}});
+test('collapse, delay, items and freeze',()=>{let s=E.create({size:2,seed:99});for(let i=0;i<13&&s.phase==='aim';i++)E.skip(s);assert.ok(s.ground[0]>E.H);s=E.create({tank:'scout',enemy:'guardian',seed:30,collapse:false});const turns=[];for(let i=0;i<12;i++){turns.push(s.turn);E.skip(s);}assert.ok(turns.some((x,i)=>i>0&&x===turns[i-1]));for(const k of ['teleport','powerup','shield','wind','double']){s=E.create({seed:33,tank:'cannon'});assert.ok(E.item(s,k));assert.equal(s.tanks[0].items[k],0);}s=E.create({seed:2,tank:'frost'});s.tanks[0].frozenTurn=true;E.aim(s,45,100,1,0);assert.equal(s.tanks[0].power,65);});
