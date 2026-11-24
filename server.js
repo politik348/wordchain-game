@@ -575,7 +575,7 @@ const handler=async(req,res)=>{
       const tasteFile=ESCAPE_TASTE_ASSETS.get(pathname);
       if(isEscapeTaste&&!tasteFile)throw err(404,'맛보기 파일을 찾을 수 없습니다.');
       const protectedEscape=pathname==='/escape'||pathname.startsWith('/escape/');
-      const memberRoots=['/gamehell','/tetris','/logic','/fortress','/fighter'];
+      const memberRoots=['/gamehell','/tetris','/logic','/fortress','/fighter','/kof97'];
       const memberRoot=memberRoots.find(root=>pathname===root||pathname.startsWith(root+'/'));
       const protectedMember=Boolean(memberRoot);
       const gamehellEntrypoint=pathname==='/gamehell'||pathname==='/gamehell/'||pathname==='/gamehell/index.html';
