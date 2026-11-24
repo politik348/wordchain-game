@@ -592,7 +592,7 @@ const handler=async(req,res)=>{
       const publicFortressCat=memberRoot==='/fortress'&&
         (pathname===memberRoot||pathname===memberRoot+'/'||pathname===memberRoot+'/index.html')&&
         u.searchParams.get('cat')==='1';
-      const publicFortressArt=memberRoot==='/fortress'&&/^\/fortress\/art\/(?:v3\/(?:valley|desert|moon|islands|pirate|mine)-(?:sky|tile)\.svg|v5\/(?:venom|flame|frost|seeker|mortar|thunder|guardian|scout)-card\.webp)$/.test(pathname);
+      const publicFortressArt=memberRoot==='/fortress'&&/^\/fortress\/art\/(?:v3\/(?:valley|desert|moon|islands|pirate|mine)-(?:sky|tile)\.svg|v5\/(?:venom|flame|frost|seeker|mortar|thunder|guardian|scout)-card\.webp|v6\/(?:venom|flame|frost|seeker|mortar|thunder|guardian|scout|super)-sprite\.webp)$/.test(pathname);
       if(protectedEscape)await requireEscapeAccess(req);
       if(protectedMember&&!publicGamehellTrial&&!publicGamehellAsset&&!publicFortressCat&&!publicFortressArt&&!await getAuthenticatedAccount(req)){
         if(pathname===memberRoot||pathname===memberRoot+'/'||pathname===memberRoot+'/index.html'){

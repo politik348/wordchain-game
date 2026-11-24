@@ -1,0 +1,5 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import vm from 'node:vm';
+const types=['venom','flame','frost','seeker','mortar','thunder','guardian','scout','super'];
+const page=readFileSync(new URL('../public/fortress/index.html',import.meta.url),'utf8');
+test('v6 sprite files contain WebP headers and all 9 are mapped',()=>{for(const k of types){const b=readFileSync(new URL('../public/fortress/art/v6/'+k+'-sprite.webp',import.meta.url));assert.equal(b.toString('ascii',0,4),'RIFF');assert.equal(b.toString('ascii',8,12),'WEBP');assert.ok(b.length>1000);}assert.ok(page.includes('premiumSprites'));assert.ok(page.includes('art/v6/'));assert.ok(page.includes('paintPremium'));assert.ok(page.includes('muzzleFlash'));});
+test('render code parses and all 13 tanks remain in the engine',()=>{const scripts=[...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]);scripts.forEach(s=>new vm.Script(s));const world=vm.createContext({});vm.runInContext(scripts[0],world);assert.equal(Object.keys(world.FortressEngine.TANKS).length,13);});
