@@ -1,0 +1,2 @@
+# Fortress v0.3 terrain artwork
+Six original scalable 1920 × 1000 SVG background compositions and six 512 × 512 SVG material textures. Backgrounds are decorative (no collision), tiles repeat only inside the engine's current ground heightfield mask. The game physics, AI, weapons and map generation are unchanged. The canvas caches texture patterns after loading. The old embedded map thumbnails remain fallback backgrounds if a new SVG fails to load.
