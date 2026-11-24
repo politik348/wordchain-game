@@ -556,3 +556,8 @@ button.omok-cell, button.omok-cell:disabled, button.omok-cell[disabled]{opacity:
 .game-card-illustrated .game-animal-bell{background-position:0% 100%}
 .game-card-illustrated .game-animal-liar{background-position:50% 100%}
 .game-card-illustrated .game-animal-wordchain{background-position:100% 100%}
+
+/* Fortress gallery — standalone artillery game */
+.game-card-illustrated .game-animal-fortress{background-image:url('/assets/fortress-gallery.webp');background-size:cover;background-position:center}
+.cat-hub-page .cat-choice-art-fortress{background-image:url('/assets/fortress-cat.webp');background-size:cover;background-position:center}
+.cat-feature-image-card{position:relative}.cat-feature-image-card::after{content:'7 GAMES';position:absolute;right:12px;top:12px;background:#553b65;color:white;font-weight:900;font-size:12px;padding:6px 10px;border-radius:14px;pointer-events:none}

@@ -1,12 +1,13 @@
 // The Cat Challenge is a mode hub, not a multiplayer game.
-export const CAT_CHALLENGE_GAMES = ['omok', 'yut', 'rummikub', 'marble', 'tetris', 'wordchain'];
+export const CAT_CHALLENGE_GAMES = ['omok', 'yut', 'rummikub', 'marble', 'tetris', 'wordchain', 'fortress'];
 const catDetails = {
   omok: '흑백돌로 고양이와 오목 한 판',
   yut: '윷 운과 포석으로 겨루는 대결',
   rummikub: '타일을 조합하는 전략 대결',
   marble: '도시를 차지하는 부동산 승부',
   tetris: '강한 고양이와 블록 퍼즐 대결',
-  wordchain: '끝말잇기와 쿵쿵따 한 판'
+  wordchain: '끝말잇기와 쿵쿵따 한 판',
+  fortress: '바람과 탄도를 읽는 고양이 탱크 대전'
 };
 const escapeHtml = text => String(text ?? '').replace(/[&<>"']/g, char => ({
   '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
@@ -15,7 +16,7 @@ const escapeHtml = text => String(text ?? '').replace(/[&<>"']/g, char => ({
 export function renderCatFeatured() {
   // The full illustration includes the title and CTA; the whole card stays clickable.
   return '<button type="button" class="game-card cat-feature-card cat-feature-image-card" data-action="openCatHub" aria-label="고양이를 이겨라! 고양이와 승부하기">' +
-    '<img class="cat-feature-image" src="/assets/cat-feature-banner.png" alt="고양이를 이겨라! SOLO CHALLENGE · 6 GAMES. 고양이와 승부하기" width="775" height="470" loading="eager" decoding="async" />' +
+    '<img class="cat-feature-image" src="/assets/cat-feature-banner.png" alt="고양이를 이겨라! SOLO CHALLENGE · 7 GAMES. 고양이와 승부하기" width="775" height="470" loading="eager" decoding="async" />' +
     '</button>';
 }
 
@@ -24,7 +25,7 @@ export function renderCatHub(games) {
     '<div class="breadcrumb"><button data-action="home">홈</button><span>›</span><span>고양이를 이겨라</span></div>'+
     '<section class="cat-hub-hero cat-hub-hero-refresh" aria-labelledby="cat-hub-title">'+
       '<div class="cat-hub-intro">'+
-        '<span class="cat-hub-eyebrow">✦ SOLO CHALLENGE · 6 GAMES</span>'+
+        '<span class="cat-hub-eyebrow">✦ SOLO CHALLENGE · 7 GAMES</span>'+
         '<h1 id="cat-hub-title">고양이에게<br>도전할 시간!</h1>'+
         '<p>오목부터 끝말잇기까지. 마음에 드는 게임을 고르고 고양이와 한 판 승부해 보세요!</p>'+
         '<a href="#cat-game-choices" class="cat-hub-jump">게임 선택하기 <span aria-hidden="true">↓</span></a>'+
@@ -33,7 +34,7 @@ export function renderCatHub(games) {
         '<img src="/assets/cat-hub-mascot.webp" alt="" width="630" height="480" loading="eager" decoding="async">'+
       '</div>'+
     '</section>'+
-    '<div class="cat-hub-heading" id="cat-game-choices"><h2>어떤 게임으로 도전할까요?</h2><span>6가지 고양이 대전</span></div>'+
+    '<div class="cat-hub-heading" id="cat-game-choices"><h2>어떤 게임으로 도전할까요?</h2><span>7가지 고양이 대전</span></div>'+
     '<div class="cat-choice-grid">'+games.map((g,index)=>{
       const id=escapeHtml(g.id),name=escapeHtml(g.name),icon=escapeHtml(g.emoji);
       return '<button type="button" class="cat-choice-card cat-choice-'+id+'" data-action="catChoose" data-cat-game="'+id+'">'+
