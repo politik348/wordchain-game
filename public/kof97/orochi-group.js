@@ -15,6 +15,35 @@ const get=d=>profiles[d?.key]||null;
 const timing=(d,k)=>get(d)?.moves[k]||null;
 const clamp=x=>Math.max(0,Math.min(1,x));
 const atlas=new Map();
+const requiredGroups=['idle','walk','crouch','guard','jump','punch','kick','special','upper','grab','hit','ko','win','evade','super'];
+const base=typeof document!=='undefined'&&document.currentScript?new URL('./orochi-assets/',document.currentScript.src):null;
+function validated(asset){
+ if(!asset||typeof asset.portrait!=='string'||typeof asset.src!=='string'||!Number.isInteger(asset.columns)||asset.columns<1||asset.columns>32||!Number.isInteger(asset.width)||asset.width<1||!Number.isInteger(asset.height)||asset.height<1||!asset.frames||!Number.isFinite(asset.anchorY??.93)||(asset.anchorY??.93)<0||(asset.anchorY??.93)>1)return false;
+ return requiredGroups.every(k=>Array.isArray(asset.frames[k])&&asset.frames[k].length&&asset.frames[k].every(i=>Number.isInteger(i)&&i>=0));
+}
+function loadImage(src){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('Asset image unavailable'));im.src=src;});}
+function assetInfo(d){const a=atlas.get(d.key);return a&&ready(a.im)&&ready(a.portrait)?a:null;}
+function drawFrame(c,d,group,index,dx,dy,dw,dh){const a=assetInfo(d),seq=a?.frames[group];if(!seq||!Number.isInteger(index)||index<0||index>=seq.length)return false;const i=seq[index],sx=i%a.columns*a.width,sy=Math.floor(i/a.columns)*a.height;if(sx+a.width>a.im.naturalWidth||sy+a.height>a.im.naturalHeight)return false;c.drawImage(a.im,sx,sy,a.width,a.height,dx,dy,dw,dh);return true;}
+async function loadAssets(){
+ if(!base||typeof fetch!=='function')return [];
+ try{
+   const res=await fetch(new URL('manifest.json',base));if(!res.ok)return [];
+   const manifest=await res.json(),entries=manifest.characters||{};
+   const tasks=Object.keys(profiles).map(async id=>{
+     const data=entries[id];if(!validated(data))return null;
+     const localPath=s=>typeof s==='string'&&/^[a-z0-9_-]+\.(png|webp)$/i.test(s);
+     if(!localPath(data.src)||!localPath(data.portrait))return null;
+     try{
+       const src=new URL(data.src,base).href,portraitSrc=new URL(data.portrait,base).href;
+       const [im,portrait]=await Promise.all([loadImage(src),loadImage(portraitSrc)]);
+       if(im.naturalWidth!==data.width*data.columns||im.naturalHeight%data.height!==0||Object.values(data.frames).flat().some(i=>!Number.isInteger(i)||i<0||i>=data.columns*im.naturalHeight/data.height))return null;
+       atlas.set(Number(id),{...data,src,portraitSrc,im,portrait});
+       return Number(id);
+     }catch{return null;}
+   });
+   return (await Promise.all(tasks)).filter(x=>x!==null);
+ }catch{return [];}
+}
 function register(d,asset){
  const p=get(d);if(!p||!asset?.portrait||!asset?.src||!asset?.frames||!Number.isInteger(asset.columns)||asset.columns<1||!Number.isInteger(asset.width)||asset.width<1||!Number.isInteger(asset.height)||asset.height<1)return false;
  const im=new Image(),portrait=new Image();im.src=asset.src;portrait.src=asset.portrait;atlas.set(d.key,{...asset,im,portrait});return true;
@@ -66,5 +95,6 @@ function effects(c,f,frame,layer){
  }
  c.restore();
 }
-root.KOFOrochiGroup=Object.freeze({get,timing,register,portrait,draw,effects,projectileColor:d=>get(d)?.color||null});
+const assetsReady=loadAssets();
+root.KOFOrochiGroup=Object.freeze({get,timing,register,portrait,draw,effects,assetInfo,drawFrame,assetsReady,projectileColor:d=>get(d)?.color||null});
 })(window);
