@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "key": 21,
+  "status": "pending",
+  "species": "코브라",
+  "brief": "Snake-arm lash / counter strike / guillotine",
+  "pixelsPerBody": null,
+  "frames": [],
+  "actions": {}
+}
