@@ -12,6 +12,7 @@ import {createMembershipUI} from './auth-ui.mjs?v=20261120statusrefresh1';
 import {renderPregame} from './pregame-lobbies.mjs?v=20261120catIcon2';
 import {renderOnlineWaiting} from './waiting-room.mjs?v=20261120catlevels1';
 const GAMES=[
+ {id:'kof97',name:'모여 KOF ’97',genre:'격투 · 3인 팀전',players:'1~2명',emoji:'🥊',color:'#d0b3e6',badge:'회원 전용 · 개발판',desc:'동물화 KOF ’97 팬게임. 3인 생존전과 ADVANCED·EXTRA, 오로치 도전. 초기 개발판.',rules:[['팀전','세 명을 선택해 출전 순서를 정하세요.'],['시스템','ADVANCED 또는 EXTRA를 선택합니다.'],['대전','CPU, 로컬 2인, 연습, 아케이드 모드.']]},
  {id:'fighter',name:'모여 파이터즈',genre:'격투 · 아케이드',players:'1~2명',emoji:'🥊',color:'#e4c2a8',badge:'회원 전용 · 팬게임',desc:'류, 켄, 춘리 등 동물화된 8명의 격투가! CPU 대전, 2인 로컬 대전, 연습 모드로 즐기는 비공식 비상업 팬게임.',rules:[['격투','펀치·킥·가드·잡기와 고유 기술을 사용합니다.'],['대전','3판 2선승으로 승부합니다.'],['조작','키보드와 1P 터치 조작을 지원합니다.']]},
  {id:'fortress',name:'모여 포트리스',genre:'포격 · 턴제 전략',players:'1~8명',emoji:'🎯',color:'#efcf94',badge:'회원 전용 · 온라인 팀전',desc:'탱크 13종과 전장 6종! 1vs1~4vs4 온라인 팀전, 고양이 AI, 로컬 대전, 스테이지 도전 및 회원 랭킹.',rules:[['포격','각도·파워·바람을 고려해 발사합니다.'],['지형 파괴','포탄으로 지형을 파괴하고 상대를 떨어뜨릴 수 있습니다.'],['대전','고양이 AI·로컬 또는 회원끼리 최대 8명 온라인 팀전을 즐깁니다.']]},
  {id:'escape',name:'모여 방탈출',genre:'2.5D · 미스터리',players:'1명',emoji:'🔐',color:'#e2e8fa',badge:'주인장 승인 · v4.0',desc:'13번째 종소리 · 동화풍 달빛 저택의 4개 방을 탐험하고 퍼즐 10종을 풀어 기억을 되찾으세요. 주인장 플레이 승인 필요.',rules:[['주인장 이용 승인','회원가입·로그인한 뒤 주인장의 별도 승인을 받아야 플레이할 수 있습니다.'],['공간 탐색','현관·서재·온실·시계탑을 둘러보고 아이템을 조합하여 필수 퍼즐 8종과 선택 퍼즐 2종을 해결합니다.'],['3가지 결말','선택 수집품과 단서를 모아 일반·진실·대안 엔딩을 발견합니다.']]},
@@ -963,7 +964,7 @@ document.addEventListener('click',async e=>{
   gamePrefs[selection][key]=key==='turnSeconds'?Number(value):value;
   persistPregamePrefs();render();return;
  }
- const g=e.target.closest('[data-game]');if(g){if(g.dataset.game==='escape'){location.href='/escape-access/index.html';return;}if(g.dataset.game==='marble'){location.href='/marble/index.html';return;}if(g.dataset.game==='gamehell'){location.href='/gamehell/index.html';return;}if(g.dataset.game==='fighter'){if(!(await membership.requireLogin(()=>{location.href='/fighter/index.html';})))return;location.href='/fighter/index.html';return;}if(g.dataset.game==='fortress'){if(!(await membership.requireLogin(()=>{location.href='/fortress/index.html';})))return;location.href='/fortress/index.html';return;}if(g.dataset.game==='tetris'){location.href='/tetris/index.html';return;}if(g.dataset.game==='logic'){location.href='/logic/index.html';return;}selection=g.dataset.game;view='detail';await refreshRooms(selection);render();window.scrollTo(0,0);return;}
+ const g=e.target.closest('[data-game]');if(g){if(g.dataset.game==='escape'){location.href='/escape-access/index.html';return;}if(g.dataset.game==='marble'){location.href='/marble/index.html';return;}if(g.dataset.game==='gamehell'){location.href='/gamehell/index.html';return;}if(g.dataset.game==='kof97'){if(!(await membership.requireLogin(()=>{location.href='/kof97/index.html';})))return;location.href='/kof97/index.html';return;}if(g.dataset.game==='fighter'){if(!(await membership.requireLogin(()=>{location.href='/fighter/index.html';})))return;location.href='/fighter/index.html';return;}if(g.dataset.game==='fortress'){if(!(await membership.requireLogin(()=>{location.href='/fortress/index.html';})))return;location.href='/fortress/index.html';return;}if(g.dataset.game==='tetris'){location.href='/tetris/index.html';return;}if(g.dataset.game==='logic'){location.href='/logic/index.html';return;}selection=g.dataset.game;view='detail';await refreshRooms(selection);render();window.scrollTo(0,0);return;}
  const join=e.target.closest('[data-join]');if(join){await joinRoom(join.dataset.join);return;}
  const b=e.target.closest('[data-action]');if(!b)return;
  const pregameMode=view==='catSetup'?'cat':pregameModesFor(selection).includes(pregameModes[selection])?pregameModes[selection]:pregameModesFor(selection)[0];
@@ -1110,7 +1111,7 @@ membership=createMembershipUI({
  },
  afterLogin(){
   const params=new URLSearchParams(location.search),next=params.get('next');
-  if(next&&/^\/(?:marble\/index\.html|gamehell\/index\.html|tetris\/index\.html|logic\/index\.html|fortress\/index\.html|fighter\/index\.html|escape-access\/index\.html)(?:\?[^#]*)?(?:#.*)?$/.test(next)){location.href=next;return;}
+  if(next&&/^\/(?:marble\/index\.html|gamehell\/index\.html|tetris\/index\.html|logic\/index\.html|fortress\/index\.html|fighter\/index\.html|kof97\/index\.html|escape-access\/index\.html)(?:\?[^#]*)?(?:#.*)?$/.test(next)){location.href=next;return;}
   refreshRooms(view==='detail'?selection:'').then(()=>render());
  }
 });
