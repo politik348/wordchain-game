@@ -595,7 +595,7 @@ const handler=async(req,res)=>{
       const publicFortressArt=memberRoot==='/fortress'&&/^\/fortress\/art\/(?:v3\/(?:valley|desert|moon|islands|pirate|mine)-(?:sky|tile)\.svg|v5\/(?:venom|flame|frost|seeker|mortar|thunder|guardian|scout)-card\.webp|v6\/(?:venom|flame|frost|seeker|mortar|thunder|guardian|scout|super)-sprite\.webp)$/.test(pathname);
       // Only the fixed solo cat route and its exact static art scripts are public.
       const publicFighterCat=memberRoot==='/fighter'&&(pathname===memberRoot||pathname===memberRoot+'/'||pathname===memberRoot+'/index.html')&&u.searchParams.get('cat')==='1';
-      const publicFighterAsset=memberRoot==='/fighter'&&/^\/fighter\/(?:art-(?:tiger|lion|rabbit|gorilla|eagle|octopus|eel|hippo|stages|portraits-v3|frames-stage-v3|stage-(?:airbase|alley|roof|throne|jungle|sumo)-v5)|cat-assets-v4)\.js$/.test(pathname);
+      const publicFighterAsset=memberRoot==='/fighter'&&/^\/fighter\/(?:art-(?:tiger|lion|rabbit|gorilla|eagle|octopus|eel|hippo|stages|portraits-v3|frames-stage-v3|frames-(?:octopus|eel|hippo)-v5|stage-(?:airbase|alley|roof|throne|jungle|sumo)-v5)|cat-assets-v4)\.js$/.test(pathname);
       if(protectedEscape)await requireEscapeAccess(req);
       if(protectedMember&&!publicGamehellTrial&&!publicGamehellAsset&&!publicFortressCat&&!publicFortressArt&&!publicFighterCat&&!publicFighterAsset&&!await getAuthenticatedAccount(req)){
         if(pathname===memberRoot||pathname===memberRoot+'/'||pathname===memberRoot+'/index.html'){
