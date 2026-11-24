@@ -4,7 +4,7 @@
 const base=root.KOFArt;
 if(!base||root.KOFNewfaceRivals)return;
 const allowed=new Set([24,25,26,27,28,29]), assets=new Map();
-const registryURL=new URL('./assets/newface-rivals.json',document.currentScript.src);
+const registryURL=new URL('./assets/newface-rivals.json?v=2',document.currentScript.src);
 const clamp=t=>Math.max(0,Math.min(1,t));
 const load=url=>new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url;});
 const has=(d)=>d&&allowed.has(d.key);
@@ -49,7 +49,7 @@ function draw(c,d,x,y,face,f,scale,frame,state,win){
  const rect=seq[Math.min(seq.length-1,Math.floor(t*seq.length))];
  const [sx,sy,sw,sh,ax,ay]=rect;
  // All frames use a shared source-pixel scale, so changing bounds cannot resize a fighter.
- const reference=a.frames.idle[0][3],ratio=a.displayHeight/reference*scale;
+ const reference=a.sourceHeight||a.frames.idle[0][3],ratio=a.displayHeight/reference*scale;
  c.save();c.translate(x,y);c.scale(face,1);c.imageSmoothingEnabled=true;
  c.drawImage(a.atlas,sx,sy,sw,sh,-ax*ratio,-ay*ratio,sw*ratio,sh*ratio);c.restore();return true;
 }
