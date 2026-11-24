@@ -56,7 +56,7 @@ function choose(f,frame,win){
  if(win)return ['win',(frame%60)/60];
  if(f.stun)return ['hit',clamp(1-f.stun/32)];
  if(f.evade)return ['evade',clamp(1-f.evade/18)];
- if(f.attack){const a=f.attack,k=a.key;const group=k==='super'?'super':k==='upper'?'upper':k==='grab'?'grab':['dash','shot','charge','electric','long','spin','flurry'].includes(k)?'special':['kick','mk','hk'].includes(k)?'kick':'punch';return [group,clamp(a.t/Math.max(1,a.total))];}
+ if(f.attack){const a=f.attack,k=a.key;const group=k==='super'?'super':k==='upper'?'upper':k==='grab'?'grab':['dash','shot','charge','electric','long','spin','flurry'].includes(k)?'special':['kick','mk','hk'].includes(k)?'kick':'punch';return [a.orochi?.art||group,clamp(a.t/Math.max(1,a.total))];}
  if(f.y<449)return ['jump',clamp((f.vy+13)/26)];
  if(f.guard)return ['guard',.5];
  if(f.crouch)return ['crouch',.5];
