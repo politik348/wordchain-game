@@ -24,8 +24,8 @@
     });
   }
   function valid(m,im){
-    if(!m||m.version!==1||!m.frames||!m.actions)return false;
-    return required.every(a=>Array.isArray(m.actions[a])&&m.actions[a].length>=2&&m.actions[a].every(i=>Number.isInteger(i)&&i>=0&&i<m.frames.length))&&
+    if(!m||m.version!==1||!Array.isArray(m.frames)||!m.frames.length||!m.actions)return false;
+    return required.every(a=>Array.isArray(m.actions[a])&&new Set(m.actions[a]).size>=2&&m.actions[a].every(i=>Number.isInteger(i)&&i>=0&&i<m.frames.length))&&
       m.frames.every(f=>f&&[f.x,f.y,f.w,f.h,f.ax,f.ay].every(Number.isFinite)&&f.x>=0&&f.y>=0&&f.w>0&&f.h>0&&f.x+f.w<=im.naturalWidth&&f.y+f.h<=im.naturalHeight&&f.ax>=0&&f.ax<=f.w&&f.ay>=0&&f.ay<=f.h)&&
       Number.isFinite(m.pixelsPerBody)&&m.pixelsPerBody>0;
   }
@@ -41,7 +41,7 @@
         const response=await fetch(new URL('motions.json',dir));
         if(!response.ok)return false;
         const m=await response.json();
-        if(m.key!==d.key||m.status!=='ready')return false;
+        if(m.key!==d.key||m.status!=='ready'||m.species!==p.species)return false;
         const [atlas,portrait]=await Promise.all([image(new URL('sprites.png',dir)),image(new URL('portrait.png',dir))]);
         if(!valid(m,atlas))return false;
         Object.assign(entry,{ready:true,m,atlas,portrait});
@@ -64,7 +64,8 @@
     else if(f.stun){a='hit';t=1-clamp(f.stun/24);}
     else if(f.attack){
       const q=f.attack,k=q.key;
-      a=k==='super'?'super':k===p.alternate?'alt':k===p.primary?'special':
+      a=k==='super'?'super':q.artIntent==='alt'?'alt':q.artIntent==='special'?'special':
+        q.artIntent!=='normal'&&k===p.alternate?'alt':q.artIntent!=='normal'&&k===p.primary&&!['kick','grab'].includes(k)?'special':
         ['kick','mk','hk'].includes(k)?'kick':k==='grab'?'grab':'punch';
       t=q.t<q.start?.32*q.t/Math.max(1,q.start):q.t<=q.end?.32+.40*(q.t-q.start)/Math.max(1,q.end-q.start):.72+.28*(q.t-q.end)/Math.max(1,q.total-q.end);
     }else if(f.y<449){a='jump';t=clamp((f.vy+15)/30);}
@@ -85,7 +86,7 @@
     }finally{c.restore();}
     return true;
   }
-  window.KOFGroup1723=Object.freeze({profiles,pose,draw,load,ready:key=>!!cache.get(key)?.ready});
+  window.KOFGroup1723=Object.freeze({profiles,pose,draw,load,valid,ready:key=>!!cache.get(key)?.ready});
   window.KOFArt={...original,
     draw(...args){return draw(...args)||original.draw(...args);},
     portrait(d){const e=load(d);return e?.ready?e.portrait.src:original.portrait(d);},

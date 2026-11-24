@@ -15,3 +15,7 @@ The loader is deliberately opt-in and preserves existing rendering until a valid
 | 23 | billy | 붉은여우 | Three-section staff thrust / spinning staff / flame staff whirlwind |
 
 Each folder requires portrait.png (full body, transparent, no official logo or text), sprites.png (transparent packed atlas), and motions.json. The latter must contain version: 1, key: roster key, status: ready, pixelsPerBody: standing body height in source pixels, frames: [{x,y,w,h,ax,ay}], actions: {idle,walk,jump,crouch,guard,hit,ko,win,evade,punch,kick,grab,special,alt,super}. Every action has at least two frame indices; idle/walk loop, attacks map to startup/active/recovery. Use manually verified crop rectangles and feet anchors, never assume generated sheets have uniform cells. Match the current roster species and costume on every frame. Portrait, sprite and metadata must be committed together. Existing fight logic and other characters remain unchanged.
+
+## Input routing and tests
+
+The engine records artIntent only for these seven fighters, without changing damage, timing, movement, meter or collision behavior. Normal kick and normal grab remain separate from Kim's and Mary's same-key special actions. Alternate inputs (including cancel chains) select `alt` even if the existing engine uses a different underlying attack key. Species must match the roster exactly, and each action requires at least two distinct frame indices. Run `node --test tests/kof97-group-17-23.test.cjs` from the repository root for the adapter regression test.
