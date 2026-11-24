@@ -41,7 +41,37 @@ function drawGuile(c,d,x,y,face,f,scale){
  let frames=seq[group]||seq.idle,index=frames[Math.min(frames.length-1,Math.floor(progress*frames.length))],size=272*scale/1.12;
  c.save();c.translate(x,y);c.scale(face,1);if(f.hp<=0){c.translate(-20,-6);c.rotate(-1.25)}c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.drawImage(img,(index%8)*192,Math.floor(index/8)*192,192,192,-size/2,-size*187/192,size,size);c.restore();return true;
 }
+// Character-specific timing using existing eight-pose atlases. These are transform-based
+// animation phases, not a claim of independently hand-drawn frames.
+function drawTechnical(c,d,x,y,face,f,scale){
+ if(!f||!['octopus','eel','hippo'].includes(d.id))return false;
+ const im=artImages[d.id+'-poses'];if(!isArtReady(im))return false;
+ const a=f.attack,k=a?.key,phase=a?Math.max(0,Math.min(1,(a.t-a.start)/Math.max(1,a.end-a.start))):0;
+ const pulse=Math.sin(Math.PI*phase),active=a&&a.t>=a.start&&a.t<=a.end;
+ let pose=0,dx=0,dy=0,tilt=0,sx=1,sy=1,trail=false;
+ if(f.hp<=0){pose=2;tilt=-1.30;dy=-9}
+ else if(f.stun){pose=2;dx=-9;tilt=-.13*Math.min(1,f.stun/14);sx=.97}
+ else if(state==='done'&&wins[f.i]>=2){pose=7;sy=1+.015*Math.sin(frame*.12)}
+ else if(a){if(a.t<a.start){pose=a.t<a.start*.45?1:2;dx=-7*a.t/a.start;sy=.95}
+ else if(active){pose=['kick','mk','hk'].includes(k)?5:['long','dash','electric','flurry','shot','charge','super','grab','spin','upper'].includes(k)?6:4;
+ if(d.id==='octopus'&&k==='long'){sx=1+.36*pulse;dx=20*pulse;tilt=.04}
+ if(d.id==='eel'&&k==='dash'){pose=3;tilt=phase*Math.PI*2;sy=.72;sx=.83;dy=-62;trail=true}
+ if(d.id==='eel'&&k==='electric'){pose=Math.floor(a.t/3)%2?6:2;sx=1+.04*Math.sin(a.t*2);sy=.92;trail=true}
+ if(d.id==='hippo'&&k==='flurry'){pose=Math.floor(a.t/3)%2?4:6;dx=12+Math.sin(a.t*1.7)*7;trail=true}
+ if(d.id==='hippo'&&k==='dash'){pose=6;tilt=.35;dx=18;sy=.86;trail=true}
+ if(k==='super'){trail=true;sx=1+.12*pulse;dx=15*pulse}
+ }else{const rec=(a.t-a.end)/Math.max(1,a.total-a.end);pose=rec<.4?1:0;dx=7*(1-rec)}}
+ else if(f.y<FLOOR-2){pose=3;tilt=Math.max(-.13,Math.min(.13,f.vy*.009))}
+ else if(f.guard||f.crouch){pose=2;sy=f.crouch?.84:1}
+ else if(f.moving){pose=Math.floor(frame/6)%2;dx=Math.sin(frame*.4)*3;tilt=Math.sin(frame*.3)*.035;sy=1+.025*Math.sin(frame*.5)}
+ else{pose=Math.floor(frame/24)%2;sy=1+.014*Math.sin(frame*.13)}
+ const size=(d.id==='hippo'?255:240)*scale/1.12;
+ c.save();c.translate(x,y+dy);c.scale(face,1);c.translate(dx,0);c.rotate(tilt);c.scale(sx,sy);c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';
+ const draw=()=>c.drawImage(im,pose%4*384,Math.floor(pose/4)*384,384,384,-size/2,-size*380/384,size,size);
+ if(trail){c.save();c.globalAlpha=.20;c.translate(-22,0);draw();c.translate(-18,0);c.globalAlpha=.10;draw();c.restore()}draw();c.restore();return true;
+}
 function drawSprite(c,d,x,y,face,f,scale){
+ if(drawTechnical(c,d,x,y,face,f,scale))return true;
  if(drawGuile(c,d,x,y,face,f,scale))return true;
  const img=artImages[d.id+'-poses'];if(!isArtReady(img))return false;
  const a=f?.attack,k=a?.key;let pose=0,shift=0,tilt=0,sx=1,sy=1;
