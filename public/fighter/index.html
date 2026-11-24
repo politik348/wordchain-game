@@ -9,6 +9,7 @@
 <script src="./art-eel.js?v=2"></script>
 <script src="./art-hippo.js?v=2"></script>
 <script src="./art-stages.js?v=2"></script>
+<script src="./art-portraits-v3.js?v=3"></script>
 <script>window.MOYEO_FIGHTERS=[
 {id:'tiger',name:'류',en:'RYU',species:'호랑이',role:'균형형',color:'#e78a39',light:'#ffe1ae',dark:'#5b342c',gi:'#f1ece0',belt:'#22232a',speed:4.1,hp:1000,power:1,reach:1,special:'파동권',kind:'shot',alt:'승룡권',super:'진공파동권'},
 {id:'lion',name:'켄',en:'KEN',species:'사자',role:'공격형',color:'#d8a148',light:'#ffe4a8',dark:'#8c452d',gi:'#c83132',belt:'#24232a',speed:4.8,hp:970,power:1.04,reach:1,special:'파동권',kind:'shot',alt:'승룡권',super:'승룡열파'},
@@ -25,24 +26,28 @@ const hero=document.querySelector('#artHero');if(hero&&ART.banner){hero.src=ART.
 function isArtReady(im){return !!(im&&im.complete&&im.naturalWidth>0)}
 function drawSprite(c,d,x,y,face,f,scale){
  const img=artImages[d.id+'-poses'];if(!isArtReady(img))return false;
- let a=f?.attack,k=a?.key,active=!!a&&a.t>=Math.max(1,a.start-3)&&a.t<=a.end+4,pose=0;
- if(f?.hp<=0||f?.stun>0)pose=2;
- else if(active)pose=['kick','mk','hk','spin','flurry'].includes(k)?5:['shot','charge','upper','super','long','dash','electric','grab'].includes(k)?6:4;
- else if(f?.y<FLOOR-2)pose=3;
- else if(f?.guard||f?.crouch)pose=2;
- else if(f?.moving)pose=Math.floor(frame/7)%2?1:0;
- else if(!f)pose=0;
- else if(state==='done'&&wins[f.i]>=2)pose=7;
- else pose=Math.floor(frame/30)%2?1:0;
+ const a=f?.attack,k=a?.key;let pose=0,shift=0,tilt=0,sx=1,sy=1;
+ const clamp=(v)=>Math.max(0,Math.min(1,v)),ease=(v)=>{v=clamp(v);return v*v*(3-2*v)};
+ const grounded=!f||f.y>=FLOOR-2,win=f&&state==='done'&&wins[f.i]>=2;
+ const special=['shot','charge','upper','super','long','dash','electric','grab','spin'].includes(k),kick=['kick','mk','hk','flurry'].includes(k);
+ if(f?.hp<=0){pose=2;tilt=-1.25;shift=-18;sy=.88}
+ else if(f?.stun>0){pose=2;tilt=-.16*ease(f.stun/14);shift=-8*ease(f.stun/14);sx=.95;sy=.98}
+ else if(win){pose=7;sy=1+.012*Math.sin(frame*.12)}
+ else if(a){
+   let anticipation=ease(a.t/Math.max(1,a.start)),recovery=ease((a.t-a.end)/Math.max(1,a.total-a.end));
+   if(a.t<a.start){pose=a.t<a.start*.45?1:2;shift=-6*anticipation;tilt=-.06*anticipation;sy=1-.05*anticipation}
+   else if(a.t<=a.end){pose=special?6:kick?5:4;let pulse=['flurry','electric','spin'].includes(k)?Math.sin((a.t-a.start)*.9):1;shift=(special?12:9)+pulse*3;tilt=k==='dash'?.19:k==='upper'?-.13:.045;sx=1.025;sy=1.01;
+   if(k==='flurry'&&Math.floor((a.t-a.start)/3)%2)pose=4;
+   if(k==='electric'&&Math.floor((a.t-a.start)/4)%2)pose=2;}
+   else {pose=recovery<.22?(special?6:kick?5:4):recovery<.7?1:0;shift=8*(1-recovery);tilt=.035*(1-recovery);sy=1-.025*Math.sin(Math.PI*recovery)}
+ }
+ else if(!grounded){pose=3;tilt=Math.max(-.1,Math.min(.12,(f.vy||0)*.007))}
+ else if(f?.crouch||f?.guard){pose=2}
+ else if(f?.moving){const phase=frame*.32;pose=Math.sin(phase)>0?1:0;shift=2*Math.sin(phase);tilt=.035*Math.cos(phase);sy=1+.018*Math.sin(phase*2)}
+ else if(f){pose=Math.floor(frame/30)%2?1:0;sy=1+.015*Math.sin(frame*.105)}
  const size=(['gorilla','hippo'].includes(d.id)?238:d.id==='rabbit'?210:224)*scale/1.12;
- let bob=f&&f.y>=FLOOR&&!a&&!f.crouch?Math.sin(frame*(f.moving?.28:.10))*(f.moving?3:1.4):0;
- c.save();c.translate(x,y+bob);c.scale(face,1);
- if(f?.hp<=0){c.translate(-12,-10);c.rotate(-Math.PI*.42)}
- else if(f?.stun>0)c.rotate(-.10);
- else if(active&&k==='dash')c.rotate(.12);
- if(active&&['punch','medium','heavy','kick','mk','hk','long','grab'].includes(k))c.translate(9,0);
- if(f?.crouch&&!['tiger','lion','rabbit','gorilla'].includes(d.id))c.scale(1,.76);
- c.imageSmoothingEnabled=['tiger','lion','rabbit','gorilla'].includes(d.id);
+ let bob=f&&grounded&&!a&&!f.crouch&&!f.guard&&!win&&f.hp>0?Math.sin(frame*(f.moving?.32:.105))*(f.moving?2:1):0;
+ c.save();c.translate(x,y+bob);c.scale(face,1);c.translate(shift,0);c.rotate(tilt);c.scale(sx,sy);c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';
  c.drawImage(img,(pose%4)*384,Math.floor(pose/4)*384,384,384,-size/2,-size*380/384,size,size);
  c.restore();return true;
 }
