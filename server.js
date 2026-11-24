@@ -8,6 +8,7 @@ import { randomBytes, randomInt } from 'node:crypto';
 import {acceptWebSocket} from './websocket-lite.mjs';
 import {applyYutMove,legalYutMoves,yutSelectedSteps,usableYutRolls} from './public/yut-solo-engine.mjs';
 import {startRummikub, sanitizeRummikub, actRummikub, tickRummikub, labelRummikub} from './rummikub/multiplayer.mjs';
+import {handleFortressRequest} from './fortress-server.mjs';
 import {handleMarbleRequest} from './marble-server.mjs';
 import {handleAccountRequest,multiplayerAccount,requireEscapeAccess,getAuthenticatedAccount} from './auth.mjs';
 import {TURN_SECONDS, dictionaryIndex, replies, validReply} from './public/chain-utils.mjs';
@@ -508,6 +509,7 @@ const handler=async(req,res)=>{
   try {
     if(await handleAccountRequest(req,res,pathname))return;
     if(await handleMarbleRequest(req,res,pathname))return;
+    if(await handleFortressRequest(req,res,pathname))return;
     if(pathname==='/api/health')return simpleReply(res,200,{ok:true,rooms:rooms.size,dictionaryWords:DICT_COUNT,dictionarySource:'표준국어대사전 + 우리말샘'});
     if(pathname==='/api/dictionary'&&req.method==='GET'){res.setHeader('Cache-Control','public, max-age=86400');return simpleReply(res,200,words);}
     if(pathname==='/api/rooms'&&req.method==='GET'){
@@ -590,8 +592,9 @@ const handler=async(req,res)=>{
       const publicFortressCat=memberRoot==='/fortress'&&
         (pathname===memberRoot||pathname===memberRoot+'/'||pathname===memberRoot+'/index.html')&&
         u.searchParams.get('cat')==='1';
+      const publicFortressArt=memberRoot==='/fortress'&&/^\/fortress\/art\/(?:v3\/(?:valley|desert|moon|islands|pirate|mine)-(?:sky|tile)\.svg|v5\/(?:venom|flame|frost|seeker|mortar|thunder|guardian|scout)-card\.webp)$/.test(pathname);
       if(protectedEscape)await requireEscapeAccess(req);
-      if(protectedMember&&!publicGamehellTrial&&!publicGamehellAsset&&!publicFortressCat&&!await getAuthenticatedAccount(req)){
+      if(protectedMember&&!publicGamehellTrial&&!publicGamehellAsset&&!publicFortressCat&&!publicFortressArt&&!await getAuthenticatedAccount(req)){
         if(pathname===memberRoot||pathname===memberRoot+'/'||pathname===memberRoot+'/index.html'){
           const next=memberRoot+'/index.html'+u.search;
           res.writeHead(302,{'Location':'/?auth=login&next='+encodeURIComponent(next),'Cache-Control':'private, no-store'});

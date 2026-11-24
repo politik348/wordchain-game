@@ -287,3 +287,30 @@ async function createSession(accountId){
  },true);
  return token;
 }
+
+/* Fortress results are accepted only from the server-authoritative room engine. */
+export async function fortressRecordMatch(matchId,players,winner){
+ return readOrWrite(data=>{
+  const f=data.fortressRanking||(data.fortressRanking={players:{},matches:{}});
+  if(f.matches[matchId])return false;
+  for(const p of players){
+   if(!data.accounts.some(a=>a.id===p.id))continue;
+   const r=f.players[p.id]||(f.players[p.id]={wins:0,losses:0,draws:0,points:0});
+   const won=!p.forfeited&&p.team===winner,draw=!p.forfeited&&winner===-1;
+   r[won?'wins':draw?'draws':'losses']++;
+   r.points=Math.max(0,r.points+(won?30:draw?5:-10));
+  }
+  f.matches[matchId]=Date.now();
+  return true;
+ },true);
+}
+export async function fortressLeaderboard(accountId){
+ return readOrWrite(data=>{
+  const players=data.fortressRanking?.players||{};
+  const all=data.accounts.filter(a=>players[a.id]).map(a=>({id:a.id,nickname:a.dripNickname,...players[a.id]})).sort((a,b)=>b.points-a.points||b.wins-a.wins||a.nickname.localeCompare(b.nickname));
+  const rows=all.slice(0,50).map(({id,...r},i)=>({...r,rank:i+1}));
+  const idx=all.findIndex(a=>a.id===accountId);
+  const mine=idx<0?null:(({id,...r})=>({...r,rank:idx+1}))(all[idx]);
+  return {rows,mine};
+ });
+}
