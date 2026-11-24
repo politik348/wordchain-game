@@ -50,13 +50,19 @@ function register(d,asset){
 }
 function ready(im){return !!(im&&im.complete&&im.naturalWidth>0);}
 function portrait(d){const a=atlas.get(d.key);return ready(a?.portrait)?a.portrait.src:null;}
+function attackProgress(a){
+ if(!a.orochi)return clamp(a.t/Math.max(1,a.total));
+ if(a.t<a.start)return .32*clamp(a.t/Math.max(1,a.start));
+ if(a.t<=a.end)return .32+.43*clamp((a.t-a.start)/Math.max(1,a.end-a.start));
+ return .75+.25*clamp((a.t-a.end)/Math.max(1,a.total-a.end));
+}
 function choose(f,frame,win){
  if(!f)return ['idle',(frame%40)/40];
  if(f.hp<=0)return ['ko',1];
  if(win)return ['win',(frame%60)/60];
  if(f.stun)return ['hit',clamp(1-f.stun/32)];
  if(f.evade)return ['evade',clamp(1-f.evade/18)];
- if(f.attack){const a=f.attack,k=a.key;const group=k==='super'?'super':k==='upper'?'upper':k==='grab'?'grab':['dash','shot','charge','electric','long','spin','flurry'].includes(k)?'special':['kick','mk','hk'].includes(k)?'kick':'punch';return [a.orochi?.art||group,clamp(a.t/Math.max(1,a.total))];}
+ if(f.attack){const a=f.attack,k=a.key;const group=k==='super'?'super':k==='upper'?'upper':k==='grab'?'grab':['dash','shot','charge','electric','long','spin','flurry'].includes(k)?'special':['kick','mk','hk'].includes(k)?'kick':'punch';return [a.orochi?.art||group,attackProgress(a)];}
  if(f.y<449)return ['jump',clamp((f.vy+13)/26)];
  if(f.guard)return ['guard',.5];
  if(f.crouch)return ['crouch',.5];
@@ -96,5 +102,5 @@ function effects(c,f,frame,layer){
  c.restore();
 }
 const assetsReady=loadAssets();
-root.KOFOrochiGroup=Object.freeze({get,timing,register,portrait,draw,effects,assetInfo,drawFrame,assetsReady,projectileColor:d=>get(d)?.color||null});
+root.KOFOrochiGroup=Object.freeze({get,timing,register,portrait,draw,effects,assetInfo,drawFrame,assetsReady,attackProgress,projectileColor:d=>get(d)?.color||null});
 })(window);
