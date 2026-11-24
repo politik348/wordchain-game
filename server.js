@@ -573,7 +573,7 @@ const handler=async(req,res)=>{
       const tasteFile=ESCAPE_TASTE_ASSETS.get(pathname);
       if(isEscapeTaste&&!tasteFile)throw err(404,'맛보기 파일을 찾을 수 없습니다.');
       const protectedEscape=pathname==='/escape'||pathname.startsWith('/escape/');
-      const memberRoots=['/gamehell','/tetris','/logic'];
+      const memberRoots=['/gamehell','/tetris','/logic','/fortress'];
       const memberRoot=memberRoots.find(root=>pathname===root||pathname.startsWith(root+'/'));
       const protectedMember=Boolean(memberRoot);
       const gamehellEntrypoint=pathname==='/gamehell'||pathname==='/gamehell/'||pathname==='/gamehell/index.html';
@@ -586,8 +586,12 @@ const handler=async(req,res)=>{
         new Set(['/gamehell/gamehell.css','/gamehell/gamehell.js','/gamehell/characters.js']).has(pathname)
         || /^\/gamehell\/assets\/characters\/(?:cheese|peach|mint|space|night|sunny|cloudy|royal)\.svg$/.test(pathname)
       );
+      // Only the AI-only cat challenge entrypoint is available without an account.
+      const publicFortressCat=memberRoot==='/fortress'&&
+        (pathname===memberRoot||pathname===memberRoot+'/'||pathname===memberRoot+'/index.html')&&
+        u.searchParams.get('cat')==='1';
       if(protectedEscape)await requireEscapeAccess(req);
-      if(protectedMember&&!publicGamehellTrial&&!publicGamehellAsset&&!await getAuthenticatedAccount(req)){
+      if(protectedMember&&!publicGamehellTrial&&!publicGamehellAsset&&!publicFortressCat&&!await getAuthenticatedAccount(req)){
         if(pathname===memberRoot||pathname===memberRoot+'/'||pathname===memberRoot+'/index.html'){
           const next=memberRoot+'/index.html'+u.search;
           res.writeHead(302,{'Location':'/?auth=login&next='+encodeURIComponent(next),'Cache-Control':'private, no-store'});
