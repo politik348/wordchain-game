@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "characters": {},
+  "notes": "Only keys 30–35. Add a character after its actual PNG/WebP files exist and frame coordinates have been reviewed. Fields: portrait, src, width, height, columns, anchorY, frames. Required frame groups: idle, walk, crouch, guard, jump, punch, kick, special, upper, grab, hit, ko, win, evade, super."
+}
