@@ -30,7 +30,42 @@ if((p.spriteEnabled===true&&p.draft!==true||p.previewEnabled===true&&p.draft===t
 }));return [...cache.keys()];
 }
 function pose(d,f,frame,state,win){if(!f)return ['idle',(frame%48)/48];if(f.hp<=0)return ['ko',state==='outro'?clamp((115-(root.KOFDelay??115))/32):1];if(win)return ['win',(frame%60)/60];if(f.evade)return ['evade',clamp(1-f.evade/18)];if(f.stun)return ['hit',clamp(1-f.stun/20)];if(f.attack){const q=f.attack,k=q.key;const a=k==='super'?'super':q.artIntent==='alt'?'alt':q.artIntent==='special'?'special':['kick','mk','hk'].includes(k)?'kick':k==='grab'?'grab':['punch','medium','heavy'].includes(k)?'punch':k===d.kind?'special':'alt';const t=q.t<q.start?.32*q.t/Math.max(1,q.start):q.t<=q.end?.32+.40*(q.t-q.start)/Math.max(1,q.end-q.start):.72+.28*(q.t-q.end)/Math.max(1,q.total-q.end);return[a,clamp(t)];}if(f.y<449)return ['jump',clamp((f.vy+13)/26)];if(f.guard)return ['guard',.5];if(f.crouch)return ['crouch',.5];return f.moving?['walk',(frame%28)/28]:['idle',(frame%48)/48];}
-function draw(c,d,x,y,face,f,scale,frame,state,win){const p=get(d),e=p&&cache.get(d.key);if(!e?.atlas)return false;const [a,t]=pose(d,f,frame,state,win),seq=e.frames[a];if(!seq?.length)return false;const r=seq[Math.min(seq.length-1,Math.floor(t*seq.length))],z=p.height/e.pixelsPerBody*scale;c.save();try{c.translate(x,y);c.scale(face,1);c.imageSmoothingEnabled=true;c.drawImage(e.atlas,r[0],r[1],r[2],r[3],-r[4]*z,-r[5]*z,r[2]*z,r[3]*z);}finally{c.restore()}return true;}
+// Preview-only motion: reuse drawn poses without falsely marking them as final frames.
+function previewMotion(d,a,t,seqs){
+ const pick=(...names)=>names.find(n=>seqs[n]?.length);
+ const direct=seqs[a]?.length?a:null;
+ let use=direct,angle=0,dx=0,dy=0,sx=1,sy=1;
+ const wave=Math.sin(t*Math.PI*2),pulse=Math.sin(t*Math.PI);
+ if(a==='idle'){use=pick('idle');sy=1+wave*.012;}
+ else if(a==='walk'){use=pick('walk','idle');dx=wave*3;dy=-Math.abs(wave)*3;angle=wave*.025;}
+ else if(a==='hit'){use=pick('guard','idle');angle=-.16*pulse;dx=-9*pulse;sy=1-.03*pulse;}
+ else if(a==='ko'){use=pick('idle','crouch');angle=-Math.min(1,t*1.4)*Math.PI/2;dx=-Math.min(1,t*1.4)*20;}
+ else if(a==='evade'){use=pick('crouch','guard','idle');angle=Math.sin(t*Math.PI*2)*.17;sy=1-.09*pulse;}
+ else if(a==='grab'){use=pick('special','punch','idle');dx=6*pulse;}
+ else if(a==='alt'){use=d.key===16?pick('kick','special','idle'):d.key===11?pick('special','punch','idle'):d.key===14?pick('punch','special','idle'):d.key===15?pick('special','kick','idle'):d.key===10?pick('punch','special','idle'):pick('special','punch','idle');dx=5*pulse;angle=-.035*pulse;}
+ else if(a==='super'){use=pick('special','kick','punch','idle');dx=7*pulse;sy=1+.025*pulse;}
+ else if(!use)use=pick('idle');
+ return{use,angle,dx,dy,sx,sy};
+}
+function draw(c,d,x,y,face,f,scale,frame,state,win){
+ const p=get(d),e=p&&cache.get(d.key);if(!e?.atlas)return false;
+ const [a,t]=pose(d,f,frame,state,win),v=e.draft?previewMotion(d,a,t,e.frames):{use:a,angle:0,dx:0,dy:0,sx:1,sy:1};const seq=e.frames[v.use];if(!seq?.length)return false;
+ // In three-pose attack previews the active drawing is held across the hit window.
+ let i=Math.min(seq.length-1,Math.floor(t*seq.length));if(e.draft&&seq.length===3&&f?.attack){const q=f.attack;i=q.t<q.start?0:q.t<=q.end?1:2;}
+ const r=seq[i],z=p.height/e.pixelsPerBody*scale;
+ c.save();try{c.translate(x,y);c.scale(face,1);c.translate(v.dx,v.dy);c.rotate(v.angle);c.scale(v.sx,v.sy);c.imageSmoothingEnabled=true;c.drawImage(e.atlas,r[0],r[1],r[2],r[3],-r[4]*z,-r[5]*z,r[2]*z,r[3]*z);}finally{c.restore()}return true;
+}
+function projectile(c,s,frame){
+ const p=get(s.owner?.d),k=s.owner?.d?.key;if(!p||![12,13,15,16].includes(k))return false;
+ const pr=s.a?.orochi?.projectile;if(!pr)return false;const rx=pr.radiusX,ry=pr.radiusY;
+ c.save();try{c.translate(s.x,s.y);c.scale(s.v<0?-1:1,1);c.strokeStyle=p.color;c.fillStyle=p.color;c.shadowColor=p.color;c.shadowBlur=12;
+ const ellipse=(x,y,a,b,col)=>{c.fillStyle=col;c.beginPath();c.ellipse(x,y,a,b,0,0,Math.PI*2);c.fill()};
+ if(k===12){ellipse(-rx*.6,0,rx*1.25,ry*.73,'#a64fe166');ellipse(0,0,rx,ry,p.color);ellipse(0,0,rx*.56,ry*.56,'#fff3ff');c.strokeStyle='#ffffffb0';c.lineWidth=2;c.beginPath();c.arc(0,0,rx*.85,frame*.22,frame*.22+Math.PI*1.4);c.stroke();}
+ else if(k===13){ellipse(-rx*.8,0,rx*1.2,ry*.58,'#47b8ff66');ellipse(0,0,rx,ry,'#58d9ff');ellipse(rx*.17,0,rx*.55,ry*.5,'#efffff');c.strokeStyle='#d4f8ff';c.lineWidth=3;c.beginPath();c.ellipse(0,0,rx*.91,ry*.84,0,-1.2,1.2);c.stroke();}
+ else if(k===15){c.rotate(Math.sin(frame*.35)*.55);c.shadowBlur=8;c.fillStyle='#fff2ce';c.beginPath();c.moveTo(-rx*.65,0);c.arc(-rx*.65,0,rx*1.58,-.68,.68);c.closePath();c.fill();c.strokeStyle='#bd3042';c.lineWidth=2.5;c.stroke();for(let j=-3;j<=3;j++){c.beginPath();c.moveTo(-rx*.65,0);c.lineTo(-rx*.65+Math.cos(j*.19)*rx*1.52,Math.sin(j*.19)*rx*1.52);c.stroke();}}
+ else {c.fillStyle=p.color;c.beginPath();c.ellipse(0,0,rx,ry,0,-1.4,1.4);c.quadraticCurveTo(rx*.05,0,rx*Math.cos(-1.4),ry*Math.sin(-1.4));c.closePath();c.fill();c.strokeStyle='#f6e7ff';c.lineWidth=3;c.stroke();}
+ }finally{c.restore()}return true;
+}
 function effects(c,f,frame){const p=get(f.d),a=f.attack;if(!p||!a)return;const special=a.key==='super'||a.artIntent==='special'||a.artIntent==='alt'||!['punch','medium','heavy','kick','mk','hk','grab'].includes(a.key);if(!special||a.t<a.start||a.t>a.end)return;const sup=a.key==='super',t=clamp((a.t-a.start)/Math.max(1,a.end-a.start)),boost=sup?1.4:1;c.save();try{c.translate(f.x,f.y);c.scale(f.face,1);c.strokeStyle=p.color;c.fillStyle=p.color;c.shadowBlur=sup?15:6;c.shadowColor=p.color;c.globalAlpha=.85;c.lineWidth=sup?5:3;
 const arc=(x,y,r,start,end)=>{c.beginPath();c.arc(x,y,r,start,end);c.stroke()};
 if(p.fx==='barrage'){for(let j=0;j<4;j++){let x=52+j*13,y=-112+Math.sin(frame*.8+j*2)*20;c.beginPath();c.moveTo(x-28,y);c.lineTo(x+22*boost,y);c.stroke()}}
@@ -43,5 +78,5 @@ else if(p.fx==='kick'){for(let j=0;j<3;j++)arc(43,-95,40+j*10*boost,-2.1+t*1.8,.
 }finally{c.restore()}}
 const ready=init().catch(e=>{console.warn('Group A registry unavailable',e);return[]});
 root.KOFArt={...base,draw(...args){return draw(...args)||base.draw(...args)},portrait(d){return cache.get(d?.key)?.portrait?.src||base.portrait(d)},preload(list){return Promise.all([base.preload(list),ready]);}};
-root.KOFGroupA=Object.freeze({profiles,get,pose,draw,validAtlas,validPreview,ready,timing:(d,k)=>get(d)?.moves[k]||null,effects,projectileColor:d=>get(d)?.color||null,hasPortrait:key=>!!cache.get(key)?.portrait,hasAtlas:key=>!!cache.get(key)?.atlas});
+root.KOFGroupA=Object.freeze({profiles,get,pose,draw,previewMotion,projectile,validAtlas,validPreview,ready,timing:(d,k)=>get(d)?.moves[k]||null,effects,projectileColor:d=>get(d)?.color||null,hasPortrait:key=>!!cache.get(key)?.portrait,hasAtlas:key=>!!cache.get(key)?.atlas});
 })(window);
