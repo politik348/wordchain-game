@@ -14,7 +14,18 @@ const M={
 };
 const get=(d,intent)=>M[d?.key]?.[intent]||null;
 const rect=(f,x,y,w,h)=>({l:f.x+(f.face===-1?-x-w:x),r:f.x+(f.face===-1?-x:x+w),t:f.y+y,b:f.y+y+h});
-const hurt=f=>({l:f.x-(f.d?.key===32?36:27),r:f.x+(f.d?.key===32?36:27),t:f.y-(f.crouch?105:190),b:f.y-3});
+const bodies={30:[29,174,100],31:[25,182,105],32:[39,188,113],33:[25,182,102],34:[23,154,91],35:[32,202,116]};
+const hurt=f=>{const [w,h,c]=bodies[f.d?.key]||[27,190,105];return {l:f.x-w,r:f.x+w,t:f.y-(f.crouch?c:h),b:f.y-3};};
+function activeRects(f,a=f.attack){return (a?.orochi?.boxes||[]).map(([s,e,x,y,w,h],i)=>({s,e,i,...rect(f,x,y,w,h)})).filter(b=>a.t>=b.s&&a.t<=b.e);}
+function projectileRect(s){const p=s.a.orochi?.projectile;return p?{l:s.x-p.radiusX,r:s.x+p.radiusX,t:s.y-p.radiusY,b:s.y+p.radiusY}:null;}
+function projectileClash(a,b){const ar=projectileRect(a),br=projectileRect(b);if(!ar&&!br)return null;return overlap(ar||{l:a.x-11,r:a.x+11,t:a.y-16,b:a.y+16},br||{l:b.x-11,r:b.x+11,t:b.y-16,b:b.y+16});}
+function debugDraw(c,fighters,shots){
+ if(!fighters.some(f=>bodies[f.d?.key]))return;
+ const draw=(b,color)=>{c.strokeStyle=color;c.fillStyle=color+'22';c.fillRect(b.l,b.t,b.r-b.l,b.b-b.t);c.strokeRect(b.l,b.t,b.r-b.l,b.b-b.t);};
+ c.save();c.lineWidth=1.5;c.font='11px monospace';c.textAlign='center';
+ for(const f of fighters){if(f.hp<=0)continue;draw(hurt(f),'#63e6a6');for(const b of activeRects(f))draw(b,f.attack.hitWindows?.includes(b.i)?'#e6b455':'#ff526a');if(f.attack?.orochi){c.fillStyle='#ffffff';c.fillText(f.attack.orochi.label+' '+f.attack.t+'/'+f.attack.total,f.x,Math.max(20,f.y-215));}}
+ for(const s of shots){const b=projectileRect(s);if(b)draw(b,'#ff526a');}c.restore();
+}
 const overlap=(a,b)=>a.l<b.r&&a.r>b.l&&a.t<b.b&&a.b>b.t;
 function hit(f,o,a,floor){
  const m=a.orochi;if(!m||m.projectile||o.inv>0||o.hp<=0||(m.grounded&&o.y<floor-12))return false;
@@ -25,6 +36,6 @@ function hit(f,o,a,floor){
  }
  return false;
 }
-function projectileHit(s,o){const p=s.a.orochi?.projectile;if(!p)return null;return overlap({l:s.x-p.radiusX,r:s.x+p.radiusX,t:s.y-p.radiusY,b:s.y+p.radiusY},hurt(o));}
-root.KOFOrochiCombat=Object.freeze({get,hit,projectileHit,hurt,rect,overlap});
+function projectileHit(s,o){const b=projectileRect(s);if(!b)return null;return !o.inv&&o.hp>0&&overlap(b,hurt(o));}
+root.KOFOrochiCombat=Object.freeze({get,hit,projectileHit,projectileClash,projectileRect,hurt,rect,overlap,activeRects,debugDraw});
 })(typeof window==='undefined'?globalThis:window);
