@@ -9,12 +9,12 @@ const hub=read('public/cat-hub.mjs');
 const app=read('public/app.js');
 const serverSource=read('server.js');
 
-test('the Cat hub keeps six actual cat battles and adds two separate taste cards',async()=>{
+test('the Cat hub keeps eight actual cat battles and adds two separate taste cards',async()=>{
  const {CAT_CHALLENGE_GAMES,renderCatHub}=await import('../public/cat-hub.mjs');
- assert.deepEqual(CAT_CHALLENGE_GAMES,['omok','yut','rummikub','marble','tetris','wordchain']);
+ assert.deepEqual(CAT_CHALLENGE_GAMES,['omok','yut','rummikub','marble','tetris','wordchain','fortress','fighter']);
  const games=CAT_CHALLENGE_GAMES.map(id=>({id,name:id,emoji:'🐱',desc:'대전'}));
  const markup=renderCatHub(games);
- assert.equal((markup.match(/data-action="catChoose"/g)||[]).length,6);
+ assert.equal((markup.match(/data-action="catChoose"/g)||[]).length,8);
  assert.equal((markup.match(/data-action="catTasteEscape"/g)||[]).length,1);
  assert.equal((markup.match(/data-action="catTasteArcade"/g)||[]).length,1);
  assert.match(markup,/맛보기 놀이터/);

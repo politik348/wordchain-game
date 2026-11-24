@@ -88,7 +88,7 @@ test('standalone pregame starts real engines with selections, and retains Marble
  const logic=read('public/logic/index.html');
  const gamehell=read('public/gamehell/index.html');
  const marble=read('public/marble/app.mjs');
- assert.match(standalone,/MOYEO_TETRIS_START\(\{mode:cat\?'versus':'solo',difficulty:values\.difficulty,aiDifficulty:values\.aiDifficulty/);
+ assert.match(standalone,/MOYEO_TETRIS_START\(\{mode:mode==='cat'\?'versus':'solo',difficulty:values\.difficulty,aiDifficulty:values\.aiDifficulty\|\|'beginner'/);
  assert.match(standalone,/size\.dispatchEvent\(new Event\('change'/);
  assert.match(standalone,/choice\.click\(\);duration\.click\(\)/);
  assert.match(standalone,/arcadeModes=\[/);

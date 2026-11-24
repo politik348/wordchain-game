@@ -19,7 +19,7 @@ test('Tetris background gravity and cat decisions use real elapsed wall time',()
  assert.ok(script);
  assert.match(script,/const now=Date\.now\(\),dt=last\?Math\.max\(0,now-last\):0/);
  assert.match(script,/while\(g\.fall>=speed/);
- assert.match(script,/while\(catClock>=\(catStrength==='beginner'\?145:catStrength==='intermediate'\?110:80\)/);
+ assert.match(script,/while\(catClock>=\(catStrength==='beginner'\?190:catStrength==='intermediate'\?145:105\)/);
  assert.match(script,/if\(!paused\)last=Date\.now\(\)/);
  new Script(script);
 });

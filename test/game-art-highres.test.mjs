@@ -42,6 +42,9 @@ test('all six formerly emoji-only game cards use the new high-resolution animal 
 });
 test('new game gallery CSS and JS are cache-busted together',()=>{
  const html=read('public/index.html');
- assert.match(html,/styles\.css\?v=20261123galleryart1/);
- assert.match(html,/app\.js\?v=20261123galleryart1/);
+ const cssVersion=html.match(/styles\.css\?v=([A-Za-z0-9_-]+)/)?.[1];
+ const jsVersion=html.match(/app\.js\?v=([A-Za-z0-9_-]+)/)?.[1];
+ assert.ok(cssVersion,'CSS must have a cache version');
+ assert.ok(jsVersion,'JS must have a cache version');
+ assert.equal(cssVersion,jsVersion,'CSS and JS cache versions must match');
 });

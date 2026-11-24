@@ -17,25 +17,32 @@ test('Cat Challenge is first in the home game grid and nav',()=>{
  assert.ok(html.indexOf('data-nav="cat"')<html.indexOf('data-nav="home"'));
 });
 
-test('Cat Challenge groups the six currently available AI games',()=>{
- assert.deepEqual(CAT_CHALLENGE_GAMES,['omok','yut','rummikub','marble','tetris','wordchain']);
- const games=CAT_CHALLENGE_GAMES.map((id,i)=>({id,name:['오목','윷놀이','루미큐브','모여마블','테트리스','끝말잇기'][i],emoji:'🐱',desc:'한 판'}));
+test('Cat Challenge groups the eight currently available AI games',()=>{
+ assert.deepEqual(CAT_CHALLENGE_GAMES,['omok','yut','rummikub','marble','tetris','wordchain','fortress','fighter']);
+ const games=CAT_CHALLENGE_GAMES.map((id,i)=>({id,name:['오목','윷놀이','루미큐브','모여마블','테트리스','끝말잇기','모여 포트리스','모여 파이터즈'][i],emoji:'🐱',desc:'한 판'}));
  const hub=renderCatHub(games);
  const matches=[...hub.matchAll(/data-action="catChoose"/g)];
- assert.equal(matches.length,6);
+ assert.equal(matches.length,8);
  for(const game of games)assert.match(hub,new RegExp('data-cat-game="'+game.id+'"'));
  assert.match(hub,/홈에서 일반 게임을 선택하세요/);
 });
 
-test('all six Cat Challenge cards use matching generated illustrations',()=>{
- const games=CAT_CHALLENGE_GAMES.map((id,i)=>({id,name:['오목','윷놀이','루미큐브','모여마블','모여 테트리스','끝말잇기'][i],emoji:'🐱'}));
+test('all eight Cat Challenge cards use matching generated illustrations',()=>{
+ const games=CAT_CHALLENGE_GAMES.map((id,i)=>({id,name:['오목','윷놀이','루미큐브','모여마블','모여 테트리스','끝말잇기','모여 포트리스','모여 파이터즈'][i],emoji:'🐱'}));
  const html=renderCatHub(games);
  const css=readFileSync(new URL('../public/styles.css',import.meta.url),'utf8');
  const image=readFileSync(new URL('../public/assets/cat-challenge-highres-v2.avif',import.meta.url));
- assert.equal((html.match(/class="cat-choice-illustration/g)||[]).length,6);
+ assert.equal((html.match(/class="cat-choice-illustration/g)||[]).length,8);
  for(const id of CAT_CHALLENGE_GAMES){
    assert.match(html,new RegExp('cat-choice-art-'+id));
    assert.match(css,new RegExp('cat-choice-art-'+id));
+ }
+ for(const [id,asset] of [['fortress','fortress-cat.webp'],['fighter','fighter-gallery.webp']]){
+   assert.ok(css.includes(`.cat-choice-art-${id}{background-image:url('/assets/${asset}')`));
+   const art=readFileSync(new URL('../public/assets/'+asset,import.meta.url));
+   assert.equal(art.toString('ascii',0,4),'RIFF');
+   assert.equal(art.toString('ascii',8,12),'WEBP');
+   assert.ok(art.length>10000);
  }
  assert.match(css,/cat-challenge-highres-v2\.avif/);
  assert.ok(image.length>100000,'high-resolution six-scene image must contain actual picture bytes');

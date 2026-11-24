@@ -51,9 +51,9 @@ test('두 반응 사진은 유효한 WEBP 파일 헤더를 갖는다',()=>{
 test('여섯 고양이 대전 모드가 공통 결과 시스템을 연결한다',()=>{
  const app=read('app.js'),marble=read('marble/app.mjs'),tetris=read('tetris/index.html');
  assert.match(app,/function catResultView/);
- assert.match(app,/catResultView\\(solo\\)/);
- assert.match(marble,/MoyeoCatResult\\.render/);
- assert.match(tetris,/MoyeoCatResult\\.render/);
+ assert.match(app,/catResultView\(solo\)/);
+ assert.match(marble,/MoyeoCatResult\.render/);
+ assert.match(tetris,/MoyeoCatResult\.render/);
 });
 
 test('결과창은 현재 화면 정중앙에 고정되고 닫을 수 있다',()=>{

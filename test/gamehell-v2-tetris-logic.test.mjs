@@ -14,11 +14,11 @@ const inline=html=>{
  return match[1];
 };
 
-test('Tetris and Logic are separate standalone games and home shows twelve',()=>{
+test('Tetris and Logic are separate standalone games and home lists all sixteen games',()=>{
  assert.match(app,/id:'tetris'/);
  assert.match(app,/id:'logic'/);
  assert.match(app,/id:'gamehell'/);
- assert.equal([...app.matchAll(/\{id:'[^']+',name:/g)].length,13);
+ assert.equal([...app.matchAll(/\{id:'[^']+',name:/g)].length,16);
  assert.match(app,/\$\{GAMES\.length\} GAMES/);
  assert.match(app,/\$\{GAMES\.length\}가지 게임/);
  assert.match(app,/\/tetris\/index\.html/);
@@ -28,8 +28,8 @@ test('Tetris and Logic are separate standalone games and home shows twelve',()=>
 
 test('Tetris supports Cat Challenge and solo from either the home page or Cat hub',()=>{
  assert.match(hub,/tetris/);
- assert.match(hub,/6 GAMES/);
- assert.match(hub,/6가지 고양이 대전/);
+ assert.match(hub,/8 GAMES/);
+ assert.match(hub,/8가지 고양이 대전/);
  assert.match(app,/\/tetris\/index\.html\?cat=1/);
  assert.match(tetris,/id="solo"/);
  assert.match(tetris,/id="versus"/);
@@ -38,7 +38,7 @@ test('Tetris supports Cat Challenge and solo from either the home page or Cat hu
  assert.doesNotMatch(tetris,/\$\('solo'\)\.hidden=catChallenge/);
  assert.match(tetris,/<button id="versus" class="btn">/);
  assert.match(pregame,/allowedModes=game==='tetris'\?\['solo','cat'\]/);
- assert.match(pregame,/mode=mode==='cat'\?'versus':'solo'/);
+ assert.match(pregame,/mode:mode==='cat'\?'versus':'solo'/);
  assert.match(pregame,/b\.dataset\.pgMode&&allowedModes\.includes/);
  assert.match(tetris,/window\.MOYEO_TETRIS_START=options=>/);
  assert.match(tetris,/standalone-pregame\.mjs/);

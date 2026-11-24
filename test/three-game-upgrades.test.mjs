@@ -48,7 +48,7 @@ test('Main home uses v3 UI cache and names each upgraded game correctly',()=>{
  const app=read('public/app.js'),index=read('public/index.html');
  assert.match(app,/rummikub\/ui\.mjs\?v=20261120rk3/);
  assert.match(index,/rummikub\/rummikub\.css\?v=20261120rk3/);
- assert.match(app,/개인 최고기록에 도전하고/);
+ assert.match(app,/나의 최고기록을 갱신하는 아케이드/);
  assert.match(app,/무한 파산전/);
  assert.match(index,/auth\.css/);
 });
