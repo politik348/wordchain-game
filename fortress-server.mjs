@@ -36,7 +36,7 @@ function act(r,p,b){tick(r);
  if(b.action==='move'){if(![-1,1].includes(b.dir))throw fail(400,'잘못된 방향');E.move(s,b.dir,4);}
  else if(b.action==='item'){if(!['heal','double','teleport','powerup','shield','wind'].includes(b.key)||!E.item(s,b.key))throw fail(409,'아이템을 사용할 수 없습니다.');}
  else if(b.action==='skip'){E.skip(s);after(r);return;}
- else if(b.action==='fire'){if(![0,1].includes(b.weapon)||![-1,1].includes(b.dir)||!Number.isFinite(b.angle)||!Number.isFinite(b.power))throw fail(400,'조준 값이 올바르지 않습니다.');E.aim(s,b.angle,b.power,b.dir,b.weapon);const paths=E.fire(s);const start=clock();r.flight={start,ends:start+Math.max(...paths.map(p=>p.points.length))*12+180,paths};r.deadline=0;}
+ else if(b.action==='fire'){if(![0,1].includes(b.weapon)||![-1,1].includes(b.dir)||!Number.isFinite(b.angle)||!Number.isFinite(b.power))throw fail(400,'조준 값이 올바르지 않습니다.');E.aim(s,b.angle,b.power,b.dir,b.weapon);const paths=E.fire(s);const start=clock();r.flight={start,ends:start+E.flightDuration(paths)+900,paths};r.deadline=0;}
  else throw fail(400,'알 수 없는 행동입니다.');bump(r);
 }
 export async function handleFortressRequest(req,res,pathname){
