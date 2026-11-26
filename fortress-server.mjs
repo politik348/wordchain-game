@@ -8,7 +8,7 @@ const safeTank=k=>ordinary.includes(k)?k:'random';
 const randomTank=()=>E.pick(()=>randomInt(0,1000000)/1000000);
 function reply(res,status,data){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));}
 async function body(req){let raw='';for await(const chunk of req){raw+=chunk;if(raw.length>12000)throw fail(413,'요청이 너무 큽니다.');}try{return JSON.parse(raw||'{}');}catch{throw fail(400,'잘못된 요청입니다.');}}
-function publicRoom(r,id){return {code:r.code,host:r.host===id,size:r.size,map:r.map,timer:r.timer,collapse:r.collapse,phase:r.phase,players:r.players.map(p=>({nickname:p.nickname,team:p.team,tank:p.tank,ready:p.ready,me:p.id===id,slot:p.slot,forfeited:!!p.forfeited})),state:r.state,deadline:r.deadline,flight:r.flight,version:r.version,rankSaved:r.rankSaved,serverTime:clock()};}
+function publicRoom(r,id){return {code:r.code,host:r.host===id,size:r.size,map:r.map,timer:r.timer,collapse:r.collapse,phase:r.phase,players:r.players.map(p=>({nickname:p.nickname,team:p.team,tank:p.tank,ready:p.ready,host:p.id===r.host,me:p.id===id,slot:p.slot,forfeited:!!p.forfeited})),state:r.state,deadline:r.deadline,flight:r.flight,version:r.version,rankSaved:r.rankSaved,serverTime:clock()};}
 function member(r,id){let p=r.players.find(p=>p.id===id);if(!p)throw fail(403,'참가한 방이 아닙니다.');return p;}
 function current(r,p,b){if(r.phase!=='battle'||r.state.phase!=='aim'||r.state.turn!==p.slot||p.forfeited)throw fail(409,'현재 차례가 아닙니다.');if(b.nonce!==r.state.nonce)throw fail(409,'차례가 변경되었습니다.');}
 function bump(r){r.version++;r.touched=clock();}
@@ -27,7 +27,8 @@ function join(r,account,b){if(r.players.some(p=>p.id===account.id))return;if(r.p
 function act(r,p,b){tick(r);
  if(b.action==='leave'){if(r.phase==='lobby'){r.players=r.players.filter(x=>x!==p);if(!r.players.length){rooms.delete(r.code);return;}if(r.host===p.id)r.host=r.players[0].id;bump(r);return;}if(r.phase==='battle'&&!p.forfeited){if(r.state.phase==='flight')throw fail(409,'포탄 비행 종료 후 나갈 수 있습니다.');p.forfeited=true;r.state.tanks[p.slot].hp=0;if(!victory(r)){if(r.state.turn===p.slot){E.skip(r.state);after(r);}else bump(r);}}return;}
  if(r.phase==='lobby'){
-  if(b.action==='ready'){p.ready=b.ready!==false;p.tank=safeTank(b.tank);bump(r);return;}
+  if(b.action==='selectTank'){const next=safeTank(b.tank);if(next!==p.tank){p.tank=next;p.ready=false;bump(r);}return;}
+  if(b.action==='ready'){p.ready=b.ready!==false;if(b.tank!==undefined)p.tank=safeTank(b.tank);bump(r);return;}
   if(b.action==='team'){let t=+b.team;if(![0,1].includes(t)||r.players.filter(x=>x!==p&&x.team===t).length>=r.size)throw fail(409,'해당 팀이 가득 찼습니다.');p.team=t;p.ready=false;bump(r);return;}
   if(b.action==='start'){if(r.host!==p.id)throw fail(403,'방장만 시작할 수 있습니다.');if([0,1].some(t=>r.players.filter(x=>x.team===t).length!==r.size)||r.players.some(x=>!x.ready))throw fail(409,'모든 팀원이 입장하고 준비해야 합니다.');r.players.sort((a,b)=>a.team-b.team);let lineup=r.players.map((p,i)=>{p.slot=i;return p.tank=p.tank==='random'?randomTank():p.tank;});r.state=E.create({size:r.size,map:r.map,timer:r.timer,collapse:r.collapse,seed:randomInt(0,2147483647),lineup});r.phase='battle';after(r);return;}
   throw fail(400,'대기실에서 사용할 수 없는 행동입니다.');
