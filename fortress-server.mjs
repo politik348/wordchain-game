@@ -22,9 +22,19 @@ function tick(r){if(r.phase==='finished'){if(!r.rankSaved&&clock()-(r.lastRetry|
  else if(r.state.phase==='aim'&&clock()>=r.deadline){E.skip(r.state);after(r);}
 }
 const interval=setInterval(()=>{for(const [code,r] of rooms){try{tick(r);if((r.phase==='lobby'&&clock()-r.touched>3600000)||(r.phase==='finished'&&r.rankSaved&&clock()-r.touched>1800000))rooms.delete(code);}catch(e){console.error('Fortress tick:',e.message);}}},250);interval.unref?.();
-function createRoom(account,b){if(rooms.size>=100)throw fail(503,'현재 방이 가득 찼습니다.');if([...rooms.values()].some(r=>r.phase!=='finished'&&r.players.some(p=>p.id===account.id&&!p.forfeited)))throw fail(409,'이미 참가한 방이 있습니다. 기존 방에 다시 입장하세요.');let code;do{code=randomBytes(3).toString('hex').toUpperCase();}while(rooms.has(code));const size=[1,2,3,4].includes(+b.size)?+b.size:2;let r={code,matchId:randomUUID(),host:account.id,size,map:E.MAPS[b.map]?b.map:'valley',timer:[15,30,60].includes(+b.timer)?+b.timer:30,collapse:b.collapse!==false,phase:'lobby',players:[{id:account.id,nickname:account.dripNickname,team:0,tank:safeTank(b.tank),ready:true,slot:null}],state:null,flight:null,deadline:0,version:1,touched:clock(),rankSaved:false};rooms.set(code,r);return r;}
+function createRoom(account,b){if(rooms.size>=100)throw fail(503,'현재 방이 가득 찼습니다.');if([...rooms.values()].some(r=>r.phase!=='finished'&&r.players.some(p=>p.id===account.id&&!p.forfeited)))throw fail(409,'이미 참가한 방이 있습니다. 기존 방에 다시 입장하세요.');let code;do{code=randomBytes(3).toString('hex').toUpperCase();}while(rooms.has(code));const size=[1,2,3,4].includes(+b.size)?+b.size:2;let r={code,matchId:randomUUID(),host:account.id,size,map:E.MAPS[b.map]?b.map:'valley',timer:[15,30,60].includes(+b.timer)?+b.timer:30,collapse:b.collapse!==false,phase:'lobby',players:[{id:account.id,nickname:account.dripNickname,team:0,tank:safeTank(b.tank),ready:false,slot:null}],state:null,flight:null,deadline:0,version:1,touched:clock(),rankSaved:false};rooms.set(code,r);return r;}
 function join(r,account,b){if(r.players.some(p=>p.id===account.id))return;if(r.phase!=='lobby')throw fail(409,'이미 시작한 방입니다.');if([...rooms.values()].some(x=>x!==r&&x.phase!=='finished'&&x.players.some(p=>p.id===account.id&&!p.forfeited)))throw fail(409,'이미 다른 방에 참가했습니다.');let counts=[0,0];r.players.forEach(p=>counts[p.team]++);let team=Number(b.team);if(![0,1].includes(team))team=counts[0]<=counts[1]?0:1;if(counts[team]>=r.size)throw fail(409,'선택한 팀이 가득 찼습니다.');r.players.push({id:account.id,nickname:account.dripNickname,team,tank:safeTank(b.tank),ready:false,slot:null});bump(r);}
+export function updateRoomSettings(r,p,b){
+ if(r.phase!=='lobby')throw fail(409,'대기실에서만 설정을 변경할 수 있습니다.');
+ if(r.host!==p.id)throw fail(403,'방장만 설정을 변경할 수 있습니다.');
+ const {size,map,timer,collapse}=b;
+ if(![1,2,3,4].includes(size)||typeof map!=='string'||!Object.hasOwn(E.MAPS,map)||![15,30,60].includes(timer)||typeof collapse!=='boolean')throw fail(400,'방 설정이 올바르지 않습니다.');
+ if([0,1].some(t=>r.players.filter(x=>x.team===t).length>size))throw fail(409,'현재 팀원 수보다 작은 팀 규모로 변경할 수 없습니다.');
+ if(r.size===size&&r.map===map&&r.timer===timer&&r.collapse===collapse)return false;
+ Object.assign(r,{size,map,timer,collapse});r.players.forEach(x=>{x.ready=false;});bump(r);return true;
+}
 function act(r,p,b){tick(r);
+ if(b.action==='settings'){updateRoomSettings(r,p,b);return;}
  if(b.action==='leave'){if(r.phase==='lobby'){r.players=r.players.filter(x=>x!==p);if(!r.players.length){rooms.delete(r.code);return;}if(r.host===p.id)r.host=r.players[0].id;bump(r);return;}if(r.phase==='battle'&&!p.forfeited){if(r.state.phase==='flight')throw fail(409,'포탄 비행 종료 후 나갈 수 있습니다.');p.forfeited=true;r.state.tanks[p.slot].hp=0;if(!victory(r)){if(r.state.turn===p.slot){E.skip(r.state);after(r);}else bump(r);}}return;}
  if(r.phase==='lobby'){
   if(b.action==='selectTank'){const next=safeTank(b.tank);if(next!==p.tank){p.tank=next;p.ready=false;bump(r);}return;}

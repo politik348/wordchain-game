@@ -1,0 +1,11 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import {updateRoomSettings} from '../fortress-server.mjs';
+const page=readFileSync(new URL('../public/fortress/index.html',import.meta.url),'utf8');
+const room=()=>({phase:'lobby',host:'h',size:2,map:'valley',timer:30,collapse:true,version:1,players:[{id:'h',team:0,ready:true,tank:'cannon'},{id:'a',team:0,ready:true,tank:'laser'},{id:'b',team:1,ready:true,tank:'random'}]});
+const change={size:3,map:'desert',timer:60,collapse:false};
+test('room entry hides tank selection until joining and uses two-column layout',()=>{assert.ok(page.includes("$('tankSelectionPanel').hidden=!catOnly&&!inLobby"));assert.ok(page.includes("grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)"));assert.ok(page.includes("netAct('settings',settingsPayload())"));for(const m of page.matchAll(/<script>([\s\S]*?)<\/script>/g))new vm.Script(m[1]);});
+test('host edits all settings and invalidates readiness without changing tanks or teams',()=>{const r=room();assert.equal(updateRoomSettings(r,r.players[0],change),true);for(const k of Object.keys(change))assert.equal(r[k],change[k]);assert.equal(r.version,2);assert.ok(r.players.every(p=>!p.ready));assert.deepEqual(r.players.map(p=>p.tank),['cannon','laser','random']);assert.equal(updateRoomSettings(r,r.players[0],change),false);assert.equal(r.version,2);});
+test('guest, invalid values, too-small team and battle changes are rejected without mutation',()=>{const r=room(),original=structuredClone(r);assert.throws(()=>updateRoomSettings(r,r.players[1],change),{status:403});assert.throws(()=>updateRoomSettings(r,r.players[0],{...change,size:1}),{status:409});assert.throws(()=>updateRoomSettings(r,r.players[0],{...change,map:'toString'}),{status:400});assert.deepEqual(r,original);r.phase='battle';assert.throws(()=>updateRoomSettings(r,r.players[0],change),{status:409});});
