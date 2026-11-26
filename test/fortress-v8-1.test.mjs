@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import E from '../fortress-engine.mjs';
+const page=readFileSync(new URL('../public/fortress/index.html',import.meta.url),'utf8');
+function flat(){let s=E.create({map:'valley',seed:44,tank:'cannon',collapse:false});s.ground.fill(300);s.bands={};let t=s.tanks[0];t.x=410;t.y=300;t.move=500;return {s,t};}
+test('tank drives down and out of a real blast crater in either direction',()=>{let {s,t}=flat();E.blastTerrain(s,{x:450,y:300},30);let max=300;for(let k=0;k<20;k++){assert.ok(E.move(s,1,4));max=Math.max(max,t.y);}assert.equal(t.x,490);assert.equal(t.y,300);assert.ok(max>=329);for(let k=0;k<20;k++)assert.ok(E.move(s,-1,4));assert.equal(t.x,410);assert.equal(t.y,300);assert.ok(t.move<340);});
+test('movement respects voids, tall walls, fuel, overhead platforms, and other tanks',()=>{let {s,t}=flat();t.x=450;E.cutColumn(s,451,0,500);assert.equal(E.move(s,1),false);s.ground[451]=200;assert.equal(E.move(s,1),false);s.ground[451]=200;s.bands[451]=[200,230,300,500];assert.ok(E.move(s,1,1));assert.equal(t.y,300);t.move=0;assert.equal(E.move(s,1),false);t.move=10;s.tanks[1].x=453;s.tanks[1].y=300;assert.equal(E.move(s,1),false);});
+test('Fortress uses the common cat result and offers previous screen return in all modes',()=>{assert.ok(page.includes('/cat-result.js?'));assert.ok(page.includes('/cat-result.css?'));assert.ok(page.includes('고양이 승리!'));assert.ok(page.includes('ㅋㅋㅋㅋ!'));assert.ok(page.includes('이전 화면으로 돌아가기'));assert.ok(page.includes('대기실로 돌아가기'));assert.ok(page.includes('showResult();return;}newDeadline()'));assert.ok(page.includes("showResult();}if(room.phase==='finished'"));let scripts=[...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]);scripts.forEach(s=>new vm.Script(s));let engine=readFileSync(new URL('../fortress-engine.mjs',import.meta.url),'utf8').replace(/export default globalThis\.FortressEngine;\s*$/,'').trim();assert.equal(scripts[0].trim(),engine);});
