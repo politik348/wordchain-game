@@ -289,7 +289,7 @@ async function createSession(accountId){
 }
 
 /* Fortress results are accepted only from the server-authoritative room engine. */
-export async function fortressRecordMatch(matchId,players,winner){
+export async function fortressRecordMatch(matchId,players,winner,stats=[]){
  return readOrWrite(data=>{
   const f=data.fortressRanking||(data.fortressRanking={players:{},matches:{}});
   if(f.matches[matchId])return false;
@@ -298,7 +298,7 @@ export async function fortressRecordMatch(matchId,players,winner){
    const r=f.players[p.id]||(f.players[p.id]={wins:0,losses:0,draws:0,points:0});
    const won=!p.forfeited&&p.team===winner,draw=!p.forfeited&&winner===-1;
    r[won?'wins':draw?'draws':'losses']++;
-   r.points=Math.max(0,r.points+(won?30:draw?5:-10));
+   r.points=Math.max(0,r.points+(won?30:draw?5:-10));if(!p.forfeited){let st=stats[p.slot]||{},xp=20+(won?20:0)+Math.min(30,Math.floor((st.damage||0)/10));r.xp=(r.xp||0)+xp;r.mastery??={};r.mastery[p.tank]=(r.mastery[p.tank]||0)+xp;r.achievements??=[];for(const [key,yes] of [['첫 승리',won],['명사수',st.shots>=3&&st.hits===st.shots],['파괴왕',st.bungees>=2],['구원자',st.healing>=30],['장거리 저격',st.longest>=1200]])if(yes&&!r.achievements.includes(key))r.achievements.push(key);}
   }
   f.matches[matchId]=Date.now();
   return true;

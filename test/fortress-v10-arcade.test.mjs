@@ -1,0 +1,11 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import E from '../fortress-engine.mjs';
+import {resetForRematch} from '../fortress-server.mjs';
+test('all thirteen tanks have unique ultimate names and classic remains opt-out',()=>{assert.equal(Object.keys(E.ULTIMATES).length,13);assert.equal(new Set(Object.values(E.ULTIMATES).map(x=>x.name)).size,13);const s=E.create({seed:42,tank:'cannon'});assert.equal(s.rule,'classic');s.tanks[0].ultimate=100;assert.equal(E.activateUltimate(s),false);});
+test('ultimate is armed once, fires and clears; stats count one shot',()=>{let s=E.create({rule:'ultimate',seed:42,tank:'cannon',enemy:'laser'});s.tanks[0].ultimate=100;assert.equal(E.activateUltimate(s),true);assert.equal(E.activateUltimate(s),false);assert.ok(E.fire(s).length);E.finish(s);assert.equal(s.stats[0].shots,1);assert.equal(s.tanks[0].ultimateArmed,false);});
+test('sudden death reduces HP and chaos support is one use',()=>{let s=E.create({rule:'sudden',tank:'cannon',seed:4});assert.equal(s.tanks[0].hp,55);s=E.create({rule:'chaos',size:2,tank:'cannon',seed:4});s.tanks[0].hp=0;s.tanks[1].hp=10;assert.equal(E.supportAlly(s,0),true);assert.equal(E.supportAlly(s,0),false);assert.equal(s.tanks[1].hp,22);});
+test('rematch preserves teams and previous selected tank and resets readiness',()=>{let r={phase:'finished',rankSaved:true,version:2,players:[{team:0,tank:'laser',selectedTank:'random',ready:true,slot:0}]};resetForRematch(r,'new');assert.equal(r.phase,'lobby');assert.equal(r.players[0].tank,'random');assert.equal(r.players[0].ready,false);assert.equal(r.matchId,'new');});
+test('inline engine matches shared server engine and all scripts parse',()=>{let p=readFileSync(new URL('../public/fortress/index.html',import.meta.url),'utf8'),scripts=[...p.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(x=>x[1]);scripts.forEach(x=>new vm.Script(x));assert.equal(scripts[0].trim(),readFileSync(new URL('../fortress-engine.mjs',import.meta.url),'utf8').replace(/export default globalThis\.FortressEngine;\s*$/,'').trim());});
