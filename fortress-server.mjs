@@ -51,7 +51,7 @@ export async function handleFortressRequest(req,res,pathname){
  const m=pathname.match(/^\/api\/fortress\/rooms\/([0-9A-F]{6})(?:\/(join|action))?$/i);if(!m)throw fail(404,'잘못된 경로입니다.');const r=rooms.get(m[1].toUpperCase());if(!r)throw fail(404,'방을 찾을 수 없습니다.');
  if(method==='POST'&&m[2]==='join'){join(r,account,await body(req));}
  else if(method==='POST'&&m[2]==='action'){act(r,member(r,account.id),await body(req));}
- else if(method==='GET'&&!m[2]){member(r,account.id);tick(r);}
+ else if(method==='GET'&&!m[2]){member(r,account.id);tick(r);const since=new URL(req.url||pathname,'http://localhost').searchParams.get('since');if(since!==null&&since===String(r.version)){reply(res,200,{unchanged:true,version:r.version,deadline:r.deadline,serverTime:clock()});return true;}}
  else throw fail(405,'허용되지 않은 요청입니다.');
  reply(res,200,{room:publicRoom(r,account.id)});return true;
  }catch(e){reply(res,e.status||500,{error:e.status?e.message:'포트리스 서버 오류'});if(!e.status)console.error(e);return true;}

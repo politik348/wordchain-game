@@ -1,0 +1,8 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import E from '../fortress-engine.mjs';
+const page=readFileSync(new URL('../public/fortress/index.html',import.meta.url),'utf8');
+test('AI incremental search produces the same decision as synchronous search',()=>{for(const map of ['valley','islands','moon']){let s=E.create({map,size:4,seed:44,tank:'cannon',enemy:'guardian',collapse:false});let task=E.searchAI(s,'normal'),r,count=0;do{r=task.next();count++;}while(!r.done);assert.ok(count>10);assert.deepEqual(r.value,E.chooseAI(s,'normal'));let a=r.value;let full=E.plan(s,a.angle,a.power,a.dir,a.weapon),compact=E.plan(s,a.angle,a.power,a.dir,a.weapon,false);assert.deepEqual(full.map(p=>p.hit),compact.map(p=>p.hit));assert.ok(compact.every(p=>p.points.length===0));}});
+test('performance changes preserve shared engine and charging controls',()=>{let scripts=[...page.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]);scripts.forEach(s=>new vm.Script(s));let engine=readFileSync(new URL('../fortress-engine.mjs',import.meta.url),'utf8').replace(/export default globalThis\.FortressEngine;\s*$/,'').trim();assert.equal(scripts[0].trim(),engine);assert.ok(page.includes("releaseCharge('keyboard')"));assert.ok(page.includes('terrainImage(terrainState,th)'));assert.ok(page.includes('drawMini(terrainState,th,now)'));assert.ok(page.includes('pollBusy'));assert.ok(page.includes('qualityToggle'));let server=readFileSync(new URL('../fortress-server.mjs',import.meta.url),'utf8');assert.ok(server.includes('unchanged:true,version:r.version'));});
